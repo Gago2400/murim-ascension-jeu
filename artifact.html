@@ -2243,7 +2243,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="be170f0a75d1" aria-label="Identifiant de version">Version générée : be170f0a75d1</div>
+      <div class="meta" id="t-build" data-build="5c92c88946c8" aria-label="Identifiant de version">Version générée : 5c92c88946c8</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -12874,8 +12874,15 @@ function drawDecor(d) {
     }
     case 'oasis': {
       const R = d.eauR || 78;
-      ctx.fillStyle = '#8a7358'; ctx.beginPath(); ctx.ellipse(x, y, R + 10, (R + 10) * 0.62, 0, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#3a4e46'; ctx.beginPath(); ctx.ellipse(x, y, R * 0.84, R * 0.52, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#5a4630'; ctx.beginPath(); ctx.ellipse(x + 14, y - 6, R + 36, (R + 18) * 0.54, 0.38, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#3a2c1c'; ctx.beginPath(); ctx.ellipse(x + 8, y - 2, R + 20, (R + 10) * 0.50, 0.22, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#2e2214'; ctx.beginPath(); ctx.ellipse(x - 10, y + 6, R + 6, (R + 2) * 0.48, -0.26, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#1c140e'; ctx.beginPath(); ctx.ellipse(x + 2, y, R * 0.78, R * 0.44, 0.08, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#101c18'; ctx.beginPath(); ctx.ellipse(x, y, R * 0.56, R * 0.34, 0.12, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#6e6456';
+      for (const [a, f, s] of [[1.6, 0.7, 5], [1.9, 0.95, 3], [3.9, 0.88, 4], [0.3, 1.05, 4]]) {
+        ctx.beginPath(); ctx.arc(x + Math.cos(a) * R * f, y + Math.sin(a) * R * f * 0.55, s, 0, TAU); ctx.fill();
+      }
       break;
     }
     case 'house': {
@@ -16610,6 +16617,51 @@ function R3init(T) {
       return shade(c, 0.38);
     }
     // Plusieurs touffes, teintes voisines, taille variée, même échelle sur les trois axes.
+    // Mare d'oasis : un disque éclairé, dégradé eau → sable humide, bord qui fond (plus d'ellipse nette).
+    let oasisMat = null;
+    function poserMareOasis(X, Z, y, R) {
+      if (!oasisMat) {
+        oasisMat = new T.MeshToonMaterial({
+          color: 0xffffff, gradientMap: gradTex, transparent: true, opacity: 1, depthWrite: false, side: T.DoubleSide
+        });
+        oasisMat.onBeforeCompile = (sh) => {
+          sh.uniforms.uT = EAU_T;
+          sh.vertexShader = 'varying vec2 vL;\nvarying vec2 vW;\n' + sh.vertexShader.replace(
+            '#include <begin_vertex>',
+            '#include <begin_vertex>\n vL = position.xz;\n vW = (modelMatrix * vec4(transformed, 1.0)).xz;'
+          );
+          sh.fragmentShader = 'varying vec2 vL;\nvarying vec2 vW;\nuniform float uT;\n' + sh.fragmentShader.replace(
+            '#include <color_fragment>',
+            `#include <color_fragment>
+{
+  float wob = sin(vW.x * 1.18 + vW.y * 0.84) * 0.055 + sin(vW.x * 0.51 - vW.y * 1.07 + 1.6) * 0.04;
+  float t = clamp(length(vL) + wob, 0.0, 1.0);
+  vec3 eau = vec3(0.063, 0.110, 0.094);
+  vec3 sombre = vec3(0.047, 0.094, 0.078);
+  vec3 boue = vec3(0.141, 0.094, 0.063);
+  vec3 humide = vec3(0.180, 0.133, 0.086);
+  vec3 sable = vec3(0.353, 0.275, 0.188);
+  vec3 col = mix(eau, sombre, smoothstep(0.10, 0.34, t));
+  col = mix(col, boue, smoothstep(0.30, 0.54, t));
+  col = mix(col, humide, smoothstep(0.50, 0.74, t));
+  col = mix(col, sable, smoothstep(0.70, 0.92, t));
+  float vague = 0.5 + 0.5 * sin(vW.x * 0.82 + vW.y * 0.58 + uT * 0.42);
+  col *= 0.93 + 0.09 * vague * (1.0 - smoothstep(0.32, 0.60, t));
+  diffuseColor.rgb = col;
+  diffuseColor.a *= 1.0 - smoothstep(0.76, 0.995, t);
+}`
+          );
+        };
+        oasisMat.customProgramCacheKey = () => 'oasis-humide-v1';
+      }
+      const mesh = new T.Mesh(geo('disk'), oasisMat);
+      mesh.position.set(X, y + 0.045, Z);
+      mesh.scale.set(R * 1.58, 1, R * 1.14);
+      mesh.receiveShadow = true;
+      mesh.renderOrder = 2;
+      if (!oasisMat.userData.posed) { mesh.userData.ownMat = true; oasisMat.userData.posed = 1; }
+      root.add(mesh);
+    }
     function poserTouffes(baseCol, spots, seed) {
       const cols = [baseCol, shade(baseCol, 0.14), shade(baseCol, -0.1), shade(baseCol, 0.24), shade(baseCol, 0.06)];
       paint = 'houppe';
@@ -17852,18 +17904,30 @@ function R3init(T) {
           break;
         }
         case 'oasis': {
-          // Bassin d'oasis : un disque, la même eau que le fleuve, teinte boueuse. La margelle n'est pas de l'eau.
+          // Mare : eau sombre #101c18 / #0c1814 + berge #241810 + sable humide #5a4630 en dégradé (shader, pas d'ellipse nette).
           base.compose(V1.set(X, hSol(d.x, d.y), Z), Q1.identity(), S1.set(1, 1, 1));
           const R = Math.max(1.6, W(d.eauR || 78));
-          paint = 'stone';
-          put('cyl18', 't', '#8a7358', 0, 0.07, 0, R + 0.42, 0.14, R + 0.42);
-          paint = 'water';
-          put('cyl18', 't', '#3a4e46', 0, 0.11, 0, R * 0.84, 0.04, R * 0.84, 0, 0, 0, false);
           paint = '';
-          for (let k = 0; k < 8; k++) {
-            const a = k / 8 * TAU;
-            put('box', 't', '#4e5c38', Math.cos(a) * R * 0.9, 0.42, Math.sin(a) * R * 0.9, 0.035, 0.62, 0.035, 0.08, a, 0);
+          poserMareOasis(X, Z, hSol(d.x, d.y), R);
+          const yRoc = hSol(d.x, d.y);
+          const saved = base.clone();
+          // 3 grappes : sud (caméra, dont 2 dans l'eau), nord-ouest, nord-est. Écarts et tailles inégaux.
+          const grappes = [
+            [1.55, 0.62, 0.62], [1.78, 0.78, 0.38], [2.05, 0.52, 0.48], [1.35, 0.95, 0.34],
+            [3.85, 0.88, 0.58], [4.15, 1.12, 0.36], [3.55, 0.70, 0.44],
+            [0.22, 1.05, 0.50], [0.55, 0.68, 0.32], [5.95, 0.92, 0.40]
+          ];
+          for (let k = 0; k < grappes.length; k++) {
+            const a = grappes[k][0], rr = R * grappes[k][1], kk = grappes[k][2];
+            base.compose(V1.set(X + Math.cos(a) * rr, yRoc, Z + Math.sin(a) * rr), Q1.identity(), S1.set(1, 1, 1));
+            if (AM && variantesRoche()) poserRocher(d.x + k * 31 + 17, d.y + k * 19 + 5, 0.27 * k + 0.08, kk);
+            else if (DM && GEO['d:rocher_rond:feuillage']) {
+              const noms = ['rocher_rond', 'rocher_amas', 'rocher_strates', 'rocher_plat'];
+              const nom = noms[k % noms.length];
+              if (GEO['d:' + nom + ':feuillage']) dput(nom, '#6e6456', '#6e6456', kk, a + k);
+            }
           }
+          base.copy(saved);
           break;
         }
         case 'house': {
@@ -18226,6 +18290,29 @@ function R3init(T) {
       paint = 'cloth'; put('box', 't', d.coul || '#8a2a20', 0, 2.15 * k, 0, 0.03, 1.6 * k, 0.7 * k); put('box', 't', shade(d.coul || '#8a2a20', -0.35), 0, 1.33 * k, 0, 0.035, 0.08 * k, 0.72 * k);
       paint = ''; put('sph', 'b', '#e0b040', 0, 3.28 * k, 0, 0.08, 0.08, 0.08, 0, 0, 0, false);
     }
+    if (lmk && lmk.k === 'ruine') {
+      // Sanctuaire Englouti : temple du pack Asie déjà chargé, enfoncé dans l'eau. Rochers du pack en berge.
+      if (AM && ASIE.parts.temple_asie) {
+        const k = 0.048;
+        const mx = new T.Matrix4().compose(V1.set(W(lmk.x), hSol(lmk.x, lmk.y) - 0.72, W(lmk.y)), Q1.identity(), S1.set(k, k, k));
+        if (!asieInst.has('temple_asie')) asieInst.set('temple_asie', []);
+        asieInst.get('temple_asie').push({ mx });
+      }
+      const savedL = base.clone();
+      // 3 grappes irrégulières : sud (dont un dans l'eau), nord-ouest, est. Pas un cercle de foyer.
+      const rocs = [
+        [0.22, 0.55, 0.58], [0.72, 1.45, 0.36], [-0.18, 1.95, 0.42],
+        [-1.15, -0.28, 0.52], [-2.55, -1.15, 0.34],
+        [0.85, 0.18, 0.46], [2.45, -0.55, 0.38]
+      ];
+      for (let i = 0; i < rocs.length; i++) {
+        const ox = rocs[i][0], oz = rocs[i][1], kk = rocs[i][2];
+        base.compose(V1.set(W(lmk.x) + ox, hSol(lmk.x, lmk.y), W(lmk.y) + oz), Q1.identity(), S1.set(1, 1, 1));
+        if (AM && variantesRoche()) poserRocher(lmk.x + i * 23 + 9, lmk.y + i * 17 + 3, 0.31 * i + 0.12, kk);
+        else if (DM && GEO['d:rocher_amas:feuillage']) dput('rocher_amas', '#6e6456', '#5a6860', kk, i * 1.7);
+      }
+      base.copy(savedL);
+    }
     if (lmk) { // instances à part, matériaux propres : le lieu s'estompe quand le héros passe derrière
       bk = new Map(); paint = '';
       base.compose(V1.set(W(lmk.x), 0, W(lmk.y)), Q1.identity(), S1.set(1, 1, 1));
@@ -18279,18 +18366,7 @@ function R3init(T) {
       } else if (d.type === 'snow') {
         // Plus d'objet neige sur l'herbe (les plaques lisaient en meules). Voile : voileNeigeRoche, Col seulement.
       } else if (d.type === 'bones') {
-        // [Grok] os au sol : deux fémurs (cyl6 + rotules sph), plus des pavés 28×4 cm
-        // qui se lisaient en cubes ou disparaissaient à 18 m. Angle ~30°, pas une croix.
-        // Seaux cyl6 / sph déjà au décor : pas de géométrie nouvelle.
-        paint = '';
-        const a = (d.v || 0) * 6.2832;
-        const ca = Math.cos(a), sa = Math.sin(a);
-        put('cyl6', 't', '#d8d0bc', 0, 0.07, 0, 0.075, 0.92, 0.075, 0, a, 1.57, false);
-        put('sph', 't', '#e4dcc8', ca * 0.42, 0.08, sa * 0.42, 0.1, 0.09, 0.1, 0, 0, 0, false);
-        put('sph', 't', '#cfc6b0', -ca * 0.42, 0.075, -sa * 0.42, 0.09, 0.08, 0.09, 0, 0, 0, false);
-        const a2 = a + 0.48, c2 = Math.cos(a2), s2 = Math.sin(a2);
-        put('cyl6', 't', '#c8c0a8', 0.14, 0.065, 0.1, 0.062, 0.7, 0.062, 0, a2, 1.57, false);
-        put('sph', 't', '#d8d0bc', 0.14 + c2 * 0.32, 0.075, 0.1 + s2 * 0.32, 0.085, 0.075, 0.085, 0, 0, 0, false);
+        // Pas de crâne/os dans les packs. On retire le rendu 3D (reste dans R3_FLAT3D pour ne pas repeindre le sol).
       } else if (d.type === 'floatrock') {
         floaters.push(d);
       }
@@ -26647,15 +26723,10 @@ const LANDMARK3D = (() => {
     q.set('stone'); for (const x of [-3.4, 3.4]) { q.put('box', 't', '#7a7470', x, 0.35, 0.6, 0.7, 0.7, 0.7); q.put('sph', 't', '#9a948a', x, 0.95, 0.6, 0.32); } // lions gardiens stylisés
   };
   const ruine = (q) => {
-    const st = q.id === 'marecages' ? '#4a5248' : '#5a5a54', moss = q.id === 'marecages' ? '#3e6a40' : '#5a7a40';
-    q.set('stone');
-    q.put('box', 't', shade(st, -0.1), 0, 0.15, 0, 5.6, 0.3, 4.4, 0, 0.1, 0);
-    for (const [x, z, h] of [[-2.0, -1.2, 3.4], [2.0, -1.2, 2.2], [-2.0, 1.2, 1.3]]) { q.put('cyl6', 't', st, x, h / 2 + 0.3, z, 0.38, h, 0.38); q.put('box', 't', shade(st, 0.1), x, h + 0.38, z, 0.95, 0.18, 0.95); }
-    q.put('box', 't', st, -0.9, 3.85, -1.2, 2.6, 0.4, 0.6, 0, 0, -0.08); // linteau penché
-    q.put('cyl6', 't', st, 1.2, 0.55, 1.3, 0.36, 2.4, 0.36, 0, 0.6, Math.PI / 2); // colonne tombée
-    q.put('box', 't', shade(st, 0.08), 0.2, 0.55, -1.6, 1.2, 0.5, 0.6, 0, 0.3, 0); q.put('dode', 't', st, 2.3, 0.35, 1.0, 0.5, 0.4, 0.5);
-    q.set('leaf'); q.put('box', 't', moss, -2.0, 3.92, -1.2, 0.97, 0.06, 0.97, 0, 0, 0, false); q.put('box', 't', moss, 1.2, 0.92, 1.3, 1.3, 0.05, 0.5, 0, 0.6, 0, false);
-    if (q.id === 'marecages') { q.set(''); q.put('box', 'b', '#6ef0e6', -0.4, 0.31, 0.4, 1.6, 0.02, 1.2, 0, 0.1, 0, false); q.light(q.x, q.y + 8, 0.5, '#6ef0e6', 2.2, false); }
+    // Sanctuaire Englouti : le bâtiment vient du pack (temple_asie, posé dans buildDecor). Ici : eau/boue éclairée.
+    q.set('');
+    q.put('cyl18', 't', '#101c18', 0.10, 0.08, 0.12, 2.20, 0.14, 1.90, 0, 0.12, 0, false);
+    q.put('cyl18', 't', '#0c1814', 0.45, 0.09, 0.55, 1.05, 0.10, 0.88, 0, -0.18, 0, false);
   };
   const tour = (q) => {
     const wall = '#ddd6c6', roof = '#34404a';
