@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="f0a7e206ef8d">
+<meta name="murim-build" content="3514c9b08bc7">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -111,7 +111,7 @@ html[data-cb="tritan"] #cv, html[data-cb="tritan"] #cv3, html[data-cb="tritan"] 
 #h-menu button { width: 38px; height: 38px; border-radius: 9px; background: var(--lacquer); box-shadow: 0 0 0 1px var(--line); display: grid; place-items: center; position: relative; font-family: var(--f-han); font-size: 19px; line-height: 1; }
 #h-menu button span { position: absolute; bottom: -1px; font-family: var(--f-body); font-size: 7.5px; letter-spacing: .04em; color: var(--muted); }
 #h-menu button.flag::after { content: ""; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--cinnabar); box-shadow: 0 0 6px var(--cinnabar); }
-#b-auto { position: absolute; top: calc(var(--sat) + 10px); right: calc(var(--sar) + clamp(124px, 18vw + 16px, 168px)); font-size: 11px; font-weight: 700; padding: 5px 9px; border-radius: 99px; background: var(--lacquer); box-shadow: 0 0 0 1px var(--line); color: var(--muted); z-index: 4; }
+#b-auto { position: absolute; top: calc(var(--sat) + 10px); right: calc(var(--sar) + clamp(124px, 18vw + 16px, 168px)); font-size: 11px; font-weight: 700; padding: 5px 9px; border-radius: 99px; background: var(--lacquer); box-shadow: 0 0 0 1px var(--line); color: var(--muted); z-index: 4; white-space: nowrap; }
 #b-auto.on { color: #0b0c10; background: var(--gold); }
 #b-auto.on.pause { background: rgba(233,181,60,.35); color: #f3e3b8; } /* zone sûre : auto en pause */
 #h-boss { position: absolute; top: calc(var(--sat) + 10px); left: 50%; transform: translateX(-50%); width: min(44vw, 460px); text-align: center; }
@@ -1822,14 +1822,27 @@ body:has(#vcour) #net-parler { display: none !important; }
 #h-quest small, #h-quest .q-goal, #h-quest .q-recit { white-space: normal; overflow-wrap: anywhere; }
 /* [Grok] 15 premières minutes : suivi court, une bulle d'aide refermable, hors joystick / attaques. */
 #h-quest.compacte {
+  min-height: 0;
   max-height: none;
+  max-width: min(280px, 70vw);
   padding: 4px 12px 4px 8px;
   font-size: 12.5px;
   line-height: 1.25;
   overflow: visible;
 }
+#h-quest.compacte::after { display: none; }
 #h-quest.compacte .q-corps { white-space: normal; overflow: visible; text-overflow: clip; }
 #h-quest.compacte .q-dist { white-space: nowrap; }
+#h-quest.compacte .q-recit {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #f0d48a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .toast { align-items: flex-start; overflow: visible; height: auto; max-height: none; width: max-content; max-width: 100%; box-sizing: border-box; }
 .toast > span:first-child { flex: 1 1 auto; min-width: 0; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 /* Au-dessus du suivi (z 4) : le hit 44 px du × ne se fait pas voler le toucher. */
@@ -1852,6 +1865,27 @@ body:has(#vcour) #net-parler { display: none !important; }
 #hud.prem #toasts {
   max-height: none;
   max-width: min(340px, calc(100vw - var(--sal) - var(--sar) - 20px));
+}
+/* [Grok] Milieu portrait : plus de colonne 165 px. Largeur jusqu'à la minicarte, 2 lignes. */
+@media (orientation: portrait) {
+  #hud:not(.prem) #toasts {
+    max-width: min(340px, calc(100vw - var(--sal) - var(--sar) - 132px));
+    width: auto;
+  }
+  #hud:not(.prem) #toasts .toast {
+    width: 100%;
+    max-width: 100%;
+  }
+  #hud:not(.prem) #toasts .toast > span:first-child {
+    overflow-wrap: break-word;
+    min-width: 0;
+    flex: 1 1 auto;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
 }
 @media (orientation: landscape) and (max-height: 500px) {
   /* Premières minutes : chaque bulle reste près du geste. Le bloc unique en haut
@@ -1893,7 +1927,8 @@ body:has(#vcour) #net-parler { display: none !important; }
     width: min(220px, 42vw);
   }
   #hud.prem #coach p { font-size: 12.5px; line-height: 1.2; margin-bottom: 2px; }
-  #hud.prem #h-quest.compacte { max-width: min(200px, 28vw); max-height: none; }
+  #hud.prem #h-quest.compacte,
+  #h-quest.compacte { max-width: min(220px, 32vw); max-height: none; min-height: 0; }
   #hud.prem #toasts {
     top: calc(var(--sat) + var(--qt, 72px) + var(--qh, 40px) + 18px) !important;
     left: calc(var(--sal) + 10px) !important;
@@ -2201,7 +2236,7 @@ body:has(#vcour) #net-parler { display: none !important; }
         <button data-tab="options" aria-label="Options">设<span>Options</span></button>
       </div>
     </div>
-    <button id="b-auto" aria-pressed="false">Auto</button>
+    <button id="b-auto" aria-pressed="false" aria-label="Combat automatique">Automatique</button>
     <div id="h-boss" hidden><div class="bn"><span id="hb-name"></span> <small id="hb-lvl"></small></div><div class="bar"><i id="hb-f"></i><div class="ticks" id="hb-ticks"></div><em id="hb-t"></em></div><div class="ph" id="hb-ph"></div></div>
     <div id="toasts" aria-live="polite"></div>
     <div id="joy"><div id="joy-base"><div id="joy-knob"></div></div></div>
@@ -2220,7 +2255,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="f0a7e206ef8d" aria-label="Identifiant de version">Version générée : f0a7e206ef8d</div>
+      <div class="meta" id="t-build" data-build="3514c9b08bc7" aria-label="Identifiant de version">Version générée : 3514c9b08bc7</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -18126,10 +18161,8 @@ function R3init(T) {
     im.count = 0; im.frustumCulled = false; im.castShadow = false; im.receiveShadow = true;
     im.instanceMatrix.setUsage(T.DynamicDrawUsage); im.userData.ownMat = true; root.add(im);
     const mont = sc.id === 'montagnes';
-    // Rangs agricoles (riz, thé, potagers) : la parcelle et ses diguettes restent sans touffes (lacune notée au lot clairières).
-    const cultures = (sc.decor || []).filter((d) => (d.type === 'champ' || d.type === 'potager') && d.w > 0 && d.h > 0)
-      .map((d) => { const tourne = Math.abs(Math.sin(d.rot || 0)) > 0.5; return { x: d.x, y: d.y, hw: (tourne ? d.h : d.w) / 2 + 10, hh: (tourne ? d.w : d.h) / 2 + 10 }; });
-    grassLive = { sc, im, mobile, capacity, key: '', refreshes: 0, dynamic: false, cultures,
+    // Rangs agricoles (riz, thé, potagers, terrasses) : la parcelle et ses diguettes restent sans touffes.
+    grassLive = { sc, im, mobile, capacity, key: '', refreshes: 0, dynamic: false, cultures: culturesParcelles(sc),
       // [Claude] touffes dans la valeur du sol, pas au-dessus : la pointe à +32 % vers le blanc, multipliée par 1,16 et
       // éclairée de face (normales vers le haut), sortait blanc-gris sur le vert peint : des griffures sur tout l'écran
       // (relevé dans les treize régions). Pied un peu plus sombre que le sol, pointe à peine plus claire.
@@ -18147,6 +18180,11 @@ function R3init(T) {
     }
     return false;
   }
+  // Liste relue à chaque semis (les terrasses des Plaines bougent après le premier plan).
+  function culturesParcelles(sc) {
+    return (sc.decor || []).filter((d) => (d.type === 'champ' || d.type === 'potager' || d.terrasse) && d.w > 0 && d.h > 0)
+      .map((d) => { const tourne = Math.abs(Math.sin(d.rot || 0)) > 0.5; return { x: d.x, y: d.y, hw: (tourne ? d.h : d.w) / 2 + 16, hh: (tourne ? d.w : d.h) / 2 + 16 }; });
+  }
   // Parcelle cultivée (centre x,y, demi-côtés avec lisière) : les brins d'herbe traversaient les sillons.
   function herbeDansCulture(cultures, x, y) {
     if (!cultures) return false;
@@ -18158,7 +18196,8 @@ function R3init(T) {
     if (!g || g.sc !== curScene || !qualityPreset().grass) return;
     const bx = Math.floor(cx * M / 192), by = Math.floor(cz * M / 192), key = bx + ':' + by;
     if (key === g.key) return;
-    const sc = g.sc, x0 = bx * 192 + 96, y0 = by * 192 + 96;
+    const sc = g.sc; g.cultures = culturesParcelles(sc);
+    const x0 = bx * 192 + 96, y0 = by * 192 + 96;
     const maxY = sc.h, bourg = sc.bourg && sc.bourg.rect, cite = sc.cite && sc.cite.rect;
     const inRect = (r, x, y) => r && x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
     const im = g.im, C = new T.Color(); let n = 0;
@@ -26473,9 +26512,8 @@ function toastFermer(n, e) {
 }
 function toastLogMax() {
   if (premiereMinute()) return 1;
-  // Paysage : 1 ou 2 toasts entiers ; le reste reste en file (NOTE.q). Jamais de ligne coupée à mi-hauteur.
-  if (innerWidth > innerHeight) return Math.min(2, NOTE_CFG.logLand || 2);
-  return NOTE_CFG.log;
+  // Milieu de partie : 1 ou 2 toasts entiers (portrait comme paysage). Le reste en file.
+  return Math.min(2, NOTE_CFG.logLand || 2);
 }
 function noteShow(n) {
   const box = $('#toasts'); if (!box) return;
@@ -26675,7 +26713,16 @@ function notesEviteHud() {
     if (!hero) return;
     const gap = 12;
     let r2 = el.getBoundingClientRect();
-    if (r2.left < hero.left) {
+    // Portrait : ne plus borner à hero.left (colonne ~165 px, phrase sur 4 lignes).
+    // Largeur = jusqu'à la minicarte. On ne rétrécit que si le journal croise encore le héros.
+    const mm = document.getElementById('minimap');
+    const mmR = mm && !mm.hidden ? mm.getBoundingClientRect() : null;
+    if (mmR && mmR.width > 8) {
+      const jusqua = Math.floor(mmR.left - r2.left - 8);
+      if (jusqua > 120) el.style.setProperty('max-width', jusqua + 'px', 'important');
+    }
+    r2 = el.getBoundingClientRect();
+    if (r2.bottom > hero.top + 4 && r2.left < hero.left && rectsSeCoupe(r2, hero, 4)) {
       const maxW = Math.floor(hero.left - r2.left - gap);
       if (maxW > 80) el.style.setProperty('max-width', maxW + 'px', 'important');
     }
@@ -27070,7 +27117,18 @@ function cycleTarget() {
   if (!list.length) { P.lock = null; return; }
   const i = list.indexOf(P.lock); P.lock = list[(i + 1) % list.length];
 }
-function refreshAuto() { const b = $('#b-auto'); b.classList.toggle('on', !!S.settings.auto); b.setAttribute('aria-pressed', S.settings.auto ? 'true' : 'false'); }
+// [Grok] QA textes : plus de jeton anglais sur le bouton (toast déjà « Combat automatique »).
+function autoLibelle() {
+  return (S && S.settings && S.settings.auto && typeof autoRefuge === 'function' && autoRefuge()) ? 'En refuge' : 'Automatique';
+}
+function refreshAuto() {
+  const b = $('#b-auto'); if (!b) return;
+  b.classList.toggle('on', !!S.settings.auto);
+  b.setAttribute('aria-pressed', S.settings.auto ? 'true' : 'false');
+  b.setAttribute('aria-label', 'Combat automatique');
+  const t = autoLibelle();
+  if (b.textContent !== t) b.textContent = t;
+}
 
 // Anneau d'endurance autour de l'esquive, plus le délai. Lecture seule de combatReadout() (§ combat, 05_combat.js).
 function paintDodge() {
@@ -27239,7 +27297,7 @@ function updateHud(dt) {
   const bkey = bf.map((b) => b[0]).join('|');
   if (bkey !== UI.bkey) { UI.bkey = bkey; const box = hEl('#h-buffs'); if (box) { box.innerHTML = ''; for (const [t, c] of bf) box.append(el('span', { class: 'buff ' + c }, t)); } }
   { // auto-combat au refuge : en pause (zone sûre), le bouton le dit au lieu de rester « actif » sans rien faire
-    const pz = !!S.settings.auto && autoRefuge(); if (pz !== UI.autoPause) { UI.autoPause = pz; const b = hEl('#b-auto'); if (b) { b.classList.toggle('pause', pz); b.textContent = pz ? 'Auto · refuge' : 'Auto'; } }
+    const pz = !!S.settings.auto && autoRefuge(); if (pz !== UI.autoPause) { UI.autoPause = pz; const b = hEl('#b-auto'); if (b) { b.classList.toggle('pause', pz); const t = autoLibelle(); if (b.textContent !== t) b.textContent = t; } }
   }
   // EXP
   const req = expReq(S.level); const capped = S.level >= levelCap() && S.exp >= req && S.rank < 8;
@@ -27372,7 +27430,10 @@ const QUETE_INDICE = {
 function refreshQuest() {
   const q = currentQuest(); const box = $('#h-quest'); if (!box) return;
   const prem = premiereMinute();
-  box.classList.toggle('compacte', prem);
+  // [Grok] Après le niveau 10 le cartouche reprenait le texte long + « Trame · étape n/50 »
+  // (QA 15 min : compact seulement jusqu'à cette étape) : en paysage Auto il couvrait le monde.
+  const court = !!(q && q.short && !G.event);
+  box.classList.toggle('compacte', court);
   const hud = $('#hud'); if (hud) hud.classList.toggle('prem', prem);
   let html = '';
   if (G.event) {
@@ -27384,7 +27445,7 @@ function refreshQuest() {
     // [Grogrok] « Trame · étape n/50 » (ce n'est pas un compteur de la quête) et, si l'objectif est dans la région, sa distance
     const g = typeof questMapGoal === 'function' && G.scene && G.scene.type === 'region' ? questMapGoal(G.scene) : null;
     const dist = g ? Math.round(Math.hypot(g.x - P.x, g.y - P.y) / M) : 0;
-    if (prem && q.short && !G.event) {
+    if (court) {
       let corps = q.short;
       if (g && dist > 3) {
         const mots = q.short.split(/\s+/);
@@ -33809,11 +33870,12 @@ const refreshQuestBeforeVoie = refreshQuest;
 refreshQuest = function () {
   refreshQuestBeforeVoie();
   if (typeof premiereMinute === 'function' && premiereMinute()) return; // premières minutes : le suivi reste une seule carte
-  const a = recitActif(); const box = $('#h-quest'); if (!a || !box || G.scene.type !== 'region' || !recitIci(a.Rc, G.scene.id) && a.st == null) return;
+  const a = recitActif(); const box = $('#h-quest'); if (!a || !box || !G.scene || G.scene.type !== 'region' || !recitIci(a.Rc, G.scene.id) && a.st == null) return;
   const rg = typeof recitMapGoal === 'function' ? recitMapGoal(G.scene) : null;
   const rd = rg ? Math.round(Math.hypot(rg.x - P.x, rg.y - P.y) / M) : 0;
-  const rdist = rg && rd > 3 ? `<span class="q-goal">➤ ${rg.label} · ${rd} m</span>` : '';
-  const morceau = `<small>Récit · ${a.Rc.name}</small>${recitTxt(a.step)}${a.step.k === 'indices' ? ' <b>' + Object.keys((a.st && a.st.found) || {}).length + ' / ' + a.step.n + '</b>' : ''}${rdist}`;
+  // [Grok] Après le niveau 10 le récit s'empilait en seconde carte (titre + texte + ➤). Une ligne suffit.
+  const dist = rg && rd > 3 ? `&nbsp;·&nbsp;${rd}&nbsp;m` : '';
+  const morceau = `Récit · ${a.Rc.name}${dist}`;
   const corps = box.querySelector('.q-corps');
   if (corps) {
     let rec = corps.querySelector('.q-recit');
@@ -33821,7 +33883,7 @@ refreshQuest = function () {
     if (rec.innerHTML !== morceau) rec.innerHTML = morceau;
     return;
   }
-  const html = box.innerHTML + '<br>' + morceau;
+  const html = box.innerHTML + '<span class="q-recit">' + morceau + '</span>';
   box.innerHTML = html;
 };
 UI.refreshQuest = refreshQuest;
