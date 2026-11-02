@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="7c9e9643d4f8">
+<meta name="murim-build" content="72a462edfb45">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2259,7 +2259,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="7c9e9643d4f8" aria-label="Identifiant de version">Version générée : 7c9e9643d4f8</div>
+      <div class="meta" id="t-build" data-build="72a462edfb45" aria-label="Identifiant de version">Version générée : 72a462edfb45</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -9035,6 +9035,7 @@ function updatePlayer(dt) {
     autoTarget = autoPick();
     // Voyage de quête : on ne farm pas Qinghe — seulement aggro / boss / corps-à-corps.
     if (autoTarget && typeof autoVoyageQuete === 'function' && autoVoyageQuete()
+        && !(G.scene && G.scene.type === 'dungeon')
         && !(typeof autoFactionDifferee === 'function' && autoFactionDifferee())
         && !autoTarget.aggro && !autoTarget.isBoss
         && dist(autoTarget.x, autoTarget.y, P.x, P.y) > 3.2 * M) {
@@ -9080,7 +9081,12 @@ function updatePlayer(dt) {
   }
   // auto-combat en donjon : salle nettoyée, on marche jusqu'à la porte suivante, puis on l'emprunte
   // jamais pendant la fuite de 20 s : on ne quitte pas une salle de boss ni un donjon en cours
-  if (auto && !autoTarget && !autoFuiteActive() && G.scene && G.scene.type === 'dungeon' && !(G.enemies || []).some((e) => e && !e.dead)) {
+  // #771 : boss laissé après 2 morts → on sort, on n'avance plus vers le gardien
+  if (auto && !autoFuiteActive() && G.scene && (G.scene.type === 'dungeon' || G.scene.type === 'boss')
+      && typeof autoBossLaisseIci === 'function' && autoBossLaisseIci()
+      && typeof leaveInstance === 'function') {
+    leaveInstance();
+  } else if (auto && !autoTarget && !autoFuiteActive() && G.scene && G.scene.type === 'dungeon' && !(G.enemies || []).some((e) => e && !e.dead)) {
     const g = (G.scene.portals || []).find((p) => p.type === 'gate' && !p.locked);
     if (g) {
       const dg = dist(g.x, g.y, P.x, P.y);
@@ -9191,10 +9197,75 @@ function autoReset() {
   AUTO_NAV.questToast = false; AUTO_NAV.butX = null; AUTO_NAV.butY = null;
   const cle = G.scene ? (G.scene.type + ':' + (G.scene.dungeon || G.scene.id || '') + ':' + (G.scene.room || 0)) : '';
   if (cle !== AUTO_NAV.salle) { AUTO_NAV.salle = cle; AUTO_NAV.fuiteSalle = false; AUTO_NAV.sortiBourg = false; }
-  // evite / morts / tFuite / perceeAt / medIgnore / factionIgnore : conservés
+  // evite / morts / tFuite / perceeAt / medIgnore / factionIgnore / bossMort* / bossLaisse : conservés
 }
 const AUTO_EVITE_MAX = 90;
 const AUTO_EVITE_QUEST = 28;
+const AUTO_TROP_HAUT = 3; // #771 : min > niveau + 3 → on farm ici
+function autoTropHaut(min) {
+  return min > 0 && min > (S.level || 1) + AUTO_TROP_HAUT;
+}
+function autoMinRegion(id) {
+  const R = typeof REGION_BY_ID !== 'undefined' && REGION_BY_ID[id];
+  return R && R.lvl ? R.lvl[0] : 0;
+}
+function autoMinDonjon(id) {
+  const D = typeof DUNGEONS !== 'undefined' && DUNGEONS[id];
+  return D && D.lvl ? D.lvl[0] : 0;
+}
+function autoBossId() {
+  const sc = G.scene;
+  if (!sc) return null;
+  if (sc.type === 'boss') return sc.bossId || sc.id || null;
+  if (sc.isBoss && sc.dungeon && typeof DUNGEONS !== 'undefined' && DUNGEONS[sc.dungeon]) {
+    return DUNGEONS[sc.dungeon].boss || null;
+  }
+  if (sc.type !== 'dungeon' && sc.type !== 'boss') return null;
+  return (G.boss && G.boss.id) || null;
+}
+function autoBossLaisseIci() {
+  const id = AUTO_NAV.bossLaisse;
+  if (!id) return false;
+  const sc = G.scene;
+  if (!sc) return false;
+  if (typeof autoBossId === 'function' && autoBossId() === id) return true;
+  if (sc.type === 'dungeon' && sc.dungeon && typeof DUNGEONS !== 'undefined' && DUNGEONS[sc.dungeon]) {
+    return DUNGEONS[sc.dungeon].boss === id;
+  }
+  return false;
+}
+// Zone / donjon trop haut, ou boss déjà laissé après 2 morts (#771).
+function autoQueteTropHaute(q) {
+  if (!q) return false;
+  const laisse = AUTO_NAV.bossLaisse;
+  if (laisse) {
+    if (q.t === 'boss') {
+      const id = typeof questTarget === 'function' ? questTarget(q) : q.id;
+      if (id === laisse) return true;
+    }
+    if (q.t === 'dungeon' && typeof DUNGEONS !== 'undefined' && DUNGEONS[q.id] && DUNGEONS[q.id].boss === laisse) return true;
+  }
+  if (q.t === 'region') {
+    if (G.scene && G.scene.id === q.id) return false;
+    return autoTropHaut(autoMinRegion(q.id));
+  }
+  if (q.t === 'dungeon') {
+    if (G.scene && G.scene.type === 'dungeon' && G.scene.dungeon === q.id) return false;
+    return autoTropHaut(autoMinDonjon(q.id));
+  }
+  if (q.t === 'boss') {
+    const id = typeof questTarget === 'function' ? questTarget(q) : q.id;
+    if (typeof autoBossId === 'function' && autoBossId() === id) return false;
+    const R = typeof REGIONS !== 'undefined' && REGIONS.find((v) => v.boss === id);
+    return !!(R && autoTropHaut(autoMinRegion(R.id)));
+  }
+  if (q.t === 'nexus') {
+    if (G.scene && (G.scene.nexus || G.scene.id === 'montagnes')) return false;
+    return autoTropHaut(autoMinRegion('montagnes'));
+  }
+  return false;
+}
+// #752 : jamais de fuite d'une salle de boss (arène de région ou salle finale de donjon).
 function autoFuiteInterdite() {
   if (G.arena) return true;
   if (typeof duelActif === 'function' && duelActif()) return true;
@@ -9251,7 +9322,8 @@ function autoMarcheQuete() {
 function autoVoyageQuete() {
   const q = typeof autoQueteEffective === 'function' ? autoQueteEffective()
     : (typeof currentQuest === 'function' ? currentQuest() : null);
-  return !!(q && (q.t === 'region' || q.t === 'dungeon' || q.t === 'boss' || q.t === 'nexus' || q.t === 'faction'));
+  if (!q || (typeof autoQueteTropHaute === 'function' && autoQueteTropHaute(q))) return false;
+  return !!(q.t === 'region' || q.t === 'dungeon' || q.t === 'boss' || q.t === 'nexus' || q.t === 'faction');
 }
 function autoPorteBourg(but) {
   const b = G.scene && G.scene.bourg;
@@ -9308,23 +9380,44 @@ function autoPointChemin(tx, ty) {
   }
   return null;
 }
-// Portail à emprunter (saut de région compris : Qinghe → Vallée pour les Plaines).
+// Frontière à prendre pour rejoindre une région (un saut : Plaines → Col pour la Forêt).
+function autoHopFrontiere(vers) {
+  if (!G.scene || !vers || G.scene.id === vers) return null;
+  if (typeof autoTropHaut === 'function' && autoTropHaut(autoMinRegion(vers))) return null;
+  const hop = typeof questRegionVers === 'function' ? questRegionVers(G.scene.id, vers) : null;
+  if (hop && typeof autoTropHaut === 'function' && autoTropHaut(autoMinRegion(hop))) return null;
+  return ((G.scene.portals) || []).find((v) => v.type === 'frontiere' && (v.id === vers || v.id === hop)) || null;
+}
+// Portail à emprunter (saut de région compris : Qinghe → Vallée, Plaines → Col pour la Tour).
 function autoPortailVoyage() {
   if (!G.scene) return null;
   const q = typeof autoQueteEffective === 'function' ? autoQueteEffective()
     : (typeof currentQuest === 'function' ? currentQuest() : null);
-  if (!q) return null;
+  if (!q || (typeof autoQueteTropHaute === 'function' && autoQueteTropHaute(q))) return null;
   const portes = G.scene.portals || [];
   if (q.t === 'region') {
     const hop = (G.scene.id !== q.id && typeof questRegionVers === 'function') ? questRegionVers(G.scene.id, q.id) : null;
     return portes.find((v) => v.type === 'frontiere' && (v.id === q.id || v.id === hop)) || null;
   }
-  if (q.t === 'dungeon') return portes.find((v) => v.type === 'dungeon' && v.id === q.id) || null;
+  if (q.t === 'dungeon') {
+    const ici = portes.find((v) => v.type === 'dungeon' && v.id === q.id);
+    if (ici) return ici;
+    const R = typeof DUNGEONS !== 'undefined' && DUNGEONS[q.id] && typeof REGION_BY_ID !== 'undefined' && REGION_BY_ID[DUNGEONS[q.id].region];
+    return R ? autoHopFrontiere(R.id) : null;
+  }
   if (q.t === 'boss') {
     const id = typeof questTarget === 'function' ? questTarget(q) : q.id;
-    return portes.find((v) => v.type === 'boss' && v.id === id) || null;
+    const ici = portes.find((v) => v.type === 'boss' && v.id === id);
+    if (ici) return ici;
+    const R = typeof REGIONS !== 'undefined' && REGIONS.find((v) => v.boss === id);
+    return R ? autoHopFrontiere(R.id) : null;
   }
-  if (q.t === 'nexus') return G.scene.nexus || null;
+  if (q.t === 'nexus') {
+    if (G.scene.nexus) return G.scene.nexus;
+    const Rn = typeof REGIONS !== 'undefined' && REGIONS.find((v) => v.nexus && v.id === 'montagnes')
+      || (typeof REGIONS !== 'undefined' && REGIONS.find((v) => v.nexus));
+    return Rn ? autoHopFrontiere(Rn.id) : null;
+  }
   return null;
 }
 // Objectif réel (boss / donjon) : Auto n'enchaîne pas les POI « trop bas ».
@@ -9332,7 +9425,7 @@ function autoButStrict() {
   if (!G.scene) return null;
   const q = typeof autoQueteEffective === 'function' ? autoQueteEffective()
     : (typeof currentQuest === 'function' ? currentQuest() : null);
-  if (!q) return null;
+  if (!q || (typeof autoQueteTropHaute === 'function' && autoQueteTropHaute(q))) return null;
   if (q.t === 'boss' || q.t === 'dungeon') {
     const p = typeof autoPortailVoyage === 'function' ? autoPortailVoyage() : null;
     if (p) return { x: p.x, y: p.y, label: p.name };
@@ -9426,7 +9519,7 @@ function autoFaction() {
 }
 // Percée Disciple / Expert (pas de catalyseur). Méditation rapide si Qi ou
 // compréhension manquent — jamais de parchemin, minerai, Sang-d'herbe, Brume
-// ni Pierre de reset. Même hasard qu'un joueur (attemptBreakthrough / rate).
+// ni Pierre de reset. Percée à catalyseur (Maître+) = décision du joueur.
 // Après un échec (Qi, déviation) : cooldown 120 s, pas de boucle.
 const AUTO_PERCEE_CD = 120;
 const AUTO_MED_IGNORE = 15;
@@ -9462,6 +9555,7 @@ function autoQueteInteragir() {
   const q = typeof autoQueteEffective === 'function' ? autoQueteEffective()
     : (typeof currentQuest === 'function' ? currentQuest() : null);
   if (!q || q.t === 'talk' || q.t === 'rank' || q.t === 'level' || q.t === 'faction' || q.t === 'kill' || q.t === 'combat') return;
+  if (typeof autoQueteTropHaute === 'function' && autoQueteTropHaute(q)) return;
   const portes = (G.scene && G.scene.portals) || [];
   const proche = (p, r) => p && dist(p.x, p.y, P.x, P.y) < r;
   let p = typeof autoPortailVoyage === 'function' ? autoPortailVoyage() : null;
@@ -10293,12 +10387,24 @@ function die() {
     AUTO_NAV.morts.push({ x: P.x, y: P.y, t });
     AUTO_NAV.morts = AUTO_NAV.morts.filter((m) => t - m.t < 90);
     AUTO_NAV.stats.morts++;
+    const bid = typeof autoBossId === 'function' ? autoBossId() : null;
+    if (bid) {
+      if (AUTO_NAV.bossMortId === bid) AUTO_NAV.bossMortN = (AUTO_NAV.bossMortN || 0) + 1;
+      else { AUTO_NAV.bossMortId = bid; AUTO_NAV.bossMortN = 1; }
+      if (AUTO_NAV.bossMortN >= 2) {
+        AUTO_NAV.bossLaisse = bid;
+        if (typeof toast === 'function') toast('Deux morts face à ce boss — Auto passe', 'warn');
+      }
+    } else {
+      AUTO_NAV.bossMortId = null;
+      AUTO_NAV.bossMortN = 0;
+    }
     let n = 0;
     for (const m of AUTO_NAV.morts) if (dist2(m.x, m.y, P.x, P.y) < 220 * 220) n++;
     if (n >= 2) {
       const r = n >= 3 ? 480 : 400;
       autoMarquerEvite(P.x, P.y, r, AUTO_EVITE_MAX);
-      AUTO_NAV.tFuite = autoFuiteInterdite() ? 0 : 20;
+      AUTO_NAV.tFuite = autoFuiteInterdite() ? 0 : 20; // #752 : pas de fuite en salle de boss
       let fa = P.face + Math.PI;
       if (G.scene && G.scene.spawn && dist(P.x, P.y, G.scene.spawn.x, G.scene.spawn.y) < 100) {
         let dx = 0, dy = 0, ne = 0;
@@ -10322,6 +10428,14 @@ function respawn() {
   P.dead = false; P.status = { stun: 0, slow: 0, burn: 0, burnDps: 0 }; P.shield = 0;
   recomputeStats(); P.hp = P.st.hp * 0.5; P.qi = Math.max(P.qi, P.st.qimax * 0.5); P.stam = feel('stamMax', 100);
   P.atk.ph = 'idle'; P.iframes = 1.5;
+  // #771 : 2 morts d'affilée contre le même boss → on quitte, on ne relance pas (la fuite #752 reste interdite).
+  if (S.settings && S.settings.auto && AUTO_NAV.bossLaisse
+      && typeof autoBossId === 'function' && AUTO_NAV.bossLaisse === autoBossId()
+      && typeof leaveInstance === 'function') {
+    leaveInstance();
+    autoApresRespawn();
+    return;
+  }
   // Donjon (la Crypte intercepte avant) : même salle, gardien réinitialisé. die() ne retire que 5 % d'EXP, pas d'objets.
   if (G.scene && G.scene.type === 'dungeon' && G.scene.dungeon) {
     const did = G.scene.dungeon, room = G.scene.room || 1;
