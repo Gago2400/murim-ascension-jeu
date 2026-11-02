@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="72a462edfb45">
+<meta name="murim-build" content="dd25b60f2b6c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2259,7 +2259,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="72a462edfb45" aria-label="Identifiant de version">Version générée : 72a462edfb45</div>
+      <div class="meta" id="t-build" data-build="dd25b60f2b6c" aria-label="Identifiant de version">Version générée : dd25b60f2b6c</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -18336,6 +18336,7 @@ function R3init(T) {
       // carte contre l'objectif : on la tait. Le passage caméra-héros se fond (lierVoile), il ne se retire plus d'un bloc.
       if (b.p.nom === 'feuilles' || b.p.nom === 'fleurs' || b.p.nom === 'masse' || b.p.lod === 'far') im.userData.presCam = 2.4 * 2.4;
       if (key.startsWith('qh_saule') || key.startsWith('qh_pin') || key.startsWith('qh_cerisier')) im.userData.arbre = true;
+      im.userData.pNom = b.p.nom;
       if (b.p.nom === 'toit' || b.p.nom === 'linteau') im.renderOrder = 1;
       im.computeBoundingSphere(); root.add(im); jumeauOcc(im);
       if (im.userData.arbre) lierVoile(im);
@@ -18344,7 +18345,8 @@ function R3init(T) {
     if (ARBRE_OMBRE.length) {
       // Ellipse du houppier, allongée et décalée dans le sens du soleil. Seulement autour du joueur :
       // toute la carte assombrissait la forêt sans se lire.
-      const im = new T.InstancedMesh(geo('quad'), blobShadowMat, ARBRE_OMBRE.length);
+      // [Grok] disque 28 pans + texture radiale : le quad se lisait en losange, un cyl 8 faces en octogone.
+      const im = new T.InstancedMesh(geo('disk'), blobShadowMat, ARBRE_OMBRE.length);
       im.instanceMatrix.setUsage(T.DynamicDrawUsage);
       im.count = 0; im.castShadow = false; im.receiveShadow = false; im.frustumCulled = false; im.renderOrder = 1;
       im.userData.houppe = 1; world.add(im); BLOBS.push(im); arbreIM = im; arbreCle = '';
@@ -19063,6 +19065,13 @@ function R3init(T) {
           if (im.userData.presCam && dx * dx + dz * dz < im.userData.presCam) continue;
           if (im.userData.lodMax2 && d2 > im.userData.lodMax2) continue;
           if (im.userData.lodMin2 && d2 < im.userData.lodMin2) continue;
+        }
+        // Coque « masse » (~8 faces) : octogone dès que la caméra plonge à travers le houppier
+        // (héros dessous). On la tait seulement là ; de côté, la couronne reste pleine.
+        if (im.userData.pNom === 'masse' && hero) {
+          const dxh = CSPH.center.x - W(P.x), dzh = CSPH.center.z - W(P.y);
+          const rHide = Math.max(2.8, u.S[i * 4 + 3] * 0.8);
+          if (dxh * dxh + dzh * dzh < rHide * rHide) continue;
         }
         const i16 = i * 16;
         const sc = Math.hypot(u.M[i16], u.M[i16 + 1], u.M[i16 + 2]);
@@ -26401,6 +26410,74 @@ function R3init(T) {
     const sing = out.filter((x) => x.n === 1).length;
     const few = out.filter((x) => x.n <= 3).length;
     return { n: out.length, sing, few, items: out.slice(0, 40) };
+  };
+  // Diagnostic : maillages proches du héros (ombre de houppier, décal, primitive 8 faces).
+  R3.sondePres = (rayon) => {
+    const R = rayon || 14, hx = W(P.x), hz = W(P.y);
+    const near = [];
+    const types = {};
+    for (const d of (curScene && curScene.decor) || []) {
+      types[d.type] = (types[d.type] || 0) + 1;
+      const dx = W(d.x) - hx, dz = W(d.y) - hz;
+      if (dx * dx + dz * dz < R * R) near.push({ k: 'decor', t: d.type, x: +d.x.toFixed(1), y: +d.y.toFixed(1), s: d.s || 1, dist: +Math.hypot(dx, dz).toFixed(2) });
+    }
+    const flats = [];
+    for (const d of (curScene && curScene.flats) || []) {
+      const dx = W(d.x) - hx, dz = W(d.y) - hz;
+      if (dx * dx + dz * dz < R * R) flats.push({ t: d.type, x: +d.x.toFixed(1), y: +d.y.toFixed(1), dist: +Math.hypot(dx, dz).toFixed(2) });
+    }
+    const mesh = [];
+    scn.traverse((o) => {
+      if (!o.isMesh && !o.isInstancedMesh) return;
+      if (o.visible === false) return;
+      const pos = V1.setFromMatrixPosition(o.matrixWorld);
+      const dx = pos.x - hx, dz = pos.z - hz;
+      const dist = Math.hypot(dx, dz);
+      if (dist > R + 8) return;
+      const g = o.geometry;
+      const sx = Math.abs(o.scale.x), sy = Math.abs(o.scale.y), sz = Math.abs(o.scale.z);
+      const nPos = g && g.attributes && g.attributes.position ? g.attributes.position.count : 0;
+      const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+      const hex = mat && mat.color ? '#' + mat.color.getHexString() : '';
+      const map = !!(mat && mat.map);
+      const tr = !!(mat && (mat.transparent || mat.opacity < 1));
+      const op = mat && mat.opacity != null ? +mat.opacity.toFixed(2) : 1;
+      const large = Math.max(sx, sz) > 0.8 || (o.isInstancedMesh && o.count > 0);
+      if (!large && dist > 6) return;
+      mesh.push({
+        n: o.isInstancedMesh ? (o.count | 0) : 1,
+        g: (g && g.type) || 'geo',
+        verts: nPos,
+        dist: +dist.toFixed(2),
+        y: +pos.y.toFixed(2),
+        sx: +sx.toFixed(2), sy: +sy.toFixed(2), sz: +sz.toFixed(2),
+        hex, map, tr, op,
+        name: o.name || '',
+        arbre: !!o.userData.arbre,
+        houppe: !!o.userData.houppe,
+        contact: !!o.userData.contact,
+        lod: o.userData.lod || o.userData.lodMin2 ? 'farish' : '',
+      });
+    });
+    mesh.sort((a, b) => a.dist - b.dist);
+    const ombres = ARBRE_OMBRE.filter((a) => {
+      const dx = a.x - hx, dz = a.z - hz; return dx * dx + dz * dz < R * R;
+    }).map((a) => ({ pin: !!a.pin, s: +a.s.toFixed(2), dist: +Math.hypot(a.x - hx, a.z - hz).toFixed(2), y: +(a.y || 0).toFixed(2) }));
+    const inst = [];
+    if (arbreIM && arbreIM.count) {
+      const e = new T.Vector3(), q = new T.Quaternion(), s = new T.Vector3();
+      for (let i = 0; i < arbreIM.count; i++) {
+        arbreIM.getMatrixAt(i, M1); M1.decompose(e, q, s);
+        inst.push({ x: +e.x.toFixed(2), z: +e.z.toFixed(2), sx: +s.x.toFixed(2), sz: +s.z.toFixed(2), dist: +Math.hypot(e.x - hx, e.z - hz).toFixed(2) });
+      }
+    }
+    return {
+      hx: +hx.toFixed(2), hz: +hz.toFixed(2), q: (typeof qualityLabel === 'function' ? qualityLabel() : ''),
+      shadows: ren.shadowMap.enabled,
+      arbreIM: arbreIM ? { n: arbreIM.count | 0, vis: !!arbreIM.visible, g: arbreIM.geometry && arbreIM.geometry.type, inst } : null,
+      ombres, near: near.sort((a, b) => a.dist - b.dist).slice(0, 24), flats: flats.slice(0, 16),
+      mesh: mesh.slice(0, 36), types,
+    };
   };
   // tests : ombres de contact visibles sous une vue qui porte déjà une ombre portée (0 attendu)
   // [Claude] liste des programmes GLSL vivants (nom du matériau + clef de cache) : pour savoir quelle variante s'est compilée en plein jeu
