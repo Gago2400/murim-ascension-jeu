@@ -2239,7 +2239,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="3514c9b08bc7" aria-label="Identifiant de version">Version générée : 3514c9b08bc7</div>
+      <div class="meta" id="t-build" data-build="6cd7f6045e30" aria-label="Identifiant de version">Version générée : 6cd7f6045e30</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -14344,6 +14344,7 @@ function R3init(T) {
   for (const t of Object.values(SURF)) t.userData.keep = true;
   SURF.rempart = SURF.plaster; // même enduit que les maisons ; nom à part pour percer les remparts devant le héros (bourgs, 43_bourgs.js)
   SURF.waterd = SURF.water; // bassins et puits : le matériau d'eau est choisi par ce nom, la texture rayée n'est pas lue
+  SURF.riziere = SURF.water; // rizières : même motif, matière transparente + EAU_RIZ (pas de texture neuve, #754)
 
   // ───── textures peintes (assets/textures, #39) : remplacent les motifs calculés quand elles sont fournies ─────
   // window.MURIM_ASSETS (injecté au build, artifact) : clés textures/*.webp en data URI. Sans elles, rien ne change.
@@ -14597,9 +14598,16 @@ function R3init(T) {
     const key = 'surf:' + surf; let m = MATS.get(key);
     if (!m) {
       // bassins, rigoles : le matériau d'eau, pas la texture rayée
-      if (surf === 'water' || surf === 'waterd') {
-        m = new T.MeshToonMaterial({ color: 0xffffff, gradientMap: gradTex });
-        habillerEau(m, surf === 'water' ? 'boite' : 'disque');
+      // rizière : semi-transparente (le fond de casier se lit à travers), pas de depthWrite (héros visible)
+      if (surf === 'water' || surf === 'waterd' || surf === 'riziere') {
+        if (surf === 'riziere') {
+          // Basic : le toon blanchit un plan horizontal (dalle grise). La teinte vient du shader.
+          m = new T.MeshBasicMaterial({ color: col('#1a3320'), transparent: true, opacity: 0.9, depthWrite: false, toneMapped: false, fog: false });
+          habillerEau(m, 'riziere');
+        } else {
+          m = new T.MeshToonMaterial({ color: 0xffffff, gradientMap: gradTex });
+          habillerEau(m, surf === 'water' ? 'boite' : 'disque');
+        }
       } else {
         m = new T.MeshToonMaterial({ color: 0xffffff, gradientMap: gradTex, map: SURF[surf] });
         // Feuillage : le fondu d'arbre (aVoile), pas le voile des toits.
@@ -15297,6 +15305,19 @@ function R3init(T) {
   col *= 0.95 + 0.05 * (vague * 0.5 + 0.5);
   col = mix(col, vec3(0.78, 0.90, 0.86), smoothstep(0.78, 0.98, rive) * 0.30);
 ` + EAU_REFLET;
+  // Rizière : eau sombre vert-brun, reflet de ciel doux, houle faible. Pas de spéculaire toon
+  // (une bande nette sur le plan). Le fond de casier (dalle unie) se lit à travers l'alpha.
+  const EAU_RIZ = `
+  vec3 col = vec3(0.10, 0.18, 0.10);
+  col *= 0.9 + 0.12 * (vague * 0.5 + 0.5);
+  float a = sin(vW.x * 0.55 + vW.y * 0.38 + uT * 0.35);
+  float b = sin(-vW.x * 0.33 + vW.y * 0.52 + 1.7 - uT * 0.22);
+  float reflet = pow(max(a * 0.7 + b * 0.3, 0.0), 2.6);
+  float lavis = 0.5 + 0.5 * sin(vW.x * 0.11 + vW.y * 0.08 + uT * 0.08);
+  col = mix(col, vec3(0.22, 0.32, 0.20), lavis * 0.18);
+  col = mix(col, vec3(0.38, 0.50, 0.52), reflet * 0.16);
+  diffuseColor.rgb = col;
+`;
   const EAU_CORPS = `
 {
   float cote = SHORE;
@@ -15326,13 +15347,16 @@ function R3init(T) {
       const bord = mode === 'riviere' ? 'aBord'
         : mode === 'mer' ? 'uv.y'
           : '0.0';
-      const houle = mode === 'mer' ? 'smoothstep(0.0, 0.22, uv.y)' : (mode === 'riviere' ? '1.0' : '0.0');
+      const houle = mode === 'mer' ? 'smoothstep(0.0, 0.22, uv.y)' : mode === 'riviere' ? '1.0' : mode === 'riziere' ? '0.55' : '0.0';
       const shore = mode === 'riviere' || mode === 'mer' ? '0.0'
         : mode === 'disque' ? 'smoothstep(0.12, 0.94, length(vL))'
           : mode === 'puits' ? 'smoothstep(0.06, 0.32, length(vL))'
-            : 'smoothstep(0.16, 0.48, max(abs(vL.x), abs(vL.y)))';
-      const fond = mode === 'riviere' ? 'diffuseColor.rgb * vec3(1.18, 1.12, 1.28)' : 'diffuseColor.rgb';
-      const teinte = mode === 'riviere' ? EAU_RIV : mode === 'mer' ? EAU_MER : EAU_CUVE;
+            : mode === 'riziere' ? 'smoothstep(0.78, 0.98, max(abs(vL.x), abs(vL.y)))'
+              : 'smoothstep(0.16, 0.48, max(abs(vL.x), abs(vL.y)))';
+      const fond = mode === 'riviere' ? 'diffuseColor.rgb * vec3(1.18, 1.12, 1.28)'
+        : mode === 'riziere' ? 'diffuseColor.rgb * vec3(0.42, 0.52, 0.36)'
+          : 'diffuseColor.rgb';
+      const teinte = mode === 'riviere' ? EAU_RIV : mode === 'mer' ? EAU_MER : mode === 'riziere' ? EAU_RIZ : EAU_CUVE;
       if (mode === 'riviere') {
         sh.uniforms.uLar = { value: m.userData.lar || 8 };
         sh.uniforms.uSea = { value: m.userData.seaY || -1 };
@@ -17237,38 +17261,65 @@ function R3init(T) {
         }
         case 'potager': case 'champ': {
           const w = W(d.w), dd = W(d.h), riz = d.type === 'champ' && d.v > 0.5;
-          // Terrasse des Plaines : un seul plan d'eau, même matière que le fleuve, teinte olive boueuse.
-          // Pas de second plan (la couture claire). La diguette n'est pas en surface « feuille » :
-          // cette surface perce un damier devant le héros. Le pas de 0,92 m reste. L'emprise ne grandit pas.
+          // Terrasse des Plaines : nappe d'eau à hauteur du sol (pas de marche*0,92),
+          // diguettes en mottes, riz en rangs. L'emprise ne grandit pas.
           if (d.terrasse) {
-            tuftGeo(); // mêmes brins que l'herbe du jeu, pied au sol
-            const marche = (d.marche || 0) * 0.92, berge = 1.0;
-            const ew = Math.max(1.4, w - berge * 2), ed = Math.max(1.4, dd - berge * 2);
-            paint = 'water';
-            put('quad', 't', '#3a4e46', 0, 0.06 + marche, 0, ew / 2, 1, ed / 2, 0, 0, 0, false);
+            // Rizière à hauteur du sol (jamais marche*0,92 : ça enterrait le héros sous le casier).
+            // Une nappe d'eau sombre semi-transparente sur tout le casier, boue unie dessous,
+            // diguettes en mottes bombées (hémisphères, pas de boîte), riz en rangs denses.
+            tuftGeo();
+            const berge = 0.95;
+            const ew = Math.max(1.6, w - berge * 2), ed = Math.max(1.6, dd - berge * 2);
+            const seed = (d.x || 0) * 0.013 + (d.y || 0) * 0.007 + (d.marche || 0) * 1.7 + (d.v || 0) * 4.1;
+            const terres = ['#3a2a1c', '#4e3a28', '#2c2218', '#5a4632', '#354028'];
+            const verts = ['#3a8a28', '#4a9e32', '#2f7a22', '#56a838'];
+            const hsh = (n) => { const u = Math.abs(Math.sin(n * 12.9898 + seed * 78.233) * 43758.5453); return u - Math.floor(u); };
+            // Fond de casier : dalle unie sombre (basic, pas toon) — l'eau transparente la laisse voir.
+            put('quad', 'b', '#0e1810', 0, 0.016, 0, ew * 0.5, 1, ed * 0.5, 0, 0, 0, false);
+            const teinte = mixHex('#1a3022', '#142818', 0.2 + (d.v || 0.4) * 0.28 + hsh(3) * 0.16);
+            paint = 'riziere';
+            put('quad', 't', teinte, 0, 0.07, 0, ew * 0.5, 1, ed * 0.5, 0, 0, 0, false);
             paint = '';
-            const rows = Math.max(4, Math.floor(ed / 0.85)), cols = Math.max(6, Math.floor(ew / 0.9));
-            const verts = ['#2f6e2a', '#3e8a34', '#4a9a3c', '#2a5c28'];
+            const motte = (x, z, k) => {
+              const f = hsh(k), f2 = hsh(k + 17), f3 = hsh(k + 31);
+              const rx = 0.68 + f * 0.42, rz = 0.52 + f2 * 0.36, h = 0.24 + f3 * 0.12;
+              const ox = (f - 0.5) * 0.42, oz = (f2 - 0.5) * 0.36;
+              put('hemi', 't', terres[k % 5], x + ox, 0, z + oz, rx, h, rz, 0, f * 2.4, 0, false);
+              put('tuft', 't', verts[k % 4], x + ox * 0.2, h * 0.95, z + oz * 0.2, 1.15, 0.42 + f * 0.14, 1.15, 0, k * 0.73, 0, false);
+              put('tuft', 't', verts[(k + 2) % 4], x + ox * 0.55 + 0.1, h * 0.82, z + oz * 0.2 - 0.08, 0.95, 0.36, 0.95, 0, k * 1.1, 0, false);
+            };
+            const digueLigne = (x0, z0, x1, z1, k0) => {
+              const dx = x1 - x0, dz = z1 - z0, len = Math.hypot(dx, dz);
+              if (len < 0.3) return;
+              const px = len > 0.01 ? -dz / len : 0, pz = len > 0.01 ? dx / len : 0;
+              const n = Math.max(3, Math.round(len / 0.55));
+              for (let i = 0; i <= n; i++) {
+                const t = i / n, ond = Math.sin(t * 5.4 + k0) * 0.28;
+                motte(x0 + dx * t + px * ond, z0 + dz * t + pz * ond, k0 + i * 3);
+              }
+            };
+            const x0 = -ew / 2, z0 = -ed / 2;
+            digueLigne(x0, z0, x0 + ew, z0, 3);
+            digueLigne(x0, z0 + ed, x0 + ew, z0 + ed, 11);
+            digueLigne(x0, z0, x0, z0 + ed, 21);
+            digueLigne(x0 + ew, z0, x0 + ew, z0 + ed, 31);
+            digueLigne(x0 + 0.5, 0, x0 + ew - 0.5, 0, 41);
+            const rows = Math.max(8, Math.floor((ed - 1.2) / 0.48));
+            const cols = Math.max(14, Math.floor((ew - 1.2) / 0.4));
             for (let r = 0; r < rows; r++) {
-              const z = -ed / 2 + (r + 0.5) * ed / rows;
+              const z = -ed / 2 + 0.62 + (r + 0.5) * (ed - 1.24) / rows;
+              if (Math.abs(z) < 0.46) continue;
               for (let c = 0; c < cols; c++) {
-                const x = -ew / 2 + (c + 0.5) * ew / cols;
-                const h = 1.05 + ((r + c) % 3) * 0.12;
-                put('tuft', 't', verts[(r * 3 + c) % 4], x, marche, z, 0.85, h, 0.85, 0, (r * 5 + c) * 0.7, 0, false);
+                const x = -ew / 2 + 0.58 + (c + 0.5) * (ew - 1.16) / cols;
+                const f = hsh(r * 29 + c * 7);
+                put('tuft', 't', verts[(r + c) % 4], x + (f - 0.5) * 0.06, 0.03, z + (hsh(c * 13 + r) - 0.5) * 0.04, 1.7, 0.82 + f * 0.2, 1.7, 0, (r * 5 + c) * 0.41, 0, false);
               }
             }
-            const haut = 0.34 + marche;
-            paint = '';
-            put('box', 't', '#4e7a34', 0, haut / 2, dd / 2 - 0.32, w + 0.12, haut, 0.72, 0, 0, 0, false);
-            put('box', 't', '#6a9a44', 0, haut + 0.04, dd / 2 - 0.32, w, 0.08, 0.5, 0, 0, 0, false);
-            put('box', 't', '#5a8a3c', 0, (0.22 + marche) / 2, -dd / 2 + 0.28, w, 0.22 + marche, 0.42, 0, 0, 0, false);
-            paint = '';
-            for (let i = 0; i < 7; i++) put('tuft', 't', i % 2 ? '#6aaa48' : '#4e8a38', -w / 2 + (i + 0.5) * w / 7, haut, dd / 2 - 0.32, 0.55, 0.42, 0.55, 0, i * 0.9, 0, false);
             paint = 'wood';
-            put('cyl', 't', '#5a3a22', w / 2 - 0.7, 0.7 + haut, dd / 2 - 0.32, 0.04, 1.3, 0.04);
-            put('cyl', 't', '#5a3a22', w / 2 - 0.7, 1.05 + haut, dd / 2 - 0.32, 0.035, 0.7, 0.035, 0, 0, Math.PI / 2);
+            put('cyl', 't', '#5a3a22', w / 2 - 0.7, 0.85, dd / 2 - 0.28, 0.04, 1.3, 0.04);
+            put('cyl', 't', '#5a3a22', w / 2 - 0.7, 1.2, dd / 2 - 0.28, 0.035, 0.7, 0.035, 0, 0, Math.PI / 2);
             paint = 'cloth';
-            put('box', 't', '#8a6a3a', w / 2 - 0.7, 0.95 + haut, dd / 2 - 0.32, 0.36, 0.42, 0.12, 0, 0, 0, false);
+            put('box', 't', '#8a6a3a', w / 2 - 0.7, 1.1, dd / 2 - 0.28, 0.36, 0.42, 0.12, 0, 0, 0, false);
             break;
           }
           paint = ''; put('box', 't', '#5a4030', 0, 0.06, 0, w, 0.12, dd, 0, 0, 0, false);
@@ -17753,6 +17804,7 @@ function R3init(T) {
       // Houppier (et tronc des modèles végétaux) : fondu dans le passage, pas un trou rond.
       if (b.arbre || b.surf === 'canopy') im.userData.arbre = true;
       if (b.surf === 'roof' || b.surf === 'rempart' || b.surf === 'arete') im.renderOrder = 1;
+      if (b.surf === 'riziere') im.renderOrder = 2;
       im.computeBoundingSphere(); root.add(im); jumeauOcc(im); if (im.userData.arbre) lierVoile(im); cullable(im);
     }
     for (const [nom, list] of asieInst) for (const part of (ASIE.parts[nom] || [])) {
@@ -55190,6 +55242,9 @@ function pjHorsRiz(sc) {
 function pjSortirRiz(o, r) {
   const sc = G.scene;
   if (!sc || sc.id !== 'plaines' || !o) return;
+  // En manuel, le héros patauge jusqu'aux chevilles. En Auto, on le laisse sur la berge
+  // (même flux que les PNJ : sinon le RNG du banc Auto 30 min décale la tour).
+  if (typeof P !== 'undefined' && o === P && !(typeof S !== 'undefined' && S.settings && S.settings.auto)) return;
   const d = pjDansRiz(sc, o.x, o.y);
   if (!d) return;
   const marge = 22, hw = d.w / 2 - marge, hh = d.h / 2 - marge;
