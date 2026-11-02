@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="07e0e5ba8ea9">
+<meta name="murim-build" content="161a1093382a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2255,7 +2255,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="07e0e5ba8ea9" aria-label="Identifiant de version">Version générée : 07e0e5ba8ea9</div>
+      <div class="meta" id="t-build" data-build="161a1093382a" aria-label="Identifiant de version">Version générée : 161a1093382a</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -14242,6 +14242,7 @@ function R3init(T) {
       case 'sph2': g = new T.IcosahedronGeometry(1, 2); break;
       case 'sphL': g = new T.SphereGeometry(1, 32, 20); break; // [Grogrok] sphère lisse (normales lissées) : l'icosaèdre non indexé gardait ses facettes
       case 'hemi': g = new T.SphereGeometry(1, 12, 6, 0, TAU, 0, Math.PI / 2); break;
+      case 'hemiL': g = new T.SphereGeometry(1, 24, 12, 0, TAU, 0, Math.PI / 2); break; // diguette : hémisphère lissé, pas les 12 faces de hemi
       case 'cyl': g = new T.CylinderGeometry(1, 1, 1, 8); break;
       case 'cyl6': g = new T.CylinderGeometry(1, 1, 1, 6); break;
       case 'taper': g = new T.CylinderGeometry(0.62, 1, 1, 8); break;
@@ -15506,14 +15507,14 @@ function R3init(T) {
   // Rizière : eau sombre vert-brun, reflet de ciel doux, houle faible. Pas de spéculaire toon
   // (une bande nette sur le plan). Le fond de casier (dalle unie) se lit à travers l'alpha.
   const EAU_RIZ = `
-  vec3 col = vec3(0.10, 0.18, 0.10);
-  col *= 0.9 + 0.12 * (vague * 0.5 + 0.5);
+  vec3 col = vec3(0.12, 0.20, 0.12);
+  col *= 0.88 + 0.14 * (vague * 0.5 + 0.5);
   float a = sin(vW.x * 0.55 + vW.y * 0.38 + uT * 0.35);
   float b = sin(-vW.x * 0.33 + vW.y * 0.52 + 1.7 - uT * 0.22);
-  float reflet = pow(max(a * 0.7 + b * 0.3, 0.0), 2.6);
+  float reflet = pow(max(a * 0.7 + b * 0.3, 0.0), 1.8);
   float lavis = 0.5 + 0.5 * sin(vW.x * 0.11 + vW.y * 0.08 + uT * 0.08);
-  col = mix(col, vec3(0.22, 0.32, 0.20), lavis * 0.18);
-  col = mix(col, vec3(0.38, 0.50, 0.52), reflet * 0.16);
+  col = mix(col, vec3(0.26, 0.36, 0.22), lavis * 0.22);
+  col = mix(col, vec3(0.52, 0.66, 0.70), reflet * 0.38);
   diffuseColor.rgb = col;
 `;
   const EAU_CORPS = `
@@ -17469,7 +17470,7 @@ function R3init(T) {
             const berge = 0.95;
             const ew = Math.max(1.6, w - berge * 2), ed = Math.max(1.6, dd - berge * 2);
             const seed = (d.x || 0) * 0.013 + (d.y || 0) * 0.007 + (d.marche || 0) * 1.7 + (d.v || 0) * 4.1;
-            const terres = ['#3a2a1c', '#4e3a28', '#2c2218', '#5a4632', '#354028'];
+            const terres = ['#6a5844', '#7a6854', '#5a4836', '#8a7660', '#6e5c48'];
             const verts = ['#3a8a28', '#4a9e32', '#2f7a22', '#56a838'];
             const hsh = (n) => { const u = Math.abs(Math.sin(n * 12.9898 + seed * 78.233) * 43758.5453); return u - Math.floor(u); };
             // Fond de casier : dalle unie sombre (basic, pas toon) — l'eau transparente la laisse voir.
@@ -17482,7 +17483,7 @@ function R3init(T) {
               const f = hsh(k), f2 = hsh(k + 17), f3 = hsh(k + 31);
               const rx = 0.68 + f * 0.42, rz = 0.52 + f2 * 0.36, h = 0.24 + f3 * 0.12;
               const ox = (f - 0.5) * 0.42, oz = (f2 - 0.5) * 0.36;
-              put('hemi', 't', terres[k % 5], x + ox, 0, z + oz, rx, h, rz, 0, f * 2.4, 0, false);
+              put('hemiL', 't', terres[k % 5], x + ox, 0, z + oz, rx, h, rz, 0, f * 2.4, 0, false);
               put('tuft', 't', verts[k % 4], x + ox * 0.2, h * 0.95, z + oz * 0.2, 1.15, 0.42 + f * 0.14, 1.15, 0, k * 0.73, 0, false);
               put('tuft', 't', verts[(k + 2) % 4], x + ox * 0.55 + 0.1, h * 0.82, z + oz * 0.2 - 0.08, 0.95, 0.36, 0.95, 0, k * 1.1, 0, false);
             };
@@ -17502,15 +17503,15 @@ function R3init(T) {
             digueLigne(x0, z0, x0, z0 + ed, 21);
             digueLigne(x0 + ew, z0, x0 + ew, z0 + ed, 31);
             digueLigne(x0 + 0.5, 0, x0 + ew - 0.5, 0, 41);
-            const rows = Math.max(8, Math.floor((ed - 1.2) / 0.48));
-            const cols = Math.max(14, Math.floor((ew - 1.2) / 0.4));
+            const rows = Math.max(7, Math.floor((ed - 1.2) / 0.58));
+            const cols = Math.max(12, Math.floor((ew - 1.2) / 0.5));
             for (let r = 0; r < rows; r++) {
               const z = -ed / 2 + 0.62 + (r + 0.5) * (ed - 1.24) / rows;
               if (Math.abs(z) < 0.46) continue;
               for (let c = 0; c < cols; c++) {
                 const x = -ew / 2 + 0.58 + (c + 0.5) * (ew - 1.16) / cols;
                 const f = hsh(r * 29 + c * 7);
-                put('tuft', 't', verts[(r + c) % 4], x + (f - 0.5) * 0.06, 0.03, z + (hsh(c * 13 + r) - 0.5) * 0.04, 1.7, 0.82 + f * 0.2, 1.7, 0, (r * 5 + c) * 0.41, 0, false);
+                put('tuft', 't', verts[(r + c) % 4], x + (f - 0.5) * 0.06, 0.03, z + (hsh(c * 13 + r) - 0.5) * 0.04, 1.25, 0.7 + f * 0.16, 1.25, 0, (r * 5 + c) * 0.41, 0, false);
               }
             }
             paint = 'wood';
