@@ -2239,7 +2239,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="161a1093382a" aria-label="Identifiant de version">Version générée : 161a1093382a</div>
+      <div class="meta" id="t-build" data-build="0f3220b9674c" aria-label="Identifiant de version">Version générée : 0f3220b9674c</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -12835,11 +12835,12 @@ function drawDecor(d) {
       break;
     }
     case 'shrine': {
-      drawShadow(x, y, 12, 5);
-      ctx.fillStyle = '#7a7268'; ctx.fillRect(x - 10, y - 14, 20, 14);
-      ctx.fillStyle = '#908880'; ctx.fillRect(x - 12, y - 16, 24, 3);
-      ctx.fillStyle = '#8a3038'; ctx.beginPath(); ctx.moveTo(x - 14, y - 28); ctx.lineTo(x, y - 38); ctx.lineTo(x + 14, y - 28); ctx.fill();
-      ctx.fillStyle = '#c44838'; ctx.fillRect(x - 4, y - 24, 8, 8);
+      drawShadow(x, y, 14, 6);
+      ctx.fillStyle = '#8a8478'; ctx.fillRect(x - 12, y - 6, 24, 8);
+      ctx.fillStyle = '#8a2a20';
+      ctx.fillRect(x - 8, y - 22, 3, 16); ctx.fillRect(x + 5, y - 22, 3, 16);
+      ctx.fillStyle = '#2c343c'; ctx.beginPath(); ctx.moveTo(x - 16, y - 20); ctx.lineTo(x, y - 34); ctx.lineTo(x + 16, y - 20); ctx.fill();
+      ctx.fillStyle = '#efe4cc'; ctx.fillRect(x - 1, y - 10, 2, 6);
       break;
     }
     case 'kiosque': {
@@ -14242,7 +14243,7 @@ function R3init(T) {
       case 'sph2': g = new T.IcosahedronGeometry(1, 2); break;
       case 'sphL': g = new T.SphereGeometry(1, 32, 20); break; // [Grogrok] sphère lisse (normales lissées) : l'icosaèdre non indexé gardait ses facettes
       case 'hemi': g = new T.SphereGeometry(1, 12, 6, 0, TAU, 0, Math.PI / 2); break;
-      case 'hemiL': g = new T.SphereGeometry(1, 24, 12, 0, TAU, 0, Math.PI / 2); break; // diguette : hémisphère lissé, pas les 12 faces de hemi
+      case 'hemiL': g = new T.SphereGeometry(1, 24, 12, 0, TAU, 0, Math.PI / 2); break; // diguette / névés : hémisphère lissé, pas les 12 faces de hemi
       case 'cyl': g = new T.CylinderGeometry(1, 1, 1, 8); break;
       case 'cyl6': g = new T.CylinderGeometry(1, 1, 1, 6); break;
       case 'taper': g = new T.CylinderGeometry(0.62, 1, 1, 8); break;
@@ -16220,7 +16221,7 @@ function R3init(T) {
     // le pin Andremo (échelle 0,0052) est une carte plate : les pins de bourg passent par arbreVrai, sinon des cônes
     if (d.type === 'kiosque') return ASIE.parts.kiosque_toits ? ['kiosque_toits', echelleHeros('kiosque')] : ['pavillon', 0.75]; // [Grok] ~3,2 m, uniforme
     if (d.type === 'demeure') return ['cour', 0.6];
-    if (d.type === 'lanterne_pierre') return id === 'meishan' && P.lanterne_jp ? ['lanterne_jp', 0.03] : ['lanterne_pierre', 1.25];
+    if (d.type === 'lanterne_pierre') return null; // primitive tōrō, pas le cube beige du pack
     return null;
   }
   // rock / boulder : le même rocher_mousse (matière, toon, mousse peinte dans la texture).
@@ -16315,6 +16316,13 @@ function R3init(T) {
     };
     // rock / boulder : le modèle rocher_mousse (même matière, même toon, mousse déjà peinte). Forme, échelle uniforme, lacet.
     const rocBag = new Map();
+    // Col : fin voile de neige sur les blocs hauts (boulders), épouse le rocher. Pas d'objet posé sur l'herbe.
+    function voileNeigeRoche(ech, f) {
+      if (id !== 'col' || ech < 0.88) return;
+      paint = '';
+      put('hemiL', 't', '#d4e0ea', 0, ech * 0.58, 0, ech * 0.36, ech * 0.07, ech * 0.3, 0, f * 6.2832, 0, false);
+      put('hemiL', 't', '#c0d0dc', ech * 0.08, ech * 0.52, -ech * 0.06, ech * 0.22, ech * 0.05, ech * 0.18, 0, f * 2.1, 0, false);
+    }
     function poserRocher(x, y, v, kk) {
       const u = Math.abs(Math.sin(x * 12.9898 + y * 78.233 + v * 17.1) * 43758.5453);
       const f = u - Math.floor(u);
@@ -16329,10 +16337,12 @@ function R3init(T) {
         E1.set(0, f * 6.2832, 0); Q1.setFromEuler(E1);
         M2.compose(V1.set(0, 0, 0), Q1, S1.set(ech, ech, ech));
         b.m.push(new T.Matrix4().multiplyMatrices(base, M2));
+        voileNeigeRoche(ech, f);
         return;
       }
       paint = '';
       put('roc' + (Math.floor(f * 2) % 2), 't', '#6e6456', 0, 0, 0, ech, ech, ech, 0, f * 6.2832, 0);
+      voileNeigeRoche(ech, f);
     }
     // Même volume que l'ancienne géométrie cuite à la taille (un seau par primitive, plus par taille).
     // box : échelle (w,h,dp) sur le cube unité. cyl : rayon w, hauteur h (dp ignoré, comme avant).
@@ -16636,7 +16646,7 @@ function R3init(T) {
         }
         continue;
       }
-      if (ACC_TYPES.has(d.type) && accDecor(d)) continue; // modèle texturé : le pack Asie et les pièces restent le repli
+      if (ACC_TYPES.has(d.type) && d.type !== 'lanterne_pierre' && accDecor(d)) continue; // lanterne : primitive socle/fût/chapeau (le modèle lisait en cube beige)
       const am = AM && asieModele(sc, d);
       if (am) { // bâtiment détaillé, instancié à part : pied au sol, façade vers la caméra
         const g = ASIE_GAIN[am[0]] || 1;
@@ -16989,22 +16999,48 @@ function R3init(T) {
           break;
         }
         case 'shrine': {
+          // Petit sanctuaire : socle pierre, 4 piliers bois rouge, toit tuiles sombres coins relevés, encens.
           paint = 'stone';
-          put('box', 't', '#7a7268', 0, 0.32, 0, 0.72, 0.64, 0.46);
-          put('box', 't', '#908880', 0, 0.68, 0, 0.88, 0.08, 0.56);
+          put('box', 't', '#8a8478', 0, 0.10, 0, 1.28, 0.20, 1.08);
+          put('box', 't', '#9a9488', 0, 0.24, 0, 1.12, 0.10, 0.92);
+          put('box', 't', '#8a8478', 0, 0.08, 0.68, 0.44, 0.10, 0.28);
           paint = 'wood';
-          put('box', 't', '#5a3a28', 0, 1.15, -0.18, 0.06, 0.9, 0.06);
-          put('box', 't', '#5a3a28', 0, 1.15, 0.18, 0.06, 0.9, 0.06);
+          const rouge = '#8a2a20';
+          for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+            put('cyl', 't', rouge, sx * 0.38, 0.90, sz * 0.28, 0.055, 1.16, 0.055);
+            put('box', 't', rouge, sx * 0.38, 0.34, sz * 0.28, 0.10, 0.08, 0.10);
+          }
+          put('box', 't', rouge, 0, 1.50, 0, 0.92, 0.08, 0.72);
+          paint = 'roof';
+          put('toit', 't', '#2c343c', 0, 1.50, 0, 0.30, 0.22, 0.32);
           paint = '';
-          put('roof', 't', '#8a3038', 0, 1.55, 0, 0.35, 0.45, 0.7);
-          put('box', 'b', '#c44838', 0, 0.95, 0.04, 0.26, 0.3, 0.03);
-          put('cyl', 't', '#efe4cc', 0.24, 0.86, 0.12, 0.025, 0.2, 0.025);
-          put('sph', 'b', '#ff9a40', 0.24, 1.0, 0.12, 0.045);
-          if (!d.x10 || d.v > 0.4) light(d.x + 4, d.y, 1.0, '#ff9a40', 1.3, true, '#ffb060');
+          put('box', 't', '#1c242c', 0, 1.86, 0, 0.62, 0.08, 0.12);
+          paint = '';
+          put('cyl18', 't', '#6a5a3a', 0, 0.18, 0.72, 0.10, 0.16, 0.10);
+          put('cyl', 't', '#efe4cc', -0.03, 0.36, 0.72, 0.012, 0.20, 0.012);
+          put('cyl', 't', '#efe4cc', 0.035, 0.34, 0.74, 0.012, 0.16, 0.012);
+          put('sph', 'b', '#ff9a40', 0, 0.48, 0.72, 0.035);
+          if (!d.x10 || d.v > 0.4) light(d.x, d.y + 16, 0.50, '#ff9a40', 0.95, true, '#ffb060');
           break;
         }
         case 'lantern': {
           if (d.balan) break;
+          // Oratoire / halte ×10 : tōrō de pierre (socle, fût, chapeau). Le pack lanterne_chine lisait en cubes beige.
+          if (d.x10 || d.village || d.rvHalte != null || d.poi) {
+            paint = 'stone';
+            put('cyl18', 't', '#8a8478', 0, 0.1, 0, 0.46, 0.2, 0.46);
+            put('cyl18', 't', '#7a7468', 0, 0.24, 0, 0.34, 0.12, 0.34);
+            put('cyl18', 't', '#9a9488', 0, 0.7, 0, 0.12, 0.82, 0.12);
+            put('cyl18', 't', '#8a8478', 0, 1.16, 0, 0.26, 0.1, 0.26);
+            put('cyl6', 't', '#6e685c', 0, 1.38, 0, 0.22, 0.36, 0.22);
+            paint = '';
+            put('cyl6', 'b', '#ffb060', 0, 1.38, 0, 0.14, 0.24, 0.14, 0, 0, 0, false);
+            paint = 'stone';
+            put('cone', 't', '#6a6458', 0, 1.72, 0, 0.46, 0.32, 0.46);
+            put('cyl18', 't', '#5a564c', 0, 1.9, 0, 0.06, 0.1, 0.06);
+            if (!d.x10) light(d.x, d.y, 1.22, '#ffb060', 1.15, true, '#ffc878');
+            break;
+          }
           const lc = d.dette ? '#c43030' : (id === 'citadelle' || id === 'montagnes' || id === 'domaine' ? '#ffe08a' : '#ff6a3a');
           paint = 'wood';
           put('cyl', 't', '#2a1e18', 0, 0.8, 0, 0.05, 1.6, 0.05);
@@ -17416,10 +17452,19 @@ function R3init(T) {
         case 'lingots': paint = ''; put('box', 't', '#d8b040', 0, 0.1, 0, 0.5, 0.2, 0.3); break;
         case 'oeuf_dragon': paint = 'stone'; put('sph', 't', '#6a3a5a', 0, 0.45, 0, 0.32, 0.45, 0.32); break;
         case 'lanterne_pierre': {
+          // Tōrō : socle, fût, cage, chapeau — plus les deux cubes beige vus de la caméra.
           paint = 'stone';
-          put('box', 't', '#8a8478', 0, 0.12, 0, 0.5, 0.24, 0.5); put('cyl6', 't', '#9a9488', 0, 0.55, 0, 0.12, 0.65, 0.12);
-          put('box', 't', '#8a8478', 0, 0.95, 0, 0.42, 0.3, 0.42); put('cone4', 't', '#7a7468', 0, 1.25, 0, 0.4, 0.3, 0.4, 0, Math.PI / 4, 0);
-          paint = ''; put('box', 'b', '#ffb060', 0, 0.95, 0, 0.3, 0.16, 0.44, 0, 0, 0, false);
+          put('cyl18', 't', '#8a8478', 0, 0.1, 0, 0.46, 0.2, 0.46);
+          put('cyl18', 't', '#7a7468', 0, 0.24, 0, 0.34, 0.12, 0.34);
+          put('cyl18', 't', '#9a9488', 0, 0.7, 0, 0.12, 0.82, 0.12);
+          put('cyl18', 't', '#8a8478', 0, 1.16, 0, 0.26, 0.1, 0.26);
+          put('cyl6', 't', '#6e685c', 0, 1.38, 0, 0.22, 0.36, 0.22);
+          paint = '';
+          put('cyl6', 'b', '#ffb060', 0, 1.38, 0, 0.14, 0.24, 0.14, 0, 0, 0, false);
+          paint = 'stone';
+          put('cone', 't', '#6a6458', 0, 1.72, 0, 0.46, 0.32, 0.46);
+          put('cyl18', 't', '#5a564c', 0, 1.9, 0, 0.06, 0.1, 0.06);
+          if (!d.x10) light(d.x, d.y, 1.22, '#ffb060', 1.15, true, '#ffc878');
           break;
         }
         case 'kiosque': {
@@ -17521,17 +17566,32 @@ function R3init(T) {
             put('box', 't', '#8a6a3a', w / 2 - 0.7, 1.1, dd / 2 - 0.28, 0.36, 0.42, 0.12, 0, 0, 0, false);
             break;
           }
-          paint = ''; put('box', 't', '#5a4030', 0, 0.06, 0, w, 0.12, dd, 0, 0, 0, false);
-          if (riz) put('box', 'b', '#4a8a7a', 0, 0.13, 0, w - 0.5, 0.02, dd - 0.5, 0, 0, 0, false);
-          const rows = Math.max(2, Math.floor((dd - 0.6) / (d.type === 'champ' ? 1.1 : 0.55))), cols = Math.max(3, Math.floor((w - 0.6) / (d.type === 'champ' ? 0.75 : 0.45)));
+          // Potager / champ sec : terre en mottes, rangs denses — plus la dalle-boîte brune.
+          tuftGeo();
+          const seedP = (d.x || 0) * 0.017 + (d.y || 0) * 0.011 + (d.v || 0) * 5.3;
+          const hshP = (n) => { const u = Math.abs(Math.sin(n * 12.9898 + seedP * 78.233) * 43758.5453); return u - Math.floor(u); };
+          const terresP = ['#6a5844', '#7a6854', '#5a4836', '#8a7660', '#6e5c48'];
+          const vertsP = ['#3a8a28', '#4a9e32', '#2f7a22', '#56a838'];
+          paint = '';
+          put('quad', 't', riz ? '#2a3224' : '#5a4838', 0, 0.02, 0, w * 0.5, 1, dd * 0.5, 0, 0, 0, false);
+          const berm = (x, z, k) => {
+            const f = hshP(k), f2 = hshP(k + 9);
+            put('hemiL', 't', terresP[k % 5], x + (f - 0.5) * 0.16, 0, z + (f2 - 0.5) * 0.1, 0.42 + f * 0.18, 0.12 + f2 * 0.05, 0.28 + f * 0.1, 0, f * 2.1, 0, false);
+          };
+          const rows = Math.max(3, Math.min(10, Math.floor((dd - 0.5) / (d.type === 'champ' ? 0.62 : 0.42))));
+          const cols = Math.max(4, Math.min(16, Math.floor((w - 0.5) / (d.type === 'champ' ? 0.48 : 0.36))));
           for (let r = 0; r < rows; r++) {
-            const z = -dd / 2 + 0.4 + (r + 0.5) * (dd - 0.8) / rows;
-            if (!riz) put('box', 't', '#6a4a34', 0, 0.16, z, w - 0.6, 0.1, 0.32, 0, 0, 0, false);
+            const z = -dd / 2 + 0.28 + (r + 0.5) * (dd - 0.56) / rows;
+            if (!riz) {
+              const nB = Math.max(3, Math.round((w - 0.5) / 0.48));
+              for (let i = 0; i <= nB; i++) berm(-w / 2 + 0.28 + i * (w - 0.56) / nB, z, r * 17 + i);
+            }
             for (let c = 0; c < cols; c++) {
-              const x = -w / 2 + 0.4 + (c + 0.5) * (w - 0.8) / cols;
-              if (riz) put('cone', 't', '#5a9a3a', x, 0.33, z, 0.05, 0.42, 0.05, 0, 0, 0, false);
-              else if ((r + Math.floor(d.v * 10)) % 3 === 0) put('sph', 't', '#7aa04a', x, 0.3, z, 0.17, 0.13, 0.17, 0, 0, 0, false);
-              else put('cone', 't', (r % 2 ? '#4a8a3a' : '#6a9a3e'), x, 0.36, z, 0.09, 0.36, 0.09, 0, 0, 0, false);
+              const x = -w / 2 + 0.28 + (c + 0.5) * (w - 0.56) / cols;
+              const f = hshP(r * 29 + c * 7);
+              if (riz) put('tuft', 't', vertsP[(r + c) % 4], x + (f - 0.5) * 0.05, 0.03, z, 1.05, 0.55 + f * 0.14, 1.05, 0, (r * 5 + c) * 0.41, 0, false);
+              else if ((r + Math.floor((d.v || 0) * 10) + c) % 4 === 0) put('sph', 't', '#7aa04a', x, 0.22 + f * 0.06, z, 0.12, 0.1, 0.12, 0, 0, 0, false);
+              else put('tuft', 't', vertsP[(r + c) % 4], x + (f - 0.5) * 0.04, 0.02, z, 0.85, 0.38 + f * 0.1, 0.85, 0, (r * 3 + c) * 0.6, 0, false);
             }
           }
           if (d.type === 'champ') { // épouvantail et cabane d'outils
@@ -17967,14 +18027,7 @@ function R3init(T) {
         paint = '';
         put('hemi', 't', '#e6dcc8', 0, 0.04, 0, 0.14, 0.08, 0.1, 0.4, d.v, 0, false);
       } else if (d.type === 'snow') {
-        // [Claude] plaque de neige : un cylindre à 8 pans blanc pur lisait comme un octogone de lait posé sur l'herbe
-        // (Meishan, Col, Montagnes). Trois dômes très plats qui se chevauchent, blanc bleuté légèrement inégal : un
-        // névé aux bords doux, ombré par le toon sur son pourtour.
-        paint = '';
-        const sv = d.v || 0, sa = sv * 6.2832;
-        put('hemi', 't', '#e4e9ef', 0, 0.0, 0, 0.56, 0.05, 0.42, 0, sa, 0, false);
-        put('hemi', 't', '#dbe2ea', Math.cos(sa) * 0.34, 0.0, Math.sin(sa) * 0.22, 0.34, 0.04, 0.26, 0, sa + 1.1, 0, false);
-        put('hemi', 't', '#e9edf2', -Math.sin(sa) * 0.3, 0.0, Math.cos(sa) * 0.26, 0.26, 0.035, 0.2, 0, sa + 2.3, 0, false);
+        // Plus d'objet neige sur l'herbe (les plaques lisaient en meules). Voile : voileNeigeRoche, Col seulement.
       } else if (d.type === 'bones') {
         // [Grok] os au sol : deux fémurs (cyl6 + rotules sph), plus des pavés 28×4 cm
         // qui se lisaient en cubes ou disparaissaient à 18 m. Angle ~30°, pas une croix.
@@ -18131,10 +18184,10 @@ function R3init(T) {
       steams.push({ puffs, s, x, z, y0: 3.35 * s });
     }
     for (const d of sc.decor) if (d.type === 'shrine') {
-      const x = W(d.x) + 0.24, z = W(d.y) + 0.12;
+      const x = W(d.x), z = W(d.y) + 0.72;
       const puffs = [];
-      for (let i = 0; i < 2; i++) puffs.push(mesh(root, 'sph', sharedBasic('#e4ddd4'), x, 1.15, z, 0.06, 0.06, 0.06, 0, 0, 0, false));
-      steams.push({ puffs, s: 0.45, x, z, y0: 1.05 });
+      for (let i = 0; i < 2; i++) puffs.push(mesh(root, 'sph', sharedBasic('#e4ddd4'), x, 0.72, z, 0.05, 0.05, 0.05, 0, 0, 0, false));
+      steams.push({ puffs, s: 0.4, x, z, y0: 0.62 });
     }
     if (sc.safe && sc.type === 'region' && pal.mood !== 'corrompu' && !(sc.spawn && dist2(sc.safe.x - 55, sc.safe.y - 125, sc.spawn.x, sc.spawn.y) < 100 * 100)) {
       const x = W(sc.safe.x - 38), z = W(sc.safe.y - 125);
