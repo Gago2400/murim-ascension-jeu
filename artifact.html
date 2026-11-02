@@ -2239,7 +2239,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="6cd7f6045e30" aria-label="Identifiant de version">Version générée : 6cd7f6045e30</div>
+      <div class="meta" id="t-build" data-build="254332d93bbb" aria-label="Identifiant de version">Version générée : 254332d93bbb</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -13642,7 +13642,10 @@ function drawFloatTexts(proj, zoom, screen) {
     const b = textBitmap(t.txt, t.color, size, t.label, t.crit);
     ctx.globalAlpha = k > 0.7 ? (1 - k) / 0.3 : 1;
     const yy = p.y - (t.label ? k * 10 : rise * 36) * zoom;
-    const dw = b.w * sc, dh = b.h * sc, dx = p.x - dw / 2, dy = yy - dh / 2;
+    const dw = b.w * sc, dh = b.h * sc, dx = p.x - dw / 2;
+    // let : un nombre sur la plaque héros est remonté (QA 10 min). `const dy` + `dy =`
+    // levait « Assignment to constant variable » dans R3.frame → repli 2D.
+    let dy = yy - dh / 2;
     if (screen) {
       if (dx < 2 || dy < 2 || dx + dw > VW - 2 || dy + dh > VH - 2) continue;
       if (typeof hudCoupe === 'function' && hudCoupe(dx, dy, dw, dh)) continue;
