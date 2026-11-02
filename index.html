@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="254332d93bbb">
+<meta name="murim-build" content="07e0e5ba8ea9">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -173,7 +173,7 @@ html[data-cb="tritan"] #cv, html[data-cb="tritan"] #cv3, html[data-cb="tritan"] 
 .act.ult.ready { animation: ultPulse 1s ease-in-out infinite; }
 @keyframes ultPulse { 50% { box-shadow: 0 0 0 2px #ffe08a, 0 0 22px #ffb34a; } }
 .act.pill .g { font-size: calc(var(--s) * 0.5); }
-#b-interact { position: absolute; left: 50%; bottom: calc(var(--sab) + 26px); transform: translateX(-50%); padding: 10px 18px; border-radius: 99px; background: var(--lacquer-2); box-shadow: 0 0 0 1.5px var(--gold), 0 6px 18px rgba(0,0,0,.6); font-weight: 700; font-size: 14px; white-space: normal; text-align: center; justify-content: center; max-width: calc(100vw - var(--sal) - var(--sar) - 24px); overflow-wrap: anywhere; display: flex; gap: 8px; align-items: center; height: auto; min-height: 44px; box-sizing: border-box; }
+#b-interact { position: absolute; left: 50%; bottom: calc(var(--sab) + 26px); transform: translateX(-50%); padding: 10px 18px; border-radius: 99px; background: var(--lacquer-2); box-shadow: 0 0 0 1.5px var(--gold), 0 6px 18px rgba(0,0,0,.6); font-weight: 700; font-size: 14px; white-space: normal; text-align: center; justify-content: center; max-width: calc(100vw - var(--sal) - var(--sar) - 24px); overflow-wrap: anywhere; display: flex; gap: 8px; align-items: center; height: auto; min-height: 44px; box-sizing: border-box; z-index: 6; touch-action: manipulation; pointer-events: auto; }
 #b-abandon { position: absolute; top: calc(var(--sat) + 74px); left: 50%; transform: translateX(-50%); }
 #res-screen { background: radial-gradient(circle, rgba(30,20,10,.55), rgba(0,0,0,.88)); }
 #b-interact .k { font-size: 10px; color: var(--muted); padding: 1px 5px; border: 1px solid var(--faint); border-radius: 4px; }
@@ -2255,7 +2255,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="254332d93bbb" aria-label="Identifiant de version">Version générée : 254332d93bbb</div>
+      <div class="meta" id="t-build" data-build="07e0e5ba8ea9" aria-label="Identifiant de version">Version générée : 07e0e5ba8ea9</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -9017,10 +9017,23 @@ function updatePlayer(dt) {
 
   // déplacement
   let mx = I.mx, my = I.my;
-  const auto = S.settings.auto && !moveIn && !autoRefuge() && !G.arena;
+  // [Grok] Auto : le combat se tait au refuge, mais la marche, la percée et le voyage
+  // restent (sinon 20 min planté au spawn Qinghe, quête Disciple, goal null).
+  const autoOn = S.settings.auto && !moveIn && !G.arena;
+  const refuge = autoOn && typeof autoRefuge === 'function' && autoRefuge();
+  const auto = autoOn && !refuge;
   let autoTarget = null;
-  if (auto) {
+  if (autoOn && !autoFuiteActive() && typeof autoPercée === 'function' && autoPercée()) {
+    // percée ou méditation rapide lancée : on reste sur place ce pas
+  } else if (auto) {
     autoTarget = autoPick();
+    // Voyage de quête : on ne farm pas Qinghe — seulement aggro / boss / corps-à-corps.
+    if (autoTarget && typeof autoVoyageQuete === 'function' && autoVoyageQuete()
+        && !autoTarget.aggro && !autoTarget.isBoss
+        && dist(autoTarget.x, autoTarget.y, P.x, P.y) > 3.2 * M) {
+      autoTarget = null;
+      AUTO_NAV.cible = null;
+    }
     if (P.autoFuite && Math.hypot(P.autoFuite.dx, P.autoFuite.dy) > 0.2) {
       mx = P.autoFuite.dx; my = P.autoFuite.dy;
     } else if (AUTO_NAV.tFuite > 0 && !autoFuiteInterdite()) {
@@ -9036,8 +9049,26 @@ function updatePlayer(dt) {
       // 4,5 m suffit pour un loup. Un dragon (rayon ~2,6 m) serait lâché avant d'être à portée de frappe.
       if (d > Math.max(4.5 * M, autoTarget.r + 3.2 * M)) autoTarget = null;
     } else {
-      const rode = autoRode();
-      if (rode) { mx = rode.mx; my = rode.my; }
+      const dir = typeof autoMarcheQuete === 'function' ? autoMarcheQuete() : null;
+      if (dir) { mx = dir.mx; my = dir.my; }
+      else {
+        AUTO_NAV.butX = AUTO_NAV.butY = null;
+        const rode = autoRode();
+        if (rode) { mx = rode.mx; my = rode.my; }
+      }
+    }
+  } else if (autoOn && !autoFuiteActive()) {
+    const dir = typeof autoMarcheQuete === 'function' ? autoMarcheQuete() : null;
+    if (dir) { mx = dir.mx; my = dir.my; }
+    else {
+      AUTO_NAV.butX = AUTO_NAV.butY = null;
+      // Au refuge sans objectif de voyage : on ne sort pas vers le camp
+      // (sinon on retourne dans le pack qui vient de tuer — auto_fiabilite).
+      const q = typeof currentQuest === 'function' ? currentQuest() : null;
+      if (q && (q.t === 'kill' || q.t === 'combat')) {
+        const rode = autoRode();
+        if (rode) { mx = rode.mx; my = rode.my; }
+      }
     }
   }
   // auto-combat en donjon : salle nettoyée, on marche jusqu'à la porte suivante, puis on l'emprunte
@@ -9086,7 +9117,8 @@ function updatePlayer(dt) {
     if (typeof clampToScene === 'function') clampToScene(P, rayonSol());
   }
   if (auto && autoFuiteActive()) I.interact = false;
-  if (auto) autoSuivi(dt, AUTO_NAV.cible, P.moving);
+  else if (autoOn && !autoTarget && !autoFuiteActive() && typeof autoQueteInteragir === 'function') autoQueteInteragir();
+  if (autoOn) autoSuivi(dt, AUTO_NAV.cible, P.moving);
 
   // attaques & techniques
   updateAttack(dt, auto && autoTarget && dist(autoTarget.x, autoTarget.y, P.x, P.y) < autoTarget.r + 2.4 * M);
@@ -9149,10 +9181,10 @@ function autoReset() {
   AUTO_NAV.slide = 0; AUTO_NAV.tSlide = 0; AUTO_NAV.tIdle = 0; AUTO_NAV.tour = 0;
   AUTO_NAV.tPauseCible = 0;
   AUTO_NAV.oscil = null; AUTO_NAV.x0 = P.x; AUTO_NAV.y0 = P.y; AUTO_NAV.fails = 0;
-  AUTO_NAV.questToast = false;
+  AUTO_NAV.questToast = false; AUTO_NAV.butX = null; AUTO_NAV.butY = null;
   const cle = G.scene ? (G.scene.type + ':' + (G.scene.dungeon || G.scene.id || '') + ':' + (G.scene.room || 0)) : '';
   if (cle !== AUTO_NAV.salle) { AUTO_NAV.salle = cle; AUTO_NAV.fuiteSalle = false; }
-  // evite / morts / tFuite : conservés (même salle après mort, pièce rechargée)
+  // evite / morts / tFuite / perceeAt / medIgnore : conservés (échec et interrupt)
 }
 const AUTO_EVITE_MAX = 90;
 const AUTO_EVITE_QUEST = 28;
@@ -9183,6 +9215,156 @@ function autoEloignerSortie(mx, my) {
     }
   }
   return { mx, my };
+}
+// Objectif de trame que Auto doit rejoindre (carte). Jamais « parler » :
+// ça ouvrirait le maître et figerait la sim (auto_fiabilite, quête 0).
+function autoMarcheQuete() {
+  const but = typeof autoButQuete === 'function' ? autoButQuete() : null;
+  if (!but) return null;
+  const d = dist(but.x, but.y, P.x, P.y);
+  if (d <= 2.2 * M) { AUTO_NAV.butX = AUTO_NAV.butY = null; return null; }
+  if (AUTO_NAV.butX !== but.x || AUTO_NAV.butY !== but.y) {
+    AUTO_NAV.butX = but.x; AUTO_NAV.butY = but.y; AUTO_NAV.d0 = d; AUTO_NAV.tProg = 0;
+  }
+  if (AUTO_NAV.tProg > 2.4) {
+    const raw = typeof questMapGoal === 'function' && G.scene ? questMapGoal(G.scene) : null;
+    const final = raw && dist(but.x, but.y, raw.x, raw.y) < 12;
+    if (!final && typeof autoMarquerEvite === 'function') autoMarquerEvite(but.x, but.y, 70, 14);
+    if (typeof autoDegage === 'function') autoDegage();
+    AUTO_NAV.tProg = 0;
+  }
+  const a = angTo(P.x, P.y, but.x, but.y) + (AUTO_NAV.slide || 0);
+  return { mx: Math.cos(a), my: Math.sin(a) };
+}
+function autoVoyageQuete() {
+  if (typeof currentQuest !== 'function') return false;
+  const q = currentQuest();
+  return !!(q && (q.t === 'region' || q.t === 'dungeon' || q.t === 'boss' || q.t === 'nexus' || q.t === 'faction'));
+}
+function autoPorteBourg(but) {
+  const b = G.scene && G.scene.bourg;
+  if (!b || !b.portes || !b.portes.length || !but) return null;
+  const R = b.rect;
+  if (!R || !(P.x > R.x0 && P.x < R.x1 && P.y > R.y0 && P.y < R.y1)) return null;
+  let best = null, bd = Infinity;
+  for (const p of b.portes) {
+    const px = p.ox != null ? p.ox : p.x, py = p.oy != null ? p.oy : p.y;
+    if (typeof autoZoneEvite === 'function' && autoZoneEvite(px, py, true)) continue;
+    const d = dist2(px, py, but.x, but.y);
+    if (d < bd) { bd = d; best = p; }
+  }
+  if (!best) return null;
+  return { x: best.ox != null ? best.ox : best.x, y: best.oy != null ? best.oy : best.y, label: but.label };
+}
+// Suit la route dont une extrémité mène au but, jalon après jalon (pas de raccourci dans un mur).
+function autoPointChemin(tx, ty) {
+  const sc = G.scene;
+  if (!sc || !sc.paths || !sc.paths.length) return null;
+  const dBut = dist2(P.x, P.y, tx, ty);
+  if (dBut < (10 * M) ** 2) return null;
+  let path = null, best = Infinity;
+  for (const pts of sc.paths) {
+    if (!pts || pts.length < 2) continue;
+    let near = Infinity;
+    for (let i = 0; i < pts.length; i += Math.max(1, Math.ceil(pts.length / 32))) {
+      const d = dist2(pts[i].x, pts[i].y, P.x, P.y);
+      if (d < near) near = d;
+    }
+    const dEnd = Math.min(dist2(pts[0].x, pts[0].y, tx, ty), dist2(pts[pts.length - 1].x, pts[pts.length - 1].y, tx, ty));
+    const scv = near + dEnd * 0.45;
+    if (scv < best) { best = scv; path = pts; }
+  }
+  if (!path) return null;
+  let i0 = 0, d0 = Infinity;
+  for (let i = 0; i < path.length; i++) {
+    const d = dist2(path[i].x, path[i].y, P.x, P.y);
+    if (d < d0) { d0 = d; i0 = i; }
+  }
+  const evite = (q) => typeof autoZoneEvite === 'function' && autoZoneEvite(q.x, q.y, true);
+  // Loin de la route : d'abord la rejoindre (pas un jalon derrière un rempart).
+  if (d0 > (8 * M) ** 2 && path[i0] && !evite(path[i0])) return path[i0];
+  const dStart = dist2(path[0].x, path[0].y, tx, ty);
+  const dEnd = dist2(path[path.length - 1].x, path[path.length - 1].y, tx, ty);
+  const dir = dEnd <= dStart ? 1 : -1;
+  for (let k = 1; k < path.length; k++) {
+    const i = i0 + dir * k;
+    if (i < 0 || i >= path.length) break;
+    const q = path[i];
+    if (dist(q.x, q.y, P.x, P.y) < 2.6 * M) continue;
+    if (evite(q)) continue;
+    return q;
+  }
+  return null;
+}
+function autoButQuete() {
+  if (typeof currentQuest !== 'function' || typeof questMapGoal !== 'function' || !G.scene) return null;
+  const q = currentQuest();
+  if (!q || q.t === 'talk' || q.t === 'alloc' || q.t === 'tech') return null;
+  // Chasse / défi : hors refuge, autoPick / autoRode ; au village, sortir vers le camp.
+  if ((q.t === 'kill' || q.t === 'combat') && !(typeof autoRefuge === 'function' && autoRefuge())) return null;
+  const g = questMapGoal(G.scene);
+  if (!g || g.x == null || g.y == null) return null;
+  if (typeof autoZoneEvite === 'function' && autoZoneEvite(g.x, g.y, true)) return null;
+  const porte = autoPorteBourg(g);
+  if (porte) return porte;
+  const via = autoPointChemin(g.x, g.y);
+  if (via) return { x: via.x, y: via.y, label: g.label };
+  return g;
+}
+// Percée Disciple / Expert (pas de catalyseur). Méditation rapide si Qi ou
+// compréhension manquent — jamais de parchemin, minerai, Sang-d'herbe, Brume
+// ni Pierre de reset. Même hasard qu'un joueur (attemptBreakthrough / rate).
+// Après un échec (Qi, déviation) : cooldown 120 s, pas de boucle.
+const AUTO_PERCEE_CD = 120;
+const AUTO_MED_IGNORE = 15;
+function autoPercée() {
+  if (P.dead || P.med || P.cast || G.arena) return false;
+  if ((P.combatT || 0) < 3 || (typeof enemiesNear === 'function' && enemiesNear(12))) return false;
+  const t = (G && G.t) || 0;
+  if (AUTO_NAV.medIgnore && t < AUTO_NAV.medIgnore) return false;
+  if (typeof breakInfo !== 'function' || typeof attemptBreakthrough !== 'function') return false;
+  const q = typeof currentQuest === 'function' ? currentQuest() : null;
+  if (!q || q.t !== 'rank') return false;
+  const b = breakInfo();
+  if (!b || !b.q) return false;
+  if (b.q.cat) return false;
+  const enCd = AUTO_NAV.perceeAt != null && t < AUTO_NAV.perceeAt + AUTO_PERCEE_CD;
+  if (b.ready && !enCd) {
+    const r = attemptBreakthrough();
+    if (r && !r.success) AUTO_NAV.perceeAt = t;
+    return true;
+  }
+  const qiOk = P.qi >= b.q.qi - 0.5;
+  const compOk = S.comp >= b.q.comp;
+  const lvlOk = S.level >= (b.q.lvl || 0);
+  const dev = typeof cultDeviated === 'function' && cultDeviated();
+  if (lvlOk && (!qiOk || !compOk || (enCd && dev)) && typeof startMed === 'function') {
+    const c = typeof medCheck === 'function' ? medCheck('rapide') : { ok: false };
+    if (c.ok) return !!startMed('rapide');
+  }
+  return false;
+}
+// Portail de quête à portée : frontière, donjon, boss. Pas de PNJ (pause).
+function autoQueteInteragir() {
+  if (typeof currentQuest !== 'function') return;
+  const q = currentQuest();
+  if (!q || q.t === 'talk' || q.t === 'rank' || q.t === 'level' || q.t === 'faction' || q.t === 'kill' || q.t === 'combat') return;
+  const portes = (G.scene && G.scene.portals) || [];
+  const proche = (p, r) => p && dist(p.x, p.y, P.x, P.y) < r;
+  let p = null;
+  if (q.t === 'dungeon') {
+    p = portes.find((v) => v.type === 'dungeon' && v.id === q.id && proche(v, 3.4 * M))
+      || portes.find((v) => (v.type === 'gate' || v.type === 'exit') && proche(v, 2.8 * M));
+  } else if (q.t === 'region') {
+    p = portes.find((v) => v.type === 'frontiere' && proche(v, 3.2 * M));
+  } else if (q.t === 'boss') {
+    const id = typeof questTarget === 'function' ? questTarget(q) : q.id;
+    p = portes.find((v) => v.type === 'boss' && v.id === id && proche(v, 3.2 * M));
+  }
+  if (!p) return;
+  // Portail de quête : on n'ouvre pas un PNJ plus proche (findInteract).
+  if (typeof doInteract === 'function') doInteract({ kind: 'portal', ref: p });
+  else I.interact = true;
 }
 function autoEstCibleQuete(e) {
   if (!e || typeof currentQuest !== 'function') return false;
@@ -9367,6 +9549,12 @@ function autoSuivi(dt, cible, moving) {
     const dNow = dist(cible.x, cible.y, P.x, P.y);
     if (!N.d0) N.d0 = dNow;
     // seul un rapprochement compte : glisser le long d'une clôture n'est pas un progrès
+    if (N.d0 - dNow > 12) {
+      N.d0 = dNow; N.x0 = P.x; N.y0 = P.y; N.tProg = 0; N.tour = 0; N.fails = 0;
+    } else N.tProg += dt;
+  } else if (N.butX != null) {
+    const dNow = dist(N.butX, N.butY, P.x, P.y);
+    if (!N.d0) N.d0 = dNow;
     if (N.d0 - dNow > 12) {
       N.d0 = dNow; N.x0 = P.x; N.y0 = P.y; N.tProg = 0; N.tour = 0; N.fails = 0;
     } else N.tProg += dt;
@@ -10215,7 +10403,8 @@ function pickup(l) {
 }
 
 // ───────── Méditation ─────────
-// auto-combat en pause au refuge, sauf si un adversaire en aggro est là (défi du rival sur la place du village)
+// Combat Auto en pause au refuge (pas de cible, pas de frappe), sauf adversaire
+// en aggro (défi du rival). Marche, percée et voyage de quête restent actifs.
 function autoRefuge() { return inSafeZone() && !enemiesNear(14); }
 function enemiesNear(r) {
   const lim = (r * M) ** 2;
@@ -10244,7 +10433,13 @@ function startMed(type) {
   P.atk.ph = 'idle'; P.cast = null; sfx('med');
   return true;
 }
-function cancelMed(msg) { if (!P.med) return; P.med = null; if (msg) toast(msg, 'warn'); }
+function cancelMed(msg) {
+  if (!P.med) return;
+  P.med = null;
+  if (msg) toast(msg, 'warn');
+  // Interrompre (tactile / stick) : Auto ne relance pas la pose dans la seconde.
+  if (typeof AUTO_NAV !== 'undefined') AUTO_NAV.medIgnore = ((G && G.t) || 0) + AUTO_MED_IGNORE;
+}
 function updateMed(dt) {
   const m = P.med; if (!m) return;
   m.t += Math.min(1, Math.max(0, dt));
@@ -32987,6 +33182,11 @@ function questMapGoal(sc) {
   if ((q.t === 'level' || q.t === 'rank') && sc.type === 'region') {
     const need = q.t === 'level' ? q.n : (RANKS[q.n] && RANKS[q.n].req ? RANKS[q.n].req.lvl : 0);
     if (S.level < need) return questLieuNiveau(sc);
+    // [Grok] percée : niveau atteint → plus de goal null (Auto restait 20 min au spawn).
+    if (q.t === 'rank') {
+      if (sc.safe) return { x: sc.safe.x, y: sc.safe.y, label: 'Percée' };
+      return sc.spawn ? { x: sc.spawn.x, y: sc.spawn.y, label: 'Percée' } : null;
+    }
   }
   // boss ou donjon de la trame bien au-dessus du héros : explorer d'abord (un lieu, sinon la route)
   if ((q.t === 'boss' || q.t === 'dungeon') && sc.type === 'region' && typeof questTropBas === 'function' && questTropBas(q)) {
