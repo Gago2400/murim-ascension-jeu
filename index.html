@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="40792b031b4d">
+<meta name="murim-build" content="f0a7e206ef8d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -690,6 +690,33 @@ html { overscroll-behavior: none; overflow: hidden; touch-action: manipulation; 
 #m-toggle { display: none; }
 .act.locked { visibility: hidden; }
 .act.sk.vide { opacity: .22; transform: scale(.72); box-shadow: none; } /* emplacement de technique libre : presque effacé */
+/* Paysage court : zone tactile ≥ 44 px via ::before, disque visuel inchangé. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .act { overflow: visible; }
+  .act::before {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: var(--hit, 44px); height: var(--hit, 44px);
+    transform: translate(-50%, -50%); border-radius: 50%;
+  }
+  .act.sk.vide { transform: none; }
+  .act.sk.vide .g { transform: scale(.72); }
+  #h-portrait { overflow: visible; }
+  #h-portrait::before {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: 44px; height: 44px; transform: translate(-50%, -50%);
+  }
+}
+#debug-hit { position: fixed; inset: 0; pointer-events: none; z-index: 80; }
+#debug-hit::after {
+  content: 'DEBUG HIT'; position: absolute; left: 8px; bottom: 8px;
+  font: 700 11px/1 ui-monospace, monospace; color: #ff2bd6;
+  background: rgba(0, 0, 0, .55); padding: 3px 6px; border-radius: 4px;
+}
+#debug-hit .zh {
+  position: absolute; box-sizing: border-box; border-radius: 50%;
+  border: 3px solid #ff2bd6; background: rgba(255, 43, 214, .22);
+}
+#debug-hit .zh[data-rect] { border-radius: 8px; }
 @media (max-width: 560px) and (orientation: portrait) {
   #m-toggle { display: grid; }
   #hud-tr:not(.menu-open) #h-menu > button[data-tab] { display: none; }
@@ -1466,12 +1493,12 @@ body:has(#vcour) #net-parler { display: none !important; }
   #h-banner::before, #h-banner::after { margin: 2px auto; }
   #h-center.k-level::before { width: 108px; height: 108px; margin: -54px 0 0 -54px; }
   #hud:has(#h-banner) #h-quest, #hud:has(#h-center) #h-quest { opacity: 1; }
-  #hud:has(#h-center) #toasts, #hud:has(#h-banner) #toasts { opacity: 1; max-height: 80px; }
+  #hud:has(#h-center) #toasts, #hud:has(#h-banner) #toasts { opacity: 1; max-height: none; }
 }
 
 /* Journal, menu et suivi : lisibles au doigt, portrait et paysage. */
 #h-quest { left: calc(var(--sal) + 16px); }
-#toasts { left: calc(var(--sal) + 16px); display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; overflow: hidden; }
+#toasts { left: calc(var(--sal) + 16px); display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; overflow: visible; }
 .toast {
   font-size: calc(15px * var(--fs));
   line-height: 1.3;
@@ -1483,7 +1510,7 @@ body:has(#vcour) #net-parler { display: none !important; }
 #h-menu button { width: 44px; min-width: 44px; height: 44px; min-height: 44px; box-sizing: border-box; }
 @media (max-width: 560px) and (orientation: portrait) {
   #h-quest, #toasts { left: calc(var(--sal) + 16px); }
-  #toasts { max-height: 150px; }
+  #toasts { max-height: none; }
   #hud:has(#hud-tr.menu-open) #h-quest,
   #hud:has(#hud-tr.menu-open) #toasts {
     max-width: calc(100vw - var(--sal) - var(--sar) - 222px);
@@ -1508,7 +1535,7 @@ body:has(#vcour) #net-parler { display: none !important; }
   #h-quest, #toasts { left: calc(var(--sal) + 16px); }
   #h-quest { max-width: min(240px, calc(100vw - var(--sal) - var(--sar) - 334px)); }
   /* À gauche du cartouche centré : le journal ne le traverse pas, même quand le suivi est long. */
-  #toasts { max-width: min(200px, calc(100vw - var(--sal) - var(--sar) - 420px)); }
+  #toasts { max-width: min(320px, calc(100vw - var(--sal) - var(--sar) - 260px)); }
   /* Instant de niveau : sous la carte joueur (--qt), pas dessus. */
   #h-center.lv-moment { top: calc(var(--sat) + var(--qt, 80px) + 8px); }
   #h-center.lv-moment .lv-glyphe { font-size: 40px; }
@@ -1548,8 +1575,8 @@ body:has(#vcour) #net-parler { display: none !important; }
   top: calc(var(--qbot, 168px) + 8px);
   justify-content: flex-start;
   /* Au-dessus du cercle du joystick (bas 24 px, diamètre --u × 2,1), avec un écart. */
-  max-height: max(0px, calc(100dvh - var(--qbot, 168px) - 8px - var(--sab) - 24px - (var(--u) * 2.1) - 10px));
-  overflow: hidden;
+  max-height: none;
+  overflow: visible;
 }
 /* Paysage bas : 1–2 toasts entiers au-dessus du joystick (file JS). Jamais de ligne coupée. */
 @media (orientation: landscape) and (max-height: 500px) {
@@ -1565,7 +1592,7 @@ body:has(#vcour) #net-parler { display: none !important; }
     bottom: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    max-width: min(200px, 28vw);
+    max-width: min(320px, calc(100vw - var(--sal) - var(--sar) - 260px));
   }
   #toasts .toast { flex-shrink: 0; }
 }
@@ -1803,13 +1830,29 @@ body:has(#vcour) #net-parler { display: none !important; }
 }
 #h-quest.compacte .q-corps { white-space: normal; overflow: visible; text-overflow: clip; }
 #h-quest.compacte .q-dist { white-space: nowrap; }
-.toast { align-items: center; }
+.toast { align-items: flex-start; overflow: visible; height: auto; max-height: none; width: max-content; max-width: 100%; box-sizing: border-box; }
+.toast > span:first-child { flex: 1 1 auto; min-width: 0; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+/* Au-dessus du suivi (z 4) : le hit 44 px du × ne se fait pas voler le toucher. */
+#toasts { z-index: 5; }
 .toast-x {
-  flex: none; width: 44px; height: 44px; margin: 0 0 0 2px; padding: 0;
-  border-radius: 8px; background: rgba(217, 180, 94, .16); color: #f6edd8;
-  font-size: 22px; line-height: 1; pointer-events: auto;
+  flex: none; width: 18px; height: 18px; margin: 1px 0 0 4px; padding: 0;
+  position: relative; overflow: visible; z-index: 1;
+  border-radius: 4px; background: transparent; color: #c9b48a;
+  font-size: 15px; line-height: 18px; pointer-events: auto;
 }
-#hud.prem #toasts { max-height: 72px; max-width: min(260px, 58vw); }
+.toast-x-hit {
+  position: absolute; left: 50%; top: 50%;
+  width: 44px; height: 44px; transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+#hud.prem #toasts,
+#toasts .toast {
+  overflow: visible !important;
+}
+#hud.prem #toasts {
+  max-height: none;
+  max-width: min(340px, calc(100vw - var(--sal) - var(--sar) - 20px));
+}
 @media (orientation: landscape) and (max-height: 500px) {
   /* Premières minutes : chaque bulle reste près du geste. Le bloc unique en haut
      (left 286) recouvrait Menu / Auto et disait « glisse à gauche » loin du joystick. */
@@ -1852,11 +1895,12 @@ body:has(#vcour) #net-parler { display: none !important; }
   #hud.prem #coach p { font-size: 12.5px; line-height: 1.2; margin-bottom: 2px; }
   #hud.prem #h-quest.compacte { max-width: min(200px, 28vw); max-height: none; }
   #hud.prem #toasts {
-    top: calc(var(--sat) + 6px) !important;
-    left: calc(var(--sal) + 286px) !important;
-    max-width: min(200px, calc(100vw - var(--sal) - var(--sar) - 400px)) !important;
-    width: min(200px, calc(100vw - var(--sal) - var(--sar) - 400px));
-    max-height: 56px !important;
+    top: calc(var(--sat) + var(--qt, 72px) + var(--qh, 40px) + 18px) !important;
+    left: calc(var(--sal) + 10px) !important;
+    max-width: min(320px, calc(100vw - var(--sal) - var(--sar) - 260px)) !important;
+    width: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 }
 .act .nm {
@@ -2096,7 +2140,12 @@ body:has(#vcour) #net-parler { display: none !important; }
     text-align: center;
   }
   #h-center b { font-size: clamp(20px, 4.8vmin, 30px); }
-  #b-auto { min-height: 40px; min-width: 52px; padding: 8px 12px; box-sizing: border-box; }
+  #b-auto { min-height: 40px; min-width: 52px; padding: 8px 12px; box-sizing: border-box; overflow: visible; }
+  #b-auto::before {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: max(100%, 44px); height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
   #npc { background: rgba(6, 4, 3, .78); }
   #npc .sheet {
     height: calc(100dvh - var(--sat) - var(--sab) - 16px);
@@ -2171,7 +2220,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="40792b031b4d" aria-label="Identifiant de version">Version générée : 40792b031b4d</div>
+      <div class="meta" id="t-build" data-build="f0a7e206ef8d" aria-label="Identifiant de version">Version générée : f0a7e206ef8d</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -26436,7 +26485,8 @@ function noteShow(n) {
       if (toastEstTitre(o.msg)) { if (o.el) o.el.remove(); NOTE.live.splice(i, 1); }
     }
   }
-  const x = el('button', { class: 'toast-x', type: 'button', 'aria-label': 'Fermer', onclick: (e) => toastFermer(n, e) }, '×');
+  const x = el('button', { class: 'toast-x', type: 'button', 'aria-label': 'Fermer', onclick: (e) => toastFermer(n, e) },
+    el('span', { class: 'toast-x-hit', 'aria-hidden': 'true' }), '×');
   n.el = el('div', { class: 'toast ' + n.cls }, el('span', null, n.msg), el('b', { class: 'n' }, n.n > 1 ? '×' + n.n : ''), x);
   box.append(n.el); NOTE.live.push(n);
   const max = toastLogMax();
@@ -26613,47 +26663,29 @@ function notesEviteHud() {
       el.style.setProperty('transform', 'translateX(-50%)', 'important');
     }
     if (el.id !== 'toasts' || !el.childElementCount) return;
+    // Un toast affiche toujours son texte entier : on peut rétrécir la largeur
+    // (le texte passe à la ligne) ou déplacer la boîte, jamais l'écrêter.
+    el.style.overflow = 'visible';
+    el.style.maxHeight = '';
+    const kids0 = el.querySelectorAll('.toast');
+    for (let i = 0; i < kids0.length; i++) {
+      kids0[i].style.maxHeight = '';
+      kids0[i].style.overflow = 'visible';
+    }
     if (!hero) return;
     const gap = 12;
     let r2 = el.getBoundingClientRect();
-    // Toujours rester à gauche du héros : pas de plancher 120 px (667×375, héros hors-centre).
     if (r2.left < hero.left) {
       const maxW = Math.floor(hero.left - r2.left - gap);
-      if (maxW > 0) el.style.setProperty('max-width', maxW + 'px', 'important');
+      if (maxW > 80) el.style.setProperty('max-width', maxW + 'px', 'important');
     }
     r2 = el.getBoundingClientRect();
     if (rectsSeCoupe(r2, hero, 4)) {
-      const maxH = Math.floor(hero.top - r2.top - gap);
-      if (maxH > 0) {
-        el.style.setProperty('max-height', maxH + 'px', 'important');
-        el.style.overflow = 'hidden';
-      } else {
-        const haut = Math.max(8, hero.top - Math.max(r2.height, 28) - gap);
-        el.style.setProperty('top', Math.round(haut) + 'px', 'important');
-        el.style.setProperty('bottom', 'auto', 'important');
-      }
-    }
-    r2 = el.getBoundingClientRect();
-    if (rectsSeCoupe(r2, hero, 4)) {
-      const maxW = Math.max(0, Math.floor(hero.left - r2.left - gap));
-      const maxH = Math.max(0, Math.floor(hero.top - r2.top - gap));
-      el.style.setProperty('max-width', maxW + 'px', 'important');
-      el.style.setProperty('max-height', maxH + 'px', 'important');
-      el.style.overflow = 'hidden';
-    }
-    const kids = el.querySelectorAll('.toast');
-    for (let i = 0; i < kids.length; i++) {
-      const k = kids[i];
-      k.style.maxWidth = '100%';
-      const kr = k.getBoundingClientRect();
-      if (!rectsSeCoupe(kr, hero, 4)) continue;
-      const maxW = Math.max(0, Math.floor(hero.left - kr.left - gap));
-      const maxH = Math.max(0, Math.floor(hero.top - kr.top - gap));
-      if (maxW < kr.width) k.style.setProperty('max-width', maxW + 'px', 'important');
-      if (maxH < kr.height) {
-        k.style.setProperty('max-height', maxH + 'px', 'important');
-        k.style.overflow = 'hidden';
-      }
+      const haut = Math.max(8, hero.top - r2.height - gap);
+      el.style.setProperty('top', Math.round(haut) + 'px', 'important');
+      el.style.setProperty('bottom', 'auto', 'important');
+      el.style.overflow = 'visible';
+      el.style.maxHeight = '';
     }
   };
   nudge(toasts, false);
@@ -26741,8 +26773,16 @@ function roueOuverte() {
 function questeTech() { const q = S && typeof currentQuest === 'function' ? currentQuest() : null; return !!(q && q.t === 'tech'); }
 function layoutActions() {
   const box = $('#actions'); if (!box || !ACT.atk) return;
-  // right/bottom : centre du bouton, converti en bord CSS.
-  const place = (b, size, right, bottom) => { b.style.width = b.style.height = size + 'px'; b.style.setProperty('--s', size + 'px'); b.style.right = (right - size / 2) + 'px'; b.style.bottom = (bottom - size / 2) + 'px'; };
+  // right/bottom : centre visuel. --hit (≥ 44) agrandit la zone tactile via ::before, sans grossir le disque.
+  const HIT = 44;
+  const place = (b, size, right, bottom) => {
+    const vis = size, hit = Math.max(vis, HIT);
+    b.style.width = b.style.height = vis + 'px';
+    b.style.setProperty('--s', vis + 'px');
+    b.style.setProperty('--hit', hit + 'px');
+    b.style.right = (right - vis / 2) + 'px';
+    b.style.bottom = (bottom - vis / 2) + 'px';
+  };
   const extra = [ACT.s0, ACT.s1, ACT.s2, ACT.s3, ACT.ult, ACT.php, ACT.pqi];
   const tog = $('#roue-btn');
   // §23.1 : en portrait étroit, la roue tient sous le pouce droit, loin du coin et de la barre d'accueil.
@@ -26783,14 +26823,59 @@ function layoutActions() {
   const A = 0.775 * u;
   const polar = (b, size, deg, R) => { const a = deg * Math.PI / 180; place(b, size, A + Math.cos(a) * R * u, A + Math.sin(a) * R * u); };
   place(ACT.atk, 1.55 * u, A, A);
-  // Éventail d'origine : les angles sont réglés pour cet écart. Ne pas grossir les boutons ici.
+  // Éventail d'origine : on ne grossit pas le disque. Légers écarts pour que les hits 44 px ne se recouvrent pas.
   const ts = 1.02 * u, TR = 2.05;
   polar(ACT.s0, ts, 4, TR); polar(ACT.s1, ts, 36, TR); polar(ACT.s2, ts, 68, TR); polar(ACT.s3, ts, 100, TR);
-  polar(ACT.dodge, 1.05 * u, 0, 3.05);
+  polar(ACT.dodge, 1.05 * u, 0, 3.16);
   polar(ACT.ult, 1.1 * u, 48, 3.15);
-  place(ACT.php, Math.max(40, 0.8 * u), 0.4 * u, 4.0 * u); place(ACT.pqi, Math.max(40, 0.8 * u), 1.32 * u, 4.07 * u);
+  const pill = Math.max(40, 0.8 * u);
+  place(ACT.php, pill, 0.4 * u, 4.0 * u);
+  place(ACT.pqi, pill, 1.55 * u, 4.07 * u);
+  if (UI.debugHit) debugHitDessiner();
 }
 UI.layoutActions = layoutActions;
+
+// Zone tactile réelle (disque --hit, ou 44 px min pour Auto). Sert au calque debug et aux tests.
+function hitBox(el) {
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  const cs = getComputedStyle(el);
+  const hit = parseFloat(cs.getPropertyValue('--hit'));
+  const w = Number.isFinite(hit) && hit > 0 ? hit : Math.max(r.width, 44);
+  const h = Number.isFinite(hit) && hit > 0 ? hit : Math.max(r.height, 44);
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  return { id: el.id, x: cx - w / 2, y: cy - h / 2, w, h, r: cx + w / 2, b: cy + h / 2, cx, cy };
+}
+function debugHitDessiner() {
+  let layer = document.getElementById('debug-hit');
+  if (!UI.debugHit) { if (layer) layer.hidden = true; return; }
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.id = 'debug-hit';
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(layer);
+  }
+  layer.hidden = false;
+  layer.replaceChildren();
+  const ids = ['atk', 'dodge', 's0', 's1', 's2', 's3', 'ult', 'php', 'pqi', 'b-auto', 'h-portrait'];
+  for (const id of ids) {
+    const b = document.getElementById(id);
+    if (!b || b.hidden) continue;
+    const st = getComputedStyle(b);
+    if (st.visibility === 'hidden' || st.display === 'none') continue;
+    const box = hitBox(b); if (!box || box.w < 2) continue;
+    const d = document.createElement('div');
+    d.className = 'zh';
+    if (id === 'b-auto' || id === 'h-portrait') d.setAttribute('data-rect', '');
+    d.style.left = box.x + 'px';
+    d.style.top = box.y + 'px';
+    d.style.width = box.w + 'px';
+    d.style.height = box.h + 'px';
+    layer.appendChild(d);
+  }
+}
+UI.hitBox = hitBox;
+UI.debugHitDessiner = debugHitDessiner;
 
 // iOS Safari : un glissé sur une zone qui ne défile pas (ou en butée) tirait toute la page vers le bas et montrait
 // le fond du navigateur (panneau Personnage). overscroll-behavior n'y suffit pas : on annule ce glissé-là seulement.
