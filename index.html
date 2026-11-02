@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="8a743e3b9342">
+<meta name="murim-build" content="40792b031b4d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -713,12 +713,13 @@ html { overscroll-behavior: none; overflow: hidden; touch-action: manipulation; 
   #cr-prev { max-height: 72vh; width: auto; max-width: 100%; }
 }
 @media (max-width: 560px) and (orientation: portrait) {
-  /* Plus grand que les 32vh de main, assez court pour laisser Cheveux au-dessus des boutons. */
-  #cr-prev { max-height: 34vh; width: auto; }
+  /* 24 vh : Visage (boutons) reste au-dessus de la barre collante ; 34 vh la recouvrait. */
+  #cr-prev { max-height: 24vh; width: auto; }
   .create .fld { margin-bottom: 8px; }
-  .create-prev { position: sticky; top: 0; z-index: 2; padding-bottom: 14px; background: linear-gradient(#14110f 90%, rgba(20,17,15,0)); }
+  .create-prev { position: sticky; top: 0; z-index: 2; padding-bottom: 10px; background: linear-gradient(#14110f 90%, rgba(20,17,15,0)); }
   .cr-face { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 6px; }
 }
+#create-screen { scroll-padding-bottom: 80px; }
 
 /* ───── HUD mobile : lisibilité, pouce droit, zone sûre (§23.1) ───── */
 :root { --fs: 1; --muted: #c9c0ae; --faint: #b4aa98; }
@@ -952,13 +953,13 @@ html.hud-boss #fps {
 @media (prefers-reduced-motion: reduce) { #hero-repere i::before, #hero-repere b::before, #actions .pouls { animation: none; } }
 #hud > #guide { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
 #guide-pin, #guide-edge { position: absolute; z-index: 1; }
-#guide-pin b[hidden] { display: none; }
+#guide-pin b[hidden], #guide-edge b[hidden] { display: none; }
 #guide-pin i, #guide-edge i { position: absolute; width: 14px; height: 14px; background: #c9432f; border: 2px solid #f0d48a; box-shadow: 0 2px 6px rgba(0,0,0,.55); }
 #guide-pin i { left: -7px; top: -22px; transform: rotate(45deg); animation: pinBob 1.4s ease-in-out infinite; }
-#guide-edge i { left: -7px; top: -7px; clip-path: polygon(0 20%, 100% 50%, 0 80%); border: 0; background: #f0d48a; width: 16px; height: 16px; border-radius: 0; }
+#guide-edge i { left: -8px; top: -8px; clip-path: polygon(0 20%, 100% 50%, 0 80%); border: 0; background: #f0d48a; width: 16px; height: 16px; border-radius: 0; transform-origin: 8px 8px; }
 #guide-pin b, #guide-edge b { position: absolute; top: -28px; width: max-content; white-space: nowrap; font: 700 12px/1.2 var(--f-body); color: #ffe7a8; text-shadow: 0 1px 2px #000; overflow: visible; }
 #guide-pin b { left: 12px; }
-#guide-edge b { left: auto; right: 16px; top: -8px; }
+#guide-edge b { left: 14px; right: auto; top: -8px; }
 @keyframes pinBob { 50% { top: -28px; } }
 
 /* Menus premium : encre, jade et or. Le monde 3D ne change pas. */
@@ -1810,20 +1811,43 @@ body:has(#vcour) #net-parler { display: none !important; }
 }
 #hud.prem #toasts { max-height: 72px; max-width: min(260px, 58vw); }
 @media (orientation: landscape) and (max-height: 500px) {
+  /* Premières minutes : chaque bulle reste près du geste. Le bloc unique en haut
+     (left 286) recouvrait Menu / Auto et disait « glisse à gauche » loin du joystick. */
   #hud.prem #coach,
-  #hud.prem #coach[data-anc="joy"],
-  #hud.prem #coach[data-anc="atk"],
-  #hud.prem #coach[data-anc="dodge"],
-  #hud.prem #coach[data-anc="tech"],
-  #hud.prem #coach[data-anc="quete"],
   #hud.prem #coach[data-anc="bande"] {
-    top: calc(var(--sat) + 6px);
-    left: calc(var(--sal) + 286px);
+    top: calc(var(--sat) + var(--qt, 72px) + var(--qh, 40px) + 4px);
+    left: calc(var(--sal) + 10px);
     right: auto;
     bottom: auto;
     transform: none;
-    width: min(176px, calc(100vw - var(--sal) - var(--sar) - 400px));
+    width: min(210px, 38vw);
     padding: 4px 8px 4px;
+  }
+  #hud.prem #coach[data-anc="joy"] {
+    top: auto;
+    left: calc(var(--sal) + 12px);
+    right: auto;
+    bottom: calc(var(--sab) + 92px);
+    width: min(210px, 38vw);
+  }
+  body:has(#b-interact:not([hidden])) #hud.prem #coach[data-anc="joy"] {
+    bottom: calc(var(--sab) + 148px);
+  }
+  #hud.prem #coach[data-anc="atk"],
+  #hud.prem #coach[data-anc="dodge"],
+  #hud.prem #coach[data-anc="tech"] {
+    top: auto;
+    left: auto;
+    right: calc(var(--sar) + 8px);
+    bottom: calc(var(--sab) + 118px);
+    width: min(210px, 40vw);
+  }
+  #hud.prem #coach[data-anc="quete"] {
+    top: calc(var(--sat) + var(--qt, 72px) + var(--qh, 40px) + 4px);
+    left: calc(var(--sal) + 10px);
+    right: auto;
+    bottom: auto;
+    width: min(220px, 42vw);
   }
   #hud.prem #coach p { font-size: 12.5px; line-height: 1.2; margin-bottom: 2px; }
   #hud.prem #h-quest.compacte { max-width: min(200px, 28vw); max-height: none; }
@@ -1950,15 +1974,25 @@ body:has(#vcour) #net-parler { display: none !important; }
 #hud:has(#h-center.lv-moment) #h-quest,
 #hud:has(#h-center.lv-moment) #toasts { visibility: hidden; }
 @media (orientation: landscape) and (max-height: 430px) {
+  /* 667×375 : la carte entière (gains + « Toucher ») tenait hors cadre. */
   #h-center.lv-moment {
     animation: none !important;
-    top: calc(var(--sat) + var(--qt, 80px) + 10px) !important;
+    top: 50% !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: min(300px, calc(100vw - var(--sal) - var(--sar) - 300px));
-    max-height: calc(100dvh - var(--sat) - var(--sab) - 90px);
+    transform: translate(-50%, -50%) !important;
+    width: min(300px, calc(100vw - var(--sal) - var(--sar) - 120px));
+    max-width: min(300px, calc(100vw - var(--sal) - var(--sar) - 24px));
+    max-height: calc(100dvh - var(--sat) - var(--sab) - 12px);
     overflow: auto;
+    padding: 8px 12px 8px;
   }
+  #h-center.lv-moment .lv-kicker { font-size: 9px; letter-spacing: .12em; }
+  #h-center.lv-moment .lv-glyphe {
+    width: 40px; height: 40px; line-height: 40px; font-size: 26px; margin: 2px auto;
+  }
+  #h-center.lv-moment b { font-size: 22px; }
+  #h-center.lv-moment .lv-gains { margin-top: 4px; padding-top: 4px; font-size: 12px; gap: 1px 10px; }
+  #h-center.lv-moment .lv-touche { margin-top: 4px; }
 }
 @media (orientation: landscape) and (max-height: 500px) {
   /* Cadre plus fin : les consignes tiennent en entier, la liste des régions défile. */
@@ -2054,11 +2088,11 @@ body:has(#vcour) #net-parler { display: none !important; }
     text-align: center;
   }
   #h-center.lv-moment {
-    top: calc(var(--sat) + var(--qt, 80px) + 10px) !important;
+    top: 50% !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: min(300px, calc(100vw - var(--sal) - var(--sar) - 300px));
-    max-width: min(300px, calc(100vw - var(--sal) - var(--sar) - 300px));
+    transform: translate(-50%, -50%) !important;
+    width: min(300px, calc(100vw - var(--sal) - var(--sar) - 120px));
+    max-width: min(300px, calc(100vw - var(--sal) - var(--sar) - 24px));
     text-align: center;
   }
   #h-center b { font-size: clamp(20px, 4.8vmin, 30px); }
@@ -2137,7 +2171,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="8a743e3b9342" aria-label="Identifiant de version">Version générée : 8a743e3b9342</div>
+      <div class="meta" id="t-build" data-build="40792b031b4d" aria-label="Identifiant de version">Version générée : 40792b031b4d</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -11732,6 +11766,19 @@ function hudCoupe(x, y, w, h) {
   }
   return false;
 }
+// Hauteur monde (mètres, Y 3D) de la plaque du héros. En selle : au-dessus de la tête du cavalier,
+// pas à 2,15 m dans le garrot (Marécages 390×844 : titre, route et nom se recouvraient).
+function heroPlaqueH() {
+  const sol = (typeof solH === 'function' && G && G.scene && P) ? (solH(G.scene, P.x, P.y) || 0) : 0;
+  const tete = 2.15;
+  if (!P || !P.monte) return sol + tete;
+  const cav = typeof R3 !== 'undefined' && R3.cavalierMes;
+  if (cav && cav.bassinY != null) return cav.bassinY + 0.95;
+  const et = typeof R3 !== 'undefined' && R3.montureEtat;
+  if (et && et.sy != null) return (et.sol || sol) + et.sy + tete;
+  const m = typeof montureActive === 'function' ? montureActive() : null;
+  return sol + ((m && m.garrot) ? m.garrot * 0.78 : 1.1) + tete;
+}
 // Nom dessiné dans le monde 2D (contexte déjà cadré par la caméra) : true s'il tombe sur le HUD.
 function plaqueSurHud(wx, wy, txt) {
   const z = G.cam.zoom || 1;
@@ -12842,12 +12889,23 @@ function drawPlayer() {
   if (P.status.stun > 0) drawStunStars(x, y - 44);
   const plaque = typeof titlePlateFor === 'function' ? titlePlateFor(null) : null;
   const ttl = plaque ? plaque.title : ((() => { const t = currentTitle(); return t && t !== 'Sans talent' ? t : ''; })());
+  const nom = plaque ? plaque.name : ((S && S.name) || '');
+  // Ordre fixe : titre au-dessus, nom en bas. En selle le corps est déjà remonté de 12 px ; +14 px encore.
+  const lift = P.monte ? 14 : 0;
+  const nameY = y - 36 - lift, titleY = y - 50 - lift;
+  ctx.textAlign = 'center';
   if (ttl) {
-    ctx.font = '700 9.5px ' + BODY_FONT; ctx.textAlign = 'center';
-    if (!plaqueSurHud(x, y - 50, ttl)) {
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,6,8,0.75)'; ctx.strokeText(ttl, x, y - 50); ctx.fillStyle = S.elu ? '#ffe08a' : '#e8d8a8'; ctx.fillText(ttl, x, y - 50);
+    ctx.font = '700 9.5px ' + BODY_FONT;
+    if (!plaqueSurHud(x, titleY, ttl)) {
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,6,8,0.75)'; ctx.strokeText(ttl, x, titleY); ctx.fillStyle = S.elu ? '#ffe08a' : '#e8d8a8'; ctx.fillText(ttl, x, titleY);
+    }
+  }
+  if (nom) {
+    ctx.font = '700 10.5px ' + BODY_FONT;
+    if (!plaqueSurHud(x, nameY, nom)) {
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,6,8,0.75)'; ctx.strokeText(nom, x, nameY); ctx.fillStyle = '#f4efe4'; ctx.fillText(nom, x, nameY);
       if (plaque && plaque.cadre) {
-        const tw = ctx.measureText(ttl).width, k = 5, x0 = x - tw / 2 - 4, y0 = y - 58, x1 = x + tw / 2 + 4, y1 = y - 46;
+        const tw = ctx.measureText(nom).width, k = 5, x0 = x - tw / 2 - 4, y0 = nameY - 10, x1 = x + tw / 2 + 4, y1 = nameY + 3;
         ctx.strokeStyle = plaque.cadre; ctx.lineWidth = 1.25; ctx.beginPath();
         ctx.moveTo(x0, y0 + k); ctx.lineTo(x0, y0); ctx.lineTo(x0 + k, y0);
         ctx.moveTo(x1 - k, y0); ctx.lineTo(x1, y0); ctx.lineTo(x1, y0 + k);
@@ -13504,6 +13562,14 @@ function drawFloatTexts(proj, zoom, screen) {
     if (screen) {
       if (dx < 2 || dy < 2 || dx + dw > VW - 2 || dy + dh > VH - 2) continue;
       if (typeof hudCoupe === 'function' && hudCoupe(dx, dy, dw, dh)) continue;
+      // Au-dessus du héros : empiler au-dessus de la plaque (titre + nom), pas dessus.
+      if (typeof plaqueHeroEcran === 'function') {
+        const hr = plaqueHeroEcran();
+        if (hr && dx < hr.x + hr.w && dx + dw > hr.x && dy < hr.y + hr.h && dy + dh > hr.y) {
+          dy = hr.y - dh - 3;
+          if (dy < 2) continue;
+        }
+      }
     }
     if (t.label) barkDraw(b, sc, p.x, yy, !!screen);
     else ctx.drawImage(b.c, dx, dy, dw, dh);
@@ -24724,6 +24790,25 @@ function R3init(T) {
     const cine = typeof STORY !== 'undefined' && STORY.cur;
     if (!cine) {
     questArrow(sc);
+    // Plaque du héros d'abord (titre au-dessus du nom) : réserve la boîte pour que glyphe PNJ
+    // et route ne s'y collent pas. En selle, hauteur au-dessus de la tête du cavalier.
+    let heroBox = null;
+    if (!P.dead) {
+      const plate = typeof titlePlateFor === 'function' ? titlePlateFor(null) : null;
+      const hh = typeof heroPlaqueH === 'function' ? heroPlaqueH() : 2.15;
+      const ph = project(P.x, hh, P.y);
+      if (plate && ph.vis && (plate.title || plate.name || plate.cadre)) {
+        const lines = [];
+        if (plate.title) lines.push({ txt: plate.title, size: 10, color: S.elu ? '#ffe08a' : '#e8d8a8' });
+        if (plate.name) lines.push({ txt: plate.name, size: 11, color: '#f4efe4', cadre: plate.cadre });
+        if (lines.length) stackPlate(lines, ph.x, ph.y, 1);
+        heroBox = PLATE_TAKEN.length ? PLATE_TAKEN[PLATE_TAKEN.length - 1] : null;
+        // Les « −N Qi toxique » (Marécages) passaient sur le titre : la plaque réserve sa place.
+        if (heroBox && typeof LAB !== 'undefined' && LAB.placed) {
+          LAB.placed.push({ l: heroBox.x - 6, t: heroBox.y - 6, r: heroBox.x + heroBox.w + 6, b: heroBox.y + heroBox.h + 6 });
+        }
+      }
+    }
     if (sc && (sc.bourg || sc.planLabels)) for (const lb of (sc.bourg ? sc.bourg.labels : sc.planLabels)) { // noms des boutiques et des portes (lieux du plan hors bourg), de près seulement
       const a = plateFade(lb.x, lb.y, 4, 7); if (!(a > 0.04)) continue;
       const p = project(lb.x, 0.2, lb.y); if (p.vis) labelPlate(lb.nom, p.x, p.y + 14, 11, 'rgba(255,232,170,0.95)', a);
@@ -24732,7 +24817,8 @@ function R3init(T) {
     for (const o of R3.statics) {
       if (o.n) {
         const n = o.n; const st = NPC_STYLE[n.role] || NPC_STYLE.voix; const p = project(n.x, o.top + 0.45, n.y); if (!p.vis || n.crowd) continue; // passants d'ambiance : pas d'étiquette
-        const surBouton = labelUnderUi(p.x, p.y) || hudCoupe(p.x - 12, p.y - 12, 24, 24);
+        const surBouton = labelUnderUi(p.x, p.y) || hudCoupe(p.x - 12, p.y - 12, 24, 24)
+          || (heroBox && plateOverlap({ x: p.x - 11, y: p.y - 11, w: 22, h: 22 }, heroBox));
         if (!surBouton) {
           ctx.fillStyle = 'rgba(12,10,12,0.75)'; ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, TAU); ctx.fill(); ctx.strokeStyle = '#c9a24a'; ctx.lineWidth = 1.2; ctx.stroke();
           ctx.fillStyle = '#f1e9d6'; ctx.font = '14px ' + HAN_FONT; ctx.textBaseline = 'middle'; ctx.fillText(st.glyph, p.x, p.y + 1); ctx.textBaseline = 'alphabetic';
@@ -24780,14 +24866,8 @@ function R3init(T) {
     // compagnon de route (74_allie_route.js) : son nom au-dessus de la tête
     { const ar = typeof ALLIE_ROUTE !== 'undefined' ? ALLIE_ROUTE.e : null; const v = ar && EV.get(ar);
       if (v && v.root.visible) { const p = project(ar.x, v.top * v.r + 0.35, ar.y); if (p.vis && !hudCoupe(p.x - 40, p.y - 14, 80, 16)) { ctx.font = '600 10.5px ' + BODY_FONT; ctx.fillStyle = '#bfe8c0'; ctx.fillText(ar.name, p.x, p.y - 2); } } }
-    // joueur : titre, méditation, incantation, étourdissement
+    // joueur : méditation, incantation, étourdissement (plaque déjà posée plus haut)
     if (!P.dead) {
-      const plate = typeof titlePlateFor === 'function' ? titlePlateFor(null) : null;
-      const ph = project(P.x, 2.15, P.y);
-      if (plate && ph.vis && (plate.title || plate.cadre)) stackPlate([
-        { txt: plate.title, size: 10, color: S.elu ? '#ffe08a' : '#e8d8a8' },
-        { txt: plate.name, size: 11, color: '#f4efe4', cadre: plate.cadre },
-      ], ph.x, ph.y, 1);
       if (P.status.stun > 0) { const p = project(P.x, 2.0, P.y); stars(p.x, p.y); }
       if (P.med) { const p = project(P.x, 0.8, P.y); const k = P.med.t / P.med.dur; const rr = 1.1 * pxPerM; ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, TAU); ctx.stroke(); ctx.strokeStyle = P.med.type === 'rapide' ? '#7fdcff' : '#ffe08a'; ctx.beginPath(); ctx.arc(p.x, p.y, rr, -Math.PI / 2, -Math.PI / 2 + TAU * k); ctx.stroke(); }
       if (P.cast) { const p = project(P.x, 0.05, P.y); const k = clamp(P.cast.t / Math.max(0.01, P.cast.dur), 0, 1); ctx.strokeStyle = 'rgba(255,255,255,0.65)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(p.x, p.y, 0.65 * pxPerM, 0.65 * pxPerM * 0.6, 0, -Math.PI / 2, -Math.PI / 2 + TAU * k); ctx.stroke(); }
@@ -24833,7 +24913,12 @@ function R3init(T) {
       for (const s of z.shelters) { const q = project(s.x, 0.1, s.y); ctx.font = '700 12px ' + BODY_FONT; ctx.fillStyle = '#fff3c0'; ctx.fillText('ABRI', q.x, q.y + 4); }
     }
     // nombres flottants (08_render.js, partagé avec le rendu 2D)
-    drawFloatTexts((t) => { const p = project(t.x, 0.4, t.y); return p.vis ? p : null; }, clamp(sz, 1, TXT.zoomMax), true);
+    drawFloatTexts((t) => {
+      const pres = P && Math.hypot((t.x || 0) - P.x, (t.y || 0) - P.y) < 48;
+      const h = pres && typeof heroPlaqueH === 'function' ? heroPlaqueH() + 0.55 : 0.4;
+      const p = project(t.x, h, t.y);
+      return p.vis ? p : null;
+    }, clamp(sz, 1, TXT.zoomMax), true);
     }
     ctx.globalAlpha = 1;
     drawAmbient(sc, dt);
@@ -26079,6 +26164,40 @@ function coachSkip() {
   const box = $('#coach'); if (box) box.hidden = true;
   saveState();
 }
+// Boîte écran de la plaque du héros (titre + nom). Sert à écarter losange / « Route : » du crâne.
+function plaqueHeroEcran() {
+  if (!P || P.dead) return null;
+  const VW0 = typeof VW === 'number' ? VW : innerWidth, VH0 = typeof VH === 'number' ? VH : innerHeight;
+  const h = typeof heroPlaqueH === 'function' ? heroPlaqueH() : (P.monte ? 3.4 : 2.15);
+  let p;
+  if (typeof is3D === 'function' && is3D() && typeof R3 !== 'undefined' && R3.project) p = R3.project(P.x, P.y, h);
+  else {
+    const z = (G.cam && G.cam.zoom) || 1;
+    const lift = P.monte ? 74 : 56;
+    p = { x: (P.x - G.cam.x) * z + VW0 / 2, y: (P.y - lift - G.cam.y) * z + VH0 / 2, vis: true };
+  }
+  if (!p || !p.vis) return null;
+  const w = 176, hh = P.monte ? 46 : 38;
+  return { x: p.x - w / 2, y: p.y - hh - 8, w, h: hh + 18 };
+}
+function guideCoupeHero(x, y, w, h) {
+  const r = plaqueHeroEcran();
+  if (!r) return false;
+  return x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y;
+}
+// Même colonne, juste au-dessus : « Route : » n'a rien à faire là (déjà dans #h-quest).
+function guideLabColonneHeros(x, y, w, h) {
+  const r = plaqueHeroEcran();
+  if (!r) return false;
+  if (guideCoupeHero(x, y, w, h)) return true;
+  const hx = r.x + r.w / 2, cx = x + w / 2;
+  return Math.abs(cx - hx) < 100 && y + h > r.y - 130 && y < r.y + r.h;
+}
+function guidePresHeros(x, y) {
+  const r = plaqueHeroEcran();
+  if (!r) return false;
+  return Math.hypot(x - (r.x + r.w / 2), y - (r.y + r.h / 2)) < 72;
+}
 // Repère d'objectif : losange au-dessus de la cible, flèche au bord si elle sort de l'écran.
 function guideTick() {
   const pin = $('#guide-pin'), edge = $('#guide-edge'); if (!pin || !edge) return;
@@ -26101,9 +26220,10 @@ function guideTick() {
     const lab = pin.querySelector('b');
     if (lab) { lab.hidden = true; lab.textContent = ''; delete lab.dataset.t; }
     pin.style.left = p.x + 'px'; pin.style.top = p.y + 'px';
-    // Sous un bouton, la mini-carte, la carte joueur ou le suivi : on cache le losange
-    // (il passait par-dessus Menu en 667×375). La plaque monde reste.
-    const coupe = guideLosangeCoupe(p.x, p.y);
+    // Sous un bouton, la mini-carte, la carte joueur, le suivi — ou la plaque du héros :
+    // on cache le losange (il s'imprimait sur « Sceau brisé » / « Lin Feng » à cheval).
+    const coupe = guideLosangeCoupe(p.x, p.y) || guideCoupeHero(p.x - 10, p.y - 34, 20, 32)
+      || guidePresHeros(p.x, p.y - 16);
     pin.classList.toggle('sous-hud', coupe);
     pin.hidden = !!coupe;
     return;
@@ -26120,22 +26240,52 @@ function guideTick() {
   // s'imprimaient sur le texte du panneau de quête, la jauge de vie ou le bouton Menu (relevé dans les treize régions).
   // Sous un cadre du HUD, elle descend juste sous ce cadre, toujours au même bord de l'écran.
   ey = guideSousCadres(ex, ey);
-  edge.style.left = ex + 'px';
-  edge.style.top = ey + 'px';
-  edge.style.transform = 'translate(-50%,-50%) rotate(' + ang + 'rad)';
   const dist = Math.round(Math.hypot(vrai.x - P.x, vrai.y - P.y) / (typeof M === 'number' ? M : 16));
   // [Claude] le panneau de quête n'était relu que toutes les 0,5 s (et après un voyage, d'une vue en retard) : « 16 m »
   // au panneau, « 121 m » à la flèche. Même cible, même distance : le panneau se relit dès que la distance change.
   if (UI.guideDist !== dist) { UI.guideDist = dist; refreshQuest(); }
+  // Flèche trop près du crâne : on la laisse au vrai bord, ou on la retire (le suivi a déjà la route).
+  if (guideCoupeHero(ex - 14, ey - 14, 28, 28) || guidePresHeros(ex, ey)) {
+    const rimY = cy + Math.sin(ang) * span;
+    if (!guideCoupeHero(ex - 14, rimY - 14, 28, 28) && !guidePresHeros(ex, rimY)) ey = rimY;
+    else { edge.hidden = true; return; }
+  }
+  edge.style.left = ex + 'px';
+  edge.style.top = ey + 'px';
+  // La flèche seule tourne ; le texte reste à l'horizontale le long du bord. Avant, le parent
+  // tournait et « right: 16px » faisait pendre « Route : … » vers le héros (Marécages, 390×844).
+  edge.style.transform = 'translate(-50%,-50%)';
+  const fl = edge.querySelector('i');
+  if (fl) fl.style.transform = 'rotate(' + ang + 'rad)';
   const b = edge.querySelector('b'); const txt = (n.label ? n.label + ' · ' : '') + dist + ' m';
   if (b) {
     // Cible encore projetée à l'écran : la plaque monde suffit, pas de second nom au bord.
     const plaqueVisible = !!(p && p.vis && p.x > -20 && p.x < VW0 + 20 && p.y > -20 && p.y < VH0 + 20);
-    b.hidden = plaqueVisible;
-    if (plaqueVisible) b.textContent = '';
+    if (plaqueVisible) { b.hidden = true; b.textContent = ''; }
     else {
       if (b.textContent !== txt) b.textContent = txt;
-      b.style.transform = 'rotate(' + (-ang) + 'rad)';
+      b.hidden = false;
+      b.style.transform = 'none';
+      const bw = b.offsetWidth || 140;
+      let lx, ly;
+      if (ey < 56) {
+        lx = ex < VW0 * 0.55 ? 14 : -(bw + 8);
+        ly = 2;
+      } else if (ey > VH0 - 80) {
+        lx = ex < VW0 / 2 ? 14 : -(bw + 8);
+        ly = -16;
+      } else if (ex < VW0 / 2) { lx = 16; ly = -10; }
+      else { lx = -(bw + 10); ly = -10; }
+      b.style.left = lx + 'px';
+      b.style.right = 'auto';
+      b.style.top = ly + 'px';
+      const br = b.getBoundingClientRect();
+      // Déjà dans le suivi (#h-quest) : on retire le texte s'il recouvre encore le héros.
+      if (guideLabColonneHeros(br.left, br.top, br.width, br.height)
+        || guideRectCoupe(br.left, br.top, br.width, br.height)
+        || (typeof hudCoupe === 'function' && hudCoupe(br.left, br.top, br.width, br.height))) {
+        b.hidden = true; b.textContent = '';
+      }
     }
   }
 }
@@ -26166,15 +26316,15 @@ function guideRectCoupe(x, y, w, h) {
 }
 // Losange (14 px, ancré à −7/−22, animation pinBob jusqu'à −28).
 function guideLosangeCoupe(x, y) { return guideRectCoupe(x - 10, y - 34, 20, 32); }
-// Premier y libre sous les cadres du HUD qui couvrent (x, y).
+// Premier y libre sous les cadres du HUD qui couvrent la flèche (pas le texte :
+// l'ancienne largeur de « Route : … » faisait descendre la flèche sur le héros).
 function guideSousCadres(x, y) {
-  const b = document.querySelector('#guide-edge b'), w = (b && b.offsetWidth) || 140;
   for (let k = 0; k < 4; k++) {
     let bas = 0;
     const rs = guideHudRects();
     for (let i = 0; i < rs.length; i++) {
       const r = rs[i];
-      if (x - 16 - w < r.right && x + 12 > r.left && y > r.top - 16 && y < r.bottom + 16) bas = Math.max(bas, r.bottom + 22);
+      if (x - 12 < r.right && x + 12 > r.left && y > r.top - 12 && y < r.bottom + 12) bas = Math.max(bas, r.bottom + 16);
     }
     if (!bas) break;
     y = bas;
@@ -26935,7 +27085,10 @@ function heroRepere(dt) {
   if (off) { if (!r.hidden) r.hidden = true; return; }
   const VW0 = typeof VW === 'number' ? VW : innerWidth, VH0 = typeof VH === 'number' ? VH : innerHeight;
   let pied, tete;
-  if (typeof is3D === 'function' && is3D() && typeof R3 !== 'undefined' && R3.project) { pied = R3.project(P.x, P.y, 0); tete = R3.project(P.x, P.y, 2.3); }
+  if (typeof is3D === 'function' && is3D() && typeof R3 !== 'undefined' && R3.project) {
+    pied = R3.project(P.x, P.y, 0);
+    tete = R3.project(P.x, P.y, typeof heroPlaqueH === 'function' ? heroPlaqueH() : (P.monte ? 3.4 : 2.3));
+  }
   else { const z = (G.cam && G.cam.zoom) || 1; pied = { x: (P.x - G.cam.x) * z + VW0 / 2, y: (P.y - G.cam.y) * z + VH0 / 2, vis: true }; tete = { x: pied.x, y: pied.y - 64 * z, vis: true }; }
   if (!pied || !pied.vis) { r.hidden = true; return; }
   r.hidden = false;
