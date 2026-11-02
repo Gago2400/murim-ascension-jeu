@@ -2243,7 +2243,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="dd25b60f2b6c" aria-label="Identifiant de version">Version générée : dd25b60f2b6c</div>
+      <div class="meta" id="t-build" data-build="be170f0a75d1" aria-label="Identifiant de version">Version générée : be170f0a75d1</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -3220,6 +3220,8 @@ const BOSSES = {
     loot: { cat: [['cristal_celeste', 1], ['essence_celeste', 1]], tech: [['coupeceleste', 0.04], ['rayon', 0.04]] },
   },
   demon_sang: {
+    // Décision Gago 2 nov 2026 : difficulté actuelle (~50 % de morts Auto). Ne pas nerfer.
+    // Filet : #771 (2 morts d'affilée → toast + stop). hpMul / atkMul / phases figés.
     // hpMul 46 : TTK Auto ~80–90 s (héros niv. 72, équipement ordinaire). 34 tombait sous 60 s.
     // atkMul 0,56 : à 0,62 l'Auto recommandé mourait à 7 % des PV (drain + pluie).
     name: 'Démon de sang', kind: 'demon', c1: '#7a2424', c2: '#1a0c0c', eye: '#e0b070', glow: '#ff2a2a', size: 1.7, speed: 3.8, lvl: 75, elem: 'feu', hpMul: 46, atkMul: 0.56, gdd: 120000,
@@ -3232,6 +3234,8 @@ const BOSSES = {
     loot: { cat: [['essence_celeste', 1], ['larme_primordiale', 0.2]], tech: [['chaos', 0.01], ['dragonfist', 0.05]] },
   },
   empereur_fantome: {
+    // Décision Gago 2 nov 2026 : difficulté actuelle (~50 % de morts Auto). Ne pas nerfer.
+    // Filet : #771 (2 morts d'affilée → toast + stop). hpMul / atkMul / phases figés.
     name: 'Empereur Fantôme', kind: 'spirit', c1: '#d8b85a', c2: '#3a2050', eye: '#ffffff', glow: '#ffd56a', size: 1.8, speed: 3.6, lvl: 85, elem: 'metal', hpMul: 38.5, atkMul: 0.7, gdd: 250000,
     phases: [
       [{ t: 'blink', cd: 5, label: 'Transmigration' }, { t: 'beam', len: 14, w: 1.2, dmg: 1.3, wind: 0.85, cd: 4.5, n: 3, label: 'Rayon impérial' }],
@@ -9603,7 +9607,11 @@ function autoZoneEvite(x, y, pourQuete) {
 function autoEvite(e, pourQuete) { return !!(e && autoZoneEvite(e.x, e.y, pourQuete)); }
 function autoJoignable(e) {
   if (!e || e.dead) return false;
-  if (e.isBoss) return true;
+  if (e.isBoss) {
+    // Boss de salle / arène : toujours. Boss mondial trop loin (Col, Plaines…) : on chasse ici, on ne traverse pas la carte.
+    if (e.world && dist(e.x, e.y, P.x, P.y) > 22 * M) return false;
+    return true;
+  }
   const quete = autoEstCibleQuete(e);
   if (autoEvite(e, quete)) return false;
   if (quete) {
@@ -9783,7 +9791,7 @@ function autoSuivi(dt, cible, moving) {
   } else if (N.tProg < 0.35) { N.slide = 0; N.tSlide = 0; }
   if (cible && (N.tProg > 3.2 || N.tour > 5.5)) {
     const d = dist(cible.x, cible.y, P.x, P.y);
-    if (cible.isBoss) {
+    if (cible.isBoss && !(cible.world && d > 22 * M)) {
       if (!N.slide) N.slide = autoCote(P.x, P.y) * 1.1;
     } else if (d > (cible.r || 0) + 2.6 * M) {
       autoMarquerEvite(cible.x, cible.y, 160, 28);
@@ -11136,8 +11144,13 @@ function separateEnemies() {
   const list = G.enemies;
   const cells = G.egrid;
   let pairs = 0;
+  const px = P.x, py = P.y;
+  const loin2 = (40 * M) ** 2, pres2 = (8 * M) ** 2;
+  const tick = (G.t * 60) | 0;
   for (let i = 0; i < list.length; i++) {
     const a = list[i]; if (!a || a.dead || a.dash) continue;
+    // Hors écran : pas de séparation ni de décor (on recollera en approchant). Même rayon que le rendu 3D (42 m).
+    if ((a.x - px) * (a.x - px) + (a.y - py) * (a.y - py) > loin2) { a._solide = 0; continue; }
     const x0 = a.x, y0 = a.y;
     if (cells) {
       const gx = Math.floor(a.x / EG_CS), gy = Math.floor(a.y / EG_CS);
@@ -11173,9 +11186,14 @@ function separateEnemies() {
     // poussée un peu plus large que le rayon de coup : le corps ne reste pas dans un tronc. Le rayon e.r, lui, ne change pas.
     // Inchangé : on ne relit le décor que si le corps a bougé (ou au premier pas).
     if (a.x !== x0 || a.y !== y0 || a.moving || a.hitT > 0 || !a._solide) {
-      const pousse = a.d && !a.duel ? Math.min(a.r * 1.12, a.r + 8) : a.r * 0.8;
-      collideDecor(a, pousse); clampToScene(a, a.r);
-      a._solide = 1;
+      const pres = (a.x - px) * (a.x - px) + (a.y - py) * (a.y - py) < pres2;
+      const chaque = a.isBoss || a.hitT > 0 || !a._solide || pres;
+      if (chaque || ((a._ei + tick) & 1) === 0) {
+        const pousse = a.d && !a.duel ? Math.min(a.r * 1.12, a.r + 8) : a.r * 0.8;
+        collideDecor(a, pousse); clampToScene(a, a.r);
+        a._solide = 1;
+        if (G.cpu) G.cpu.collide = (G.cpu.collide || 0) + 1;
+      }
     }
   }
   if (G.cpu) { G.cpu.pairs = (G.cpu.pairs || 0) + pairs; G.cpu.frames = (G.cpu.frames || 0) + 1; }
@@ -19033,12 +19051,12 @@ function R3init(T) {
     const p = cam.position, q = cam.quaternion, e = cam.projectionMatrix.elements;
     const hero = typeof P !== 'undefined' && P && typeof W === 'function';
     if (hero) majVoile();
-    const hxk = hero ? Math.round(W(P.x) * 2) : 0, hzk = hero ? Math.round(W(P.y) * 2) : 0;
+    const hxk = hero ? Math.round(W(P.x)) : 0, hzk = hero ? Math.round(W(P.y)) : 0;
     const mvk = typeof I !== 'undefined' && I ? Math.round((I.mx || 0) * 2) + (Math.round((I.my || 0) * 2) << 3) : 0;
     let ck = 0; const cs = VOILE && VOILE.cible.value;
     if (cs) for (let i = 0; i < 6; i++) if (cs[i].w > 0.5) ck = (ck * 13 + Math.round(cs[i].x) * 17 + Math.round(cs[i].y)) | 0;
     const portee = ren.shadowMap.enabled ? (ren.shadowMap.portee || 14) : 0;
-    const key = [Math.round(p.x * 2), Math.round(p.y * 2), Math.round(p.z * 2), Math.round(q.x * 200), Math.round(q.y * 200), Math.round(q.z * 200), Math.round(q.w * 200), Math.round(e[0] * 100), Math.round(e[5] * 100), portee, decorCull ? 1 : 0, hxk, hzk, mvk, ck].join();
+    const key = [Math.round(p.x), Math.round(p.y), Math.round(p.z), Math.round(q.x * 100), Math.round(q.y * 100), Math.round(q.z * 100), Math.round(q.w * 100), Math.round(e[0] * 50), Math.round(e[5] * 50), portee, decorCull ? 1 : 0, hxk, hzk, mvk, ck].join();
     if (key === cullKey) return; cullKey = key;
     const marge = 1.5; // couvre le mouvement entre deux recalculs ; les ombres gardent le disque du héros
     let vis = 0;
@@ -23362,6 +23380,7 @@ function R3init(T) {
   }
   function updateEnemies3D(cx, cz) {
     const seen = new Set(); const t0 = G.t;
+    enTick++; let iEn = 0, anim = 0;
     for (const e of (typeof creaturesRendues === 'function' ? creaturesRendues() : G.enemies)) {
       if (dialogueFourreau()) { const v0 = EV.get(e); if (v0) { v0.root.visible = false; seen.add(e); } continue; }
       const far = (W(e.x) - cx) ** 2 + (W(e.y) - cz) ** 2 > 42 * 42;
@@ -23377,6 +23396,20 @@ function R3init(T) {
       v.root.visible = alpha > 0.02; if (!v.root.visible) continue;
       v.root.position.set(W(e.x), hSol(e.x, e.y), W(e.y));
       if (e.d.kind !== 'kraken') v.root.rotation.y = -e.face;
+      // Cadence réduite seulement hors 16 m (ou déjà hors champ plus haut). 10–16 m dans le cadrage : chaque image.
+      // Boss / coup / flash / mort : chaque image (démon / empereur inchangés).
+      const d2e = (W(e.x) - cx) ** 2 + (W(e.y) - cz) ** 2;
+      const chaque = !!(e.isBoss || e.dead || e.hitT > 0 || e.flash > 0
+        || e.state === 'wind' || e.state === 'blink' || e.state === 'phase'
+        || e.invuln > 0 || e.duel);
+      const sauteAnim = !chaque && d2e > 256 && (enTick + iEn) % 4;
+      const sauteInk = !chaque && d2e > 256 && ((enTick + iEn) & 1);
+      iEn++;
+      if (sauteAnim) {
+        if (alpha <= 0.99) { showInk(v.ink, false); if (v.md) showModelInk(v.md.m, false); }
+        continue;
+      }
+      anim++;
       // réaction au coup (e.hitT, e.hitA : 05_combat.js) : écrasement bref et recul visuel. Crochet grogrok-ressenti ;
       // une animation dédiée (clip « hit ») reste du ressort de grogrok-visuels et se superpose.
       const hk = !e.dead && e.hitT > 0 ? (e.hitT / IMPACT.react) * (e.hitK || 0.6) : 0;
@@ -23411,7 +23444,9 @@ function R3init(T) {
       if (e.state === 'blink' && !e.blinked) alpha *= Math.max(0.1, 1 - e.st / 0.35);
       if (e.duel && e.dodgeT > 0) alpha *= 0.55;
       if (e.d.ghost || e.d.kind === 'spirit') alpha *= 1;
-      setAlpha(v.mats, alpha, e.dead && alpha < 0.999); showInk(v.ink, alpha > 0.99); if (v.md) showModelInk(v.md.m, alpha > 0.99);
+      if (v._al !== alpha) { setAlpha(v.mats, alpha, e.dead && alpha < 0.999); v._al = alpha; }
+      if (!sauteInk && alpha > 0.99) { showInk(v.ink, true); if (v.md) showModelInk(v.md.m, true); }
+      else if (alpha <= 0.99) { showInk(v.ink, false); if (v.md) showModelInk(v.md.m, false); }
       const ph = e.state === 'phase' || e.invuln > 0;
       const auraHex = e.isBoss && typeof bossAuraColor === 'function' ? (e.aura || bossAuraColor(e.phase || 0)) : null;
       // L'annonce teinte le corps avec l'aura de la phase, à faible intensité. Le repli #ff4a4a
@@ -23458,6 +23493,7 @@ function R3init(T) {
       if (e.status.burn > 0) for (let i = 0; i < 2; i++) { const hh = (t * 2 + i * 0.5) % 1; glows.add(W(e.x) + Math.sin(t * 5 + i) * r * 0.5, r * v.top * 0.6 + hh * r, W(e.y), 0.5, pc('#ff7828'), 1 - hh); }
       if (e.status.slow > 0) decal(fxDecalP, MODE.ringfx, e.x, e.y, 0.05, r * 1.2, '#50aaff', 0.6, { r, w: 0.06 });
     }
+    R3.animEn = anim;
     for (const [e, v] of EV) if (!seen.has(e)) { disposeEnemyView(v); EV.delete(e); }
   }
   // [Claude] three détruit un programme GLSL quand son dernier matériau est disposé : la mort du dernier loup d'une espèce
@@ -23641,8 +23677,9 @@ function R3init(T) {
     return out;
   }
   // Animation des PNJ et figurants économisée (iPhone : creux à 23 FPS dans les villages) : mixeur gelé hors du champ de la caméra,
-  // demi-cadence au-delà de 10 m du héros. animModel mesure son propre pas de temps : la vitesse des gestes ne change pas.
-  let statTick = 0;
+  // quart de cadence au-delà de 16 m. Entre 10 et 16 m dans le cadrage : chaque image (pas de saccade).
+  // animModel mesure son propre pas de temps : la vitesse des gestes ne change pas.
+  let statTick = 0, enTick = 0;
   function updateStatics3D(tx, tz) {
     cam.updateMatrixWorld(); FRM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); FRU.setFromProjectionMatrix(FRM);
     statTick++; let anim = 0;
@@ -23650,6 +23687,8 @@ function R3init(T) {
       // passants d'ambiance (routines du jour, 70_vie_ville.js) : rentrés = cachés ; en marche = suivent n.x / n.y
       if (o.n && o.n.crowd) {
         if (o.n.dort) { o.root.visible = false; return; }
+        const d2c = (W(o.n.x) - tx) ** 2 + (W(o.n.y) - tz) ** 2;
+        if (d2c > 42 * 42) { o.root.visible = false; return; }
         if (!o.md) o.root.visible = true;
         if (o.n.rt && (o.px !== o.n.x || o.py !== o.n.y)) { o.px = o.n.x; o.py = o.n.y; o.root.position.set(W(o.n.x), hSol(o.n.x, o.n.y), W(o.n.y)); }
       }
@@ -23662,11 +23701,11 @@ function R3init(T) {
         if (!FRU.intersectsSphere(SPH)) { o.root.visible = false; return; }
         if (!o.f) o.root.visible = true; // figurant : update() décide (palier automatique)
         // Modèle simplifié de loin. Au-delà de 9 m (7 m en palier bas), le contour (2,2 cm) fait moins de 1,5 px à 390 px de large :
-        // il est retiré. Au-delà de 16 m (11 m), les petits accessoires aussi, et l'animation passe au quart de la cadence.
+        // il est retiré. Au-delà de 16 m (11 m), les petits accessoires aussi. Cadence réduite seulement hors 16 m (pas 10–16 m dans le champ).
         const d2 = (cx - tx) ** 2 + (cz - tz) ** 2, low = R3.auto >= 2, far = d2 > (low ? 121 : 256);
         o.thin = d2 > (low ? 49 : 81);
         if (far !== !!o.far) { o.far = far; for (const q of o.lod || []) q.visible = !far; }
-        if (far ? (statTick + i) % 4 : d2 > 100 && (statTick + i) % 2) return;
+        if (far && (statTick + i) % 4) return;
         anim++;
       }
       o.update(G.t);
@@ -26091,12 +26130,22 @@ function R3init(T) {
     if (!R_CACHE.vignette) resizeCanvas();
     teleP.begin(); fxDecalP.begin(); beamP.begin(); pillarP.begin(); ghostP.begin(); parts.begin(); glows.begin(); elemPts.begin();
     // [Claude] herbe sur la cible non tremblée (gx, gz) : la clef de bloc ne bascule plus à chaque secousse
-    stepCamera(dt); const { tx, tz, gx, gz } = placeCamera(); updateGrassField(gx, gz); updateFrustum(); dialogueBatiments(); cullInstances(); updateOcclusion();
-    updatePlayer3D(); updateNetPeers3D(); chaufferCompagnon(); updateEnemies3D(tx, tz); updateLoot3D();
+    stepCamera(dt); const { tx, tz, gx, gz } = placeCamera();
+    const cpu = R3.cpu || (R3.cpu = {});
+    let tCpu = performance.now();
+    updateGrassField(gx, gz); cpu.grass = performance.now() - tCpu;
+    tCpu = performance.now();
+    updateFrustum(); dialogueBatiments(); cullInstances(); updateOcclusion(); cpu.cull = performance.now() - tCpu;
+    updatePlayer3D(); updateNetPeers3D(); chaufferCompagnon();
+    tCpu = performance.now();
+    updateEnemies3D(tx, tz); cpu.enemies = performance.now() - tCpu;
+    updateLoot3D();
     if (MDL.st === 'ready') R3.statics.forEach((o, i) => { // PNJ construits avant le chargement des modèles : remplacés une fois
       if (!o.prim) return; oublierOmbres(o.root); world.remove(o.root); o.mats.forEach((m) => m.dispose()); R3.statics[i] = o.f ? buildFigurant(o.f) : cannePeche(buildNpc(o.n)); preCompile = true;
     });
-    updateStatics3D(tx, tz); poserOmbres();
+    tCpu = performance.now();
+    updateStatics3D(tx, tz); cpu.statics = performance.now() - tCpu;
+    poserOmbres();
     updateZones3D(); updateFx3D(dt); updateParts3D(); updateLights3D(tx, tz);
     anneauChoix();
     teleP.end(); fxDecalP.end(); beamP.end(); pillarP.end(); ghostP.end(); parts.end(); glows.end(); elemPts.end();
@@ -56775,7 +56824,10 @@ function ageEffects(dt) {
 function update(dt) {
   G.t += dt;
   G._meleeAt = null;
-  if (typeof rebuildEnemyGrid === 'function') rebuildEnemyGrid();
+  if (typeof rebuildEnemyGrid === 'function' && G.egridSc !== G.scene) {
+    rebuildEnemyGrid();
+    G.egridSc = G.scene;
+  }
   const frozen = updateArena(dt);
   if (!frozen) {
     updatePlayer(dt);
@@ -56783,10 +56835,11 @@ function update(dt) {
     separateEnemies();
   }
   // Chute 0,5 s + dissolution 0,5 s : le corps reste le temps du fondu.
-  let ei = 0;
+  let ei = 0, retire = false;
   for (let i = 0; i < G.enemies.length; i++) {
     const e = G.enemies[i];
     if (e.dead && e.deathT > 1.05) {
+      retire = true;
       if (e.butin && typeof viderButin === 'function') viderButin(e);
       continue;
     }
@@ -56794,7 +56847,7 @@ function update(dt) {
   }
   G.enemies.length = ei;
   if (G.boss && G.boss.dead) G.boss = null;
-  if (typeof rebuildEnemyGrid === 'function') rebuildEnemyGrid();
+  if (retire && typeof rebuildEnemyGrid === 'function') { rebuildEnemyGrid(); G.egridSc = G.scene; }
   updateProjs(dt); updateZones(dt); updateLoot(dt);
   ageEffects(dt);
   let pn = 0; // compactage sur place : pas de nouveau tableau à chaque pas
