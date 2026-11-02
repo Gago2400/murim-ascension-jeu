@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="5c92c88946c8">
+<meta name="murim-build" content="9200dd58a05d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2259,7 +2259,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="5c92c88946c8" aria-label="Identifiant de version">Version générée : 5c92c88946c8</div>
+      <div class="meta" id="t-build" data-build="9200dd58a05d" aria-label="Identifiant de version">Version générée : 9200dd58a05d</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -9605,11 +9605,31 @@ function autoZoneEvite(x, y, pourQuete) {
   return false;
 }
 function autoEvite(e, pourQuete) { return !!(e && autoZoneEvite(e.x, e.y, pourQuete)); }
+// Distance vol d'oiseau ≠ joignable (Fleuve de Jade, rempart, rizière).
+function autoCheminLibre(tx, ty) {
+  const r = typeof rayonSol === 'function' ? rayonSol() : 11;
+  const dx = tx - P.x, dy = ty - P.y;
+  const n = 5;
+  for (let i = 1; i <= n; i++) {
+    const t = i / n;
+    const sx = P.x + dx * t, sy = P.y + dy * t;
+    const o = { x: sx, y: sy };
+    if (typeof collideDecor === 'function') collideDecor(o, r);
+    if (typeof eauRepousse === 'function') eauRepousse(o, r);
+    if (Math.hypot(o.x - sx, o.y - sy) > 20) return false;
+  }
+  return true;
+}
+function autoCheminBoss(e) { return !!(e && autoCheminLibre(e.x, e.y)); }
 function autoJoignable(e) {
   if (!e || e.dead) return false;
   if (e.isBoss) {
     // Boss de salle / arène : toujours. Boss mondial trop loin (Col, Plaines…) : on chasse ici, on ne traverse pas la carte.
-    if (e.world && dist(e.x, e.y, P.x, P.y) > 22 * M) return false;
+    if (e.world) {
+      if (e.world && dist(e.x, e.y, P.x, P.y) > 22 * M) return false;
+      if (autoEvite(e)) return false;
+      if (!autoCheminBoss(e)) return false;
+    }
     return true;
   }
   const quete = autoEstCibleQuete(e);
@@ -9649,12 +9669,15 @@ function autoCote(x, y) {
 function autoDegage() {
   const r = typeof rayonSol === 'function' ? rayonSol() : 11;
   const x = P.x, y = P.y;
-  for (const pas of [30, 52, 80, 110]) {
+  for (const pas of [30, 52, 80, 110, 170]) {
     for (let k = 0; k < 12; k++) {
       const a = k * Math.PI / 6 + (AUTO_NAV.slide || 0);
-      const o = { x: x + Math.cos(a) * pas, y: y + Math.sin(a) * pas };
+      const sx = x + Math.cos(a) * pas, sy = y + Math.sin(a) * pas;
+      const o = { x: sx, y: sy };
       if (typeof collideDecor === 'function') collideDecor(o, r);
+      if (typeof eauRepousse === 'function') eauRepousse(o, r);
       if (typeof clampToScene === 'function') clampToScene(o, r);
+      if (Math.hypot(o.x - sx, o.y - sy) > 20) continue; // eau / mur : poche du Fleuve
       if (Math.hypot(o.x - x, o.y - y) > 22) { P.x = o.x; P.y = o.y; return true; }
     }
   }
@@ -9732,13 +9755,18 @@ function autoRode() {
   if (!sc) return null;
   const t = G.t || 0;
   const loin = (AUTO_NAV.morts || []).filter((m) => t - m.t < 90).length >= 2;
-  let tx = null, ty = null, bd = loin ? 0 : Infinity;
-  const spawns = sc.spawns || [];
-  for (const sp of spawns) {
+  let tx = null, ty = null;
+  const cands = [];
+  for (const sp of sc.spawns || []) {
     if (autoZoneEvite(sp.x, sp.y)) continue;
     const d = dist(sp.x, sp.y, P.x, P.y);
     if (d < 4 * M) continue;
-    if (loin ? d > bd : d < bd) { bd = d; tx = sp.x; ty = sp.y; }
+    cands.push({ x: sp.x, y: sp.y, d });
+  }
+  cands.sort((a, b) => loin ? b.d - a.d : a.d - b.d);
+  for (let i = 0; i < cands.length && i < 6; i++) {
+    if (!autoCheminLibre(cands[i].x, cands[i].y)) continue;
+    tx = cands[i].x; ty = cands[i].y; break;
   }
   if (tx == null) {
     if (!(sc.w > 0) || !(sc.h > 0)) return null;
@@ -9791,7 +9819,8 @@ function autoSuivi(dt, cible, moving) {
   } else if (N.tProg < 0.35) { N.slide = 0; N.tSlide = 0; }
   if (cible && (N.tProg > 3.2 || N.tour > 5.5)) {
     const d = dist(cible.x, cible.y, P.x, P.y);
-    if (cible.isBoss && !(cible.world && d > 22 * M)) {
+    // Salle / arène : on ne lâche pas. Boss mondial (Fleuve, rempart) : abandon comme une bête.
+    if (cible.isBoss && !cible.world) {
       if (!N.slide) N.slide = autoCote(P.x, P.y) * 1.1;
     } else if (d > (cible.r || 0) + 2.6 * M) {
       autoMarquerEvite(cible.x, cible.y, 160, 28);
@@ -33529,6 +33558,8 @@ function campsTick() {
 // ── Rencontres aléatoires ──
 function encounterTick(dt) {
   const sc = G.scene;
+  // Auto : une rencontre forcée (playScene force) fige G.paused — le choix reste au joueur, hors Auto.
+  if (S && S.settings && S.settings.auto) return;
   if (!storyAuto() || S.level < 3 || P.dead || G.boss || inSafeZone() || P.combatT < 8 || enemiesNear(14) || STORY.cur) return;
   MONDE.encT -= dt; if (MONDE.encT > 0) return;
   MONDE.encT = 240 + Math.random() * 180;
