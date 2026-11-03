@@ -2273,7 +2273,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="522d150d8e5f" aria-label="Identifiant de version">Version générée : 522d150d8e5f</div>
+      <div class="meta" id="t-build" data-build="03688676c142" aria-label="Identifiant de version">Version générée : 03688676c142</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6828,6 +6828,46 @@ recitRegion('fuyards_dettes', {
   retour: { dechirer: '« Dou est reparti vers les Saules, libre. Il raconte partout qu\'un maître de Qinghe a déchiré sa dette sans raison. » Elle te tend une navette de bois. « Moi, je crois que tu en avais une. »', echelonner: '« Dou paie en riz, et il dort la nuit. Personne ne frappe plus à sa porte : c\'est déjà une vie. Prends ceci pour ta peine. »', saisir: '« Dou compte ton riz grain par grain. Les enfants ont appris ton nom avant d\'apprendre à lire. » Elle pose une bourse devant toi, sans un mot.' },
   merci: { dechirer: '« Les Saules parlent de toi autrement, maintenant, {nom}. »', echelonner: '« Reviens au métier à tisser quand tu veux. »', saisir: '« Ta part est comptée, maître. »' },
   apres: ['narr', 'Une dette achetée un soir, à Qinghe, te suit jusqu\'aux Plaines. Les choix de l\'enfant sans talent commencent à peser le poids d\'un homme.'],
+});
+
+// ───────────────────────── Suite démoniaque : la liste revendue (Abysses, morts vendus aux recruteurs) ─────────────────────────
+// Conséquence tardive de recit:abysses_chant='vendre'. Les recruteurs ont trop bien payé : le camp sait qu'un cultivateur
+// a vendu les postes dégarnis, et Ying a cessé de chanter. Un sergent veut te retrouver — ou s'associer.
+recitRegion('liste_revendue', {
+  name: 'La liste revendue', region: 'abysses', quest: 26, key: 'liste_revendue', who: 'abysses_ying2', label: 'Le sergent qui a vu ta liste',
+  si: { choix: { 'recit:abysses_chant': 'vendre' } }, suite: 'recit:abysses_chant', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    abysses_ying2: { name: 'Ying', title: 'voix au bord, qui ne chante plus', glyph: '影', color: '#a090b0' },
+    abysses_kang: { name: 'Sergent Kang', title: 'recruteur du camp, qui a lu ta liste', glyph: '康', color: '#706858' },
+  },
+  quand: 'Abysses de Sang : Ying, au Fort de la Trêve (tu as vendu la liste des morts)',
+  attente: '« Le bord n\'a rien à te dire, aujourd\'hui. »',
+  rappel: 'Un sergent du camp cherche celui qui a vendu les postes, {nom}.',
+  steps: ['Écouter Ying, au Fort de la Trêve', 'Se rendre au camp bas, où les recruteurs comptent les postes', 'Suivre la piste du sergent Kang parmi les tentes', 'Trouver le Sergent Kang, près du dépôt d\'armes', 'Revenir auprès de Ying'],
+  labels: ['Lire le rôle', 'Entrer au dépôt'], objet: 'Rôle annoté du sergent Kang', slot: 'acc2',
+  intro: [['abysses_ying2', '« Depuis que tu as vendu les noms, les recruteurs savent où frapper, {nom}. Un sergent du camp a trouvé une copie de ta liste. Il demande qui l\'a vendue. »'],
+    ['abysses_ying2', '« Kang n\'est pas un juste. Il veut soit ta tête, soit ta part. Va voir ce qu\'il sait, avant qu\'il ne le crie devant Rui. »']],
+  arrivee: [['narr', 'Au camp bas, les recruteurs des sectes marchandent des postes encore chauds. Une tente trop propre pour la Fracture affiche un rôle annoté à l\'encre fraîche.'],
+    ['narr', 'Un soldat murmure : « Kang a dit qu\'il retrouverait le vendeur. Ou qu\'il le paierait mieux que les sectes. »']],
+  indices: ['Une copie de la liste des morts, annotée : chaque poste dégarni souligné, avec un prix de recruteur à côté.',
+    'Une bourse de cuivre encore scellée au sceau d\'une secte mineure — le prix d\'un nom vendu trop vite.',
+    'Une note de Kang : « Celui qui a vendu sait encore. Le payer ou le livrer à Rui. »'],
+  conclusion: 'Le sergent Kang a remonté ta liste jusqu\'à toi : il offre soit de partager le trafic, soit de te livrer au Capitaine Rui.',
+  repaire: [['narr', 'Près du dépôt d\'armes, le sergent Kang t\'attend, le rôle ouvert sur un tonneau.'],
+    ['abysses_kang', '« Les sectes paient bien pour les postes vides. Toi, tu as déjà touché. Alors : on partage les prochaines listes, ou je porte ça à Rui avant l\'aube ? »']],
+  question: 'Le rôle de Kang, le silence de Ying, et les morts que tu as déjà vendus une fois.',
+  choix: [
+    { k: 'avouer', rumeur: '« Rui a lu la vraie liste devant le camp. Kang a perdu son rôle. Ying a repris son chant, une nuit, plus bas. »', etiquette: 'aveu à Rui, trafic brisé', txt: 'Avouer devant le Capitaine Rui, brûler le rôle de Kang et laisser Ying reprendre les noms', hint: 'Voie orthodoxe · payer le prix', voie: 13, acte: 'aides', lines: [['abysses_kang', 'Il blêmit quand tu prends le rôle. « Rui ne pardonnera ni à toi ni à moi. » Il ne retient pas le papier.']] },
+    { k: 'detourner', rumeur: '« Kang a cessé de parler de listes. Les recruteurs cherchent ailleurs. Ying ne chante toujours pas. »', etiquette: 'fausse piste vendue à Kang', txt: 'Donner à Kang une fausse piste pour qu\'il cesse de te chercher, sans partager le trafic', hint: 'Voie libre · détourner sans s\'associer', voie: 2, lines: [['abysses_kang', '« Un scribe du comptoir, tu dis ? » Il note, déjà ailleurs. « Je verrai. Reste hors de mon chemin. »']] },
+    { k: 'associer', rumeur: '« Les postes se vendent avant même que les morts soient froids. On dit que {nom} et un sergent partagent la bourse. »', etiquette: 'trafic partagé avec Kang', txt: 'S\'associer à Kang : chaque nouvelle liste, une part pour toi, une pour lui', hint: 'Voie démoniaque · industrialiser la vente', voie: -15, acte: 'voles', lines: [['abysses_kang', '« Voilà un associé qui comprend la Fracture. » Il te tend une bourse plus lourde. « La prochaine liste sera plus longue. »']] },
+  ],
+  retour: {
+    avouer: '« Rui a lu les noms. Kang a perdu son rôle. » Ying pose une main sur sa gorge. « Je chanterai peut-être demain. Pas pour toi. »',
+    detourner: '« Kang cherche ailleurs. » Elle détourne le regard. « Les morts, eux, n\'ont pas bougé. »',
+    associer: '« Les recruteurs passent plus souvent. » Elle ne te regarde plus. « Le bord est silencieux pour de bon. »',
+  },
+  merci: { avouer: '« Une voix, même brisée, vaut mieux que ton or. »', detourner: '« Le silence a un prix, ici aussi. »', associer: '« Ne repasse plus au bord. »' },
 });
 
 // ───────────────────────── Suite du serment de bannière (chapitre III) : le premier rapport (Claude) ─────────────────────────
