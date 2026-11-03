@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="4ac2bf656e0f">
+<meta name="murim-build" content="d702c79cc24a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="4ac2bf656e0f" aria-label="Identifiant de version">Version générée : 4ac2bf656e0f</div>
+      <div class="meta" id="t-build" data-build="d702c79cc24a" aria-label="Identifiant de version">Version générée : d702c79cc24a</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -20392,10 +20392,11 @@ function R3init(T) {
     if (o.hit) h.body.rotation.z -= clamp(o.hit, 0, 1) * 0.38;
     if (o.roll) {
       const a = Math.sin(clamp(o.roll, 0, 1) * Math.PI);
-      h.body.rotation.x = a * 1.1;
-      h.body.position.y += a * 0.26;
+      h.body.rotation.x = a * 0.42;
+      h.body.position.y += a * 0.62;
     }
-    h.legL.rotation.z = swing; h.legR.rotation.z = -swing;
+    h.legL.rotation.z = o.roll ? 1.05 * Math.sin(clamp(o.roll, 0, 1) * Math.PI) : swing;
+    h.legR.rotation.z = o.roll ? -1.05 * Math.sin(clamp(o.roll, 0, 1) * Math.PI) : -swing;
     const idle = walk ? 0 : Math.sin(t * 1.25) * 0.05;
     h.armL.rotation.set(run * 0.12, 0, -swing * 0.75 + 0.08 + idle);
     if (o.breakPose) { h.armL.rotation.set(-0.15, -0.15, 2.45); h.armR.rotation.set(-0.15, 0.15, 2.45); }
@@ -20647,19 +20648,24 @@ function R3init(T) {
     return slot._vit;
   }
   // Foulée (mètres par cycle). timeScale = vitesse × durée / foulée : les pieds ne glissent plus.
-  // La glisse d'un pied humain (m/s vers l'avant pendant l'appui) resserre l'estimation.
+  // Pas de plafond : à 8 m/s un bornage à 4,6 laissait l'appui filer vers l'avant.
+  // Au-delà de 16 m/s (téléport) on garde la cadence précédente.
   function reglerCadence(slot, vit, dur, foul0) {
     if (slot.foul == null) slot.foul = foul0 || 1.6;
-    const want = vit < 0.25 ? 0.45 : clamp(vit * (dur || 1) / slot.foul, 0.55, 4.6);
-    slot.ts = slot.ts == null ? want : slot.ts + (want - slot.ts) * 0.4;
+    if (!(vit >= 0) || vit > 16) return slot.ts || 0.45;
+    const want = vit < 0.25 ? 0.45 : Math.max(0.55, vit * (dur || 1) / slot.foul);
+    const k = vit >= 6 ? 1 : 0.5; // sprint : suit dans l'image, le lissage glissait les pieds
+    slot.ts = slot.ts == null ? want : slot.ts + (want - slot.ts) * k;
     return slot.ts;
   }
   function noterFoulee(slot, glisse, dt) {
-    if (glisse == null || !(dt > 0) || Math.abs(glisse) < 0.1) return;
-    if (slot.foul == null) slot.foul = 1.6;
-    if (slot.ts >= 4.5 && glisse > 0) return; // cadence déjà au plafond : on ne raccourcit plus la foulée
-    const corr = clamp(glisse, -1.6, 1.6) * dt * 0.4;
-    slot.foul = clamp(slot.foul * (1 - corr * 0.45), 0.55, 2.8);
+    if (glisse == null || !(dt > 0) || Math.abs(glisse) < 0.12) return;
+    if (slot.foul == null) slot.foul = 1.5;
+    // L'appui déjà plaqué au sol (glisse monde ~ 0) : on ne raccourcit plus, sinon le cycle
+    // dépasse la jambe, le verrou lâche et les pieds repartent en glisse.
+    if (slot._glisse != null && Math.abs(slot._glisse) < 0.45 && glisse > 0) return;
+    const corr = clamp(glisse, -1.5, 1.5) * dt * 0.45;
+    slot.foul = clamp(slot.foul * (1 - corr * 0.35), 1.25, 1.7);
   }
   // 0 au vent, frappe accélérée, tenue au moment du coup, puis le retour.
   // impact : fraction du geste où le coup porte (0,45 pour le héros, ~0,85 pour un monstre dont le télégraphe se résout à la fin).
@@ -20742,26 +20748,33 @@ function R3init(T) {
       p._y = AN_A.y; p._x = AN_A.x; p._z = AN_A.z;
       const haut = AN_A.y - sol;
       p._haut = haut;
-      if (dt > 1e-4 && haut < 0.2 && p.fx != null) {
+      if (dt > 1e-4 && haut < 0.22 && p.fx != null) {
         const gs = ((AN_A.x - p.fx) * dx + (AN_A.z - p.fz) * dz) / dt;
         if (haut < bas) { bas = haut; g = gs; }
       }
-      if (haut < 0.28) { p.fx = AN_A.x; p.fz = AN_A.z; } else p.fx = null;
-      if (appui == null || haut < appui._haut) appui = p;
+      if (haut < 0.32) { p.fx = AN_A.x; p.fz = AN_A.z; } else p.fx = null;
+      p.haut.getWorldPosition(AN_B);
+      p._porte = Math.hypot(AN_A.x - AN_B.x, AN_A.z - AN_B.z);
+      // L'appui est le pied bas le plus loin du bassin. Le plus bas tout court passe souvent sous le corps.
+      if (haut < 0.24 && p._porte > 0.18 && (appui == null || p._porte > appui._porte)) appui = p;
     }
     for (const p of pieds) {
-      if (!actif || p !== appui || p._haut > 0.2) { p.lock = null; continue; }
+      if (p.lock && p._haut < 0.36 && p._porte > 0.16) appui = p;
+    }
+    for (const p of pieds) {
+      if (!actif || p !== appui || p._haut > 0.36) { p.lock = null; continue; }
       // Un seul appui : l'autre jambe garde le lever du clip. On fige l'avant-arrière, pas la hauteur du genou.
-      const y = sol + Math.max(0.11, Math.min(0.16, p._haut));
+      const y = p._y;
       if (!p.lock) p.lock = new T.Vector3(p._x, y, p._z);
       else {
         p.haut.getWorldPosition(AN_B);
         const lx = p.lock.x - AN_B.x, lz = p.lock.z - AN_B.z;
-        if (lx * lx + lz * lz > 0.48 * 0.48) p.lock.set(p._x, y, p._z);
+        if (lx * lx + lz * lz > 1.05 * 1.05) p.lock.set(p._x, y, p._z);
       }
-      p.lock.y = sol + 0.13;
+      p.lock.y = y;
       const ex = p._x - p.lock.x, ez = p._z - p.lock.z;
-      if (ex * ex + ez * ez > 0.012 * 0.012) ikDeuxOs(p.haut, p.genou, p.pied, p.lock);
+      // Une grande correction plie la jambe au lieu de poser le pied : on ne l'applique que pour un écart court.
+      if (ex * ex + ez * ez > 0.012 * 0.012 && ex * ex + ez * ez < 0.22 * 0.22) ikDeuxOs(p.haut, p.genou, p.pied, p.lock);
     }
     return g;
   }
@@ -20878,6 +20891,7 @@ function R3init(T) {
     const fige = m.fige; m.fige = null;
     if (a) {
       if (fige != null) { a.time = fige; a.timeScale = 0; }
+      else if (key === 'walk' && m.acts.walk) { a.timeScale = speed; m.vit = speed; } // la course suit le pas, sans second lissage
       else {
         m.vit = m.vit == null ? speed : m.vit + (speed - m.vit) * 0.45;
         a.timeScale = m.vit;
@@ -21667,7 +21681,7 @@ function R3init(T) {
     const ry = root.rotation.y;
     PR_F.set(Math.cos(ry), 0, -Math.sin(ry));
     PR_R.crossVectors(PR_T.set(0, 1, 0), PR_F).normalize();
-    const souffle = Math.sin((t + (phase || 0)) * 1.25) * 0.018;
+    const souffle = Math.sin((t + (phase || 0)) * 1.55) * 0.07; // inspiration lisible, les bras s'écartent un peu
     const viser = (os, enf, dir) => {
       if (!os || !enf) return;
       os.getWorldPosition(PR_A); enf.getWorldPosition(PR_B); PR_B.sub(PR_A);
@@ -21741,7 +21755,7 @@ function R3init(T) {
     const femme = !!(md && (md.femme || (look && look.female)));
     if (mv && !femme && md.m && md.m.acts && md.m.acts.walk) {
       const dur = md.m.acts.walk.getClip().duration || 0.93;
-      const spd = reglerCadence(md, Math.max(0.7, vit || 1.3), dur, 1.55);
+      const spd = reglerCadence(md, Math.max(0.7, vit || 1.3), dur, 1.5);
       md.m._vit = vit || 1.3;
       poseHumanModel(md, 'walk', spd, false, t, 0.2);
       collerPieds(md, root);
@@ -21754,6 +21768,7 @@ function R3init(T) {
     poseReposPnj(md, root, t, ph);
     collerPieds(md, root);
     poseArmePnj(md, root, look && look.weapon, true);
+    if (!mv) md._souffle = souffleIdle(md.m, t + (ph || 0), 0.12);
   }
   // Semelle sur le sol du personnage (root.y). baseY est recalée chaque image : pas d'accumulation.
   function collerPieds(d, root) {
@@ -21844,6 +21859,102 @@ function R3init(T) {
     const delta = bas - v.root.position.y;
     if (bas < 1e8 && delta > -0.4 && delta < 0.45) obj.position.y = obj.userData.baseY - delta;
   }
+  // Os du souffle, une fois par modèle. Le mixeur réécrit les quaternions : on ajoute après.
+  function osGeste(m) {
+    if (!m) return null;
+    if (m._gesteOs) return m._gesteOs;
+    m._gesteOs = {
+      sp: modelBone(m, /^spine_02$/i) || modelBone(m, /^spine_01$/i) || modelBone(m, /spine|chest/i),
+      ul: modelBone(m, /^upperarm_l$/i),
+      ur: modelBone(m, /^upperarm_r$/i),
+      hd: modelBone(m, /^head$/i),
+    };
+    return m._gesteOs;
+  }
+  function viserOs(os, enf, dir) {
+    if (!os || !enf || !dir || dir.lengthSq() < 1e-8) return;
+    os.getWorldPosition(PR_A); enf.getWorldPosition(PR_B); PR_B.sub(PR_A);
+    if (PR_B.lengthSq() < 1e-8) return;
+    PR_B.normalize();
+    PR_Q.setFromUnitVectors(PR_B, dir);
+    os.parent.getWorldQuaternion(PR_P);
+    os.quaternion.premultiply(PR_I.copy(PR_P).invert().multiply(PR_Q).multiply(PR_P));
+    os.updateMatrixWorld(true);
+  }
+  // Repos : la poitrine et les épaules montent. Les pieds restent au sol (pas de translation de la racine).
+  function souffleIdle(m, t, amp) {
+    const o = osGeste(m); if (!o) return 0;
+    const s = Math.sin(t * 1.65) * (amp == null ? 0.1 : amp);
+    if (o.sp) o.sp.rotateX(s);
+    if (o.ul) o.ul.rotateZ(s * 0.9);
+    if (o.ur) o.ur.rotateZ(-s * 0.9);
+    return s;
+  }
+  // Esquive : saut groupé. L'ancien roulé (66°) passait trop vite pour se lire.
+  function sautEsquive(root, m, k) {
+    const a = Math.sin(clamp(k, 0, 1) * Math.PI);
+    root.position.y += a * 0.78;
+    root.rotateX(a * 0.36);
+    const pieds = m && piedsHumain(m);
+    if (!pieds) return a;
+    const ry = root.rotation.y;
+    PR_F.set(Math.cos(ry), 0, -Math.sin(ry));
+    for (const p of pieds) {
+      viserOs(p.haut, p.genou, PR_T.set(0, -0.02, 0).addScaledVector(PR_F, 0.98).normalize());
+      viserOs(p.genou, p.pied, PR_T.set(0, 0.2, 0).addScaledVector(PR_F, -0.88).normalize());
+    }
+    return a;
+  }
+  // Coup reçu : le buste part en arrière, la tête encaisse, un pas de recul. Échelle uniforme.
+  function reculCoup(root, m, k, face) {
+    const a = clamp(k, 0, 1);
+    root.rotateX(-a * 0.48);
+    root.position.x -= Math.cos(face) * a * 0.34;
+    root.position.z -= Math.sin(face) * a * 0.34;
+    const o = osGeste(m); if (!o) return;
+    if (o.sp) o.sp.rotateX(-a * 0.4);
+    if (o.hd) o.hd.rotateX(a * 0.45);
+  }
+  // Glisse du pied verrouillé (m/s vers l'avant), après l'IK. Proche de zéro quand la cadence suit.
+  function glissePosee(m, root, dt) {
+    const pieds = piedsHumain(m);
+    if (!pieds || !(dt > 1e-4)) return null;
+    const face = -root.rotation.y, dx = Math.cos(face), dz = Math.sin(face);
+    let g = null, porte = -1;
+    for (const p of pieds) {
+      if (!p.pied || !p.haut) continue;
+      p.pied.getWorldPosition(AN_A);
+      const x = AN_A.x, z = AN_A.z, y = AN_A.y - root.position.y;
+      p.haut.getWorldPosition(AN_B);
+      const pr = Math.hypot(x - AN_B.x, z - AN_B.z);
+      const spd = p.gx == null ? null : ((x - p.gx) * dx + (z - p.gz) * dz) / dt;
+      if (y < 0.28 && pr > 0.18 && pr > porte && spd != null) { porte = pr; g = spd; }
+      p.gx = x; p.gz = z;
+    }
+    return g;
+  }
+  // Le mesh (pas la position de jeu) rattrape le pied d'appui, au plus 14 cm. Au-delà, l'IK a déjà lâché.
+  function collerGlisse(m, root) {
+    const pieds = piedsHumain(m);
+    if (!pieds || !m.obj) return;
+    let p = null;
+    for (const q of pieds) if (q.lock) p = q;
+    if (!p || !p.pied) return;
+    const obj = m.obj;
+    if (obj.userData.baseX == null) { obj.userData.baseX = obj.position.x; obj.userData.baseZ = obj.position.z; }
+    obj.position.x = obj.userData.baseX;
+    obj.position.z = obj.userData.baseZ;
+    obj.updateMatrixWorld(true);
+    p.pied.getWorldPosition(AN_A);
+    let dx = p.lock.x - AN_A.x, dz = p.lock.z - AN_A.z;
+    const d = Math.hypot(dx, dz);
+    if (!(d > 0.004) || d > 0.45) return;
+    const k = Math.min(1, 0.14 / d);
+    dx *= k; dz *= k;
+    const yaw = root.rotation.y, c = Math.cos(yaw), s = Math.sin(yaw);
+    obj.position.x += dx * c - dz * s;
+    obj.position.z += dx * s + dz * c;
+  }
   function updatePlayer3D() {
     const v = ensurePlayer(); const t = G.t;
     armesReposer(v.root); // chapitres XII–XIV : fourreau avant tout retour anticipé
@@ -21862,9 +21973,7 @@ function R3init(T) {
       const tourDt = pasAnim(t, v._ft || t); v._ft = t;
       v.d._tour = tourDt > 1e-4 ? angDiff(v._fy || P.face, P.face) / tourDt : 0; v._fy = P.face;
       v.d._vit = sol;
-      if (P.dead) { gaineArme(v.d, false, v.root); poseHumanModel(v.d, 'death', 1, false, t, 0.22); setAlpha(v.mats, 0.85); showModelInk(v.m, false); showInk(v.ink, false); v.shield.visible = false; return; }
-      if (roll && !emo) { const a = Math.sin(roll * Math.PI); v.root.rotateX(a * 1.15); v.root.position.y += a * 0.22; }
-      else if (hit && !selle && !emo) v.root.rotateZ(-hit * 0.28);
+      if (P.dead) { gaineArme(v.d, false, v.root); poseHumanModel(v.d, 'death', 1, false, t, 0.22); v._geste = 'mort'; v._souffle = 0; setAlpha(v.mats, 0.85); showModelInk(v.m, false); showInk(v.ink, false); v.shield.visible = false; return; }
       const sw = !selle && !emo && (P.atk.ph === 'swing' || !!P.cast); const restart = sw && P.atk.t < v.atkT; v.atkT = sw ? P.atk.t : 0;
       const marche = !sw && !selle && !roll && !emo && !P.med && P.moving && sol > 0.3;
       let spd = 0.5, cle = 'idle';
@@ -21878,14 +21987,19 @@ function R3init(T) {
       else if (marche) {
         cle = 'walk';
         const dur = (v.m.acts.walk && v.m.acts.walk.getClip().duration) || 0.93;
-        spd = reglerCadence(v, sol, dur, 1.7);
+        spd = reglerCadence(v, sol, dur, 1.45);
       } else spd = 0.55;
       poseHumanModel(v.d, cle, spd, restart, t, sw ? 0.1 : 0.22);
-      if (!selle && !sw && !roll) collerCheville(v.m, v.root);
-      if (marche) {
+      if (roll && !emo) { sautEsquive(v.root, v.m, roll); v._geste = 'esquive'; v._glisse = null; }
+      else if (hit && !selle && !emo) { reculCoup(v.root, v.m, hit, P.face); v._geste = 'coup'; }
+      else v._geste = cle;
+      if (!selle && !sw && !roll && !hit) collerCheville(v.m, v.root);
+      if (marche && !hit) {
         const g = planterPieds(v.m, v.root, true, tourDt || 0.016);
+        collerGlisse(v.m, v.root);
+        v._glisse = glissePosee(v.m, v.root, tourDt || 0.016);
         noterFoulee(v, g, tourDt || 0.016);
-      } else planterPieds(v.m, v.root, false, 0);
+      } else { planterPieds(v.m, v.root, false, 0); if (!marche) v._glisse = null; }
       if (!selle && sw && P.atk.ph === 'swing') {
         const k = clamp(P.atk.t / (P.atk.dur || 0.36), 0, 1);
         const port = wpn === 'spear' || wpn === 'staff' ? 1.35 : wpn === 'dagger' ? 0.55 : wpn === 'hammer' ? 0.7 : 1;
@@ -21915,7 +22029,9 @@ function R3init(T) {
         poserBuste(v.m, 0.2 * (1 - k), v.root.rotation.y);
         poseBrasHero(v.m, 'frappe', v.root.rotation.y, t, -0.7 * (1 - k));
       }
-      if (!selle) semelleHero(v);
+      if (!selle && !roll) semelleHero(v);
+      if (!roll && !hit && !sw && !selle && cle === 'idle') v._souffle = souffleIdle(v.m, t, 0.16);
+      else if (!P.dead) v._souffle = 0;
       const pa = P.iframes > 0 && P.dodge.t > 0 ? 0.5 : 1; setAlpha(v.mats, pa); showModelInk(v.m, pa > 0.99); showInk(v.ink, pa > 0.99);
     } else if (P.dead) {
       v.root.rotation.set(0, -P.face, Math.PI / 2 * Math.min(1, P.deathT * 3)); v.root.position.y = 0.2;
@@ -22666,18 +22782,16 @@ function R3init(T) {
           if (act) md.m.fige = courbeAttaque(k, 0.82) * act.getClip().duration;
         } else if (mv && !femme && md.m.acts.walk) {
           key = 'walk';
-          sp = reglerCadence(o, Math.max(sol, ((en && en.speed) || 80) / M * 0.85), md.m.acts.walk.getClip().duration || 0.93, 1.6);
+          sp = reglerCadence(o, Math.max(sol, ((en && en.speed) || 80) / M * 0.85), md.m.acts.walk.getClip().duration || 0.93, 1.5);
         }
         md.m._vit = sol;
         poseHumanModel(md, key, sp, wind && !o.wind, hor, wind ? 0.1 : 0.2);
         o.wind = !!wind;
+        if (key === 'idle' && !wind) o._souffle = souffleIdle(md.m, hor, 0.1);
         if (key === 'walk') {
           const dt = pasAnim(hor, o._pdt == null ? hor : o._pdt); o._pdt = hor;
           noterFoulee(o, planterPieds(md.m, o.root, true, dt || 0.016), dt || 0.016);
         } else if (mv && femme) poseDebout(md, o.root, true, t, (en && en.anim) || 0);
-        // coup reçu : le buste part en arrière puis revient (pas de clip « hit » dans joueur.glb)
-        const hk = en && !en.dead && !en.isBoss && en.hitT > 0 ? Math.sin(Math.PI * clamp(1 - en.hitT / IMPACT.react, 0, 1)) * (en.hitK || 0.6) : 0;
-        md.m.root.rotation.z = -hk * 0.22;
       };
       return o;
     }
@@ -23495,6 +23609,7 @@ function R3init(T) {
       }
       o.fl = en.flash > 0; o.wind = !!wind; o.cur = key;
       animModel(mm, key, sp, rs, hor, wind ? 0.1 : 0.18);
+      if (key === 'idle' && !en.dead && !wind && !mv) o._souffle = souffleIdle(mm, hor, 0.09);
       if (mm._sonde === undefined) {
         mm._sonde = null;
         mm.obj.traverse((q) => { if (!mm._sonde && /frontupper|frontupleg|thigh_l|leg up/i.test(q.name || '')) mm._sonde = q; });
@@ -23600,7 +23715,7 @@ function R3init(T) {
       let alpha = e.dead ? mp.alpha : 1;
       v.root.visible = alpha > 0.02; if (!v.root.visible) continue;
       v.root.position.set(W(e.x), hSol(e.x, e.y), W(e.y));
-      if (e.d.kind !== 'kraken') v.root.rotation.y = -e.face;
+      if (e.d.kind !== 'kraken') v.root.rotation.set(0, -e.face, 0); // x et z repartent de zéro : le saut ne s'accumule pas
       // Cadence réduite seulement hors 16 m (ou déjà hors champ plus haut). 10–16 m dans le cadrage : chaque image.
       // Boss / coup / flash / mort : chaque image (démon / empereur inchangés).
       const d2e = (W(e.x) - cx) ** 2 + (W(e.y) - cz) ** 2;
@@ -23618,13 +23733,16 @@ function R3init(T) {
       // réaction au coup (e.hitT, e.hitA : 05_combat.js) : écrasement bref et recul visuel. Crochet grogrok-ressenti ;
       // une animation dédiée (clip « hit ») reste du ressort de grogrok-visuels et se superpose.
       const hk = !e.dead && e.hitT > 0 ? (e.hitT / IMPACT.react) * (e.hitK || 0.6) : 0;
-      if (hk > 0 || v.hk) {
+      const clipHit = v.cur === 'hit';
+      if ((hk > 0 || v.hk) && !clipHit) {
         v.hk = hk;
-        const q = 0.42 * hk * (e.isBoss ? 0.28 : 1);
+        const q = 0.85 * hk * (e.isBoss ? 0.35 : 1);
         const s0 = v.sc0 || 1; v.root.scale.setScalar(s0); // le coup reçu ne déforme plus le corps
-        v.root.position.x += Math.cos(e.hitA || 0) * q * 0.55;
-        v.root.position.z += Math.sin(e.hitA || 0) * q * 0.55;
-        v.root.rotation.z = -q * 0.38;
+        v.root.position.x += Math.cos(e.hitA || 0) * q * 0.62;
+        v.root.position.z += Math.sin(e.hitA || 0) * q * 0.62;
+        v.root.rotation.z = -q * 0.5;
+        v.root.rotateX(-q * 0.28);
+        v._geste = 'coup';
       }
       const wind = e.state === 'wind' || e.state === 'blink' ? 1 : 0;
       v.anim(t, wind, e.moving ? t * 10 : 0, e);
@@ -23635,16 +23753,24 @@ function R3init(T) {
       }
       // Effondrement ~0,5 s puis le fondu (mortPhase). Le clip « death », s'il existe, joue en plus.
       // set() d'un coup : à yaw = 90° l'euler séparé perd le tangage.
+      if (e.dash && !e.dead) {
+        const k = clamp(e.dash.t / (e.dash.dur || 0.16), 0, 1);
+        sautEsquive(v.root, v.md && v.md.m, k);
+        v._geste = 'esquive';
+      }
+      if (!e.dead && !e.moving && e.state !== 'wind' && !e.dash && v.body) {
+        v.body.position.y += Math.sin(t0 * 1.55 + (e.anim || 0)) * 0.05 * r;
+        v._souffle = Math.sin(t0 * 1.55 + (e.anim || 0));
+      }
       if (e.dead || v.tombe) {
         const mort = !!e.dead;
         v.tombe = mort;
         const f = mort ? mp.chute : 0;
         const yaw = e.d.kind === 'kraken' ? v.root.rotation.y : -e.face;
-        v.root.rotation.set(f * (v.mortClip ? 0.42 : 1.15), yaw, mort ? 0 : v.root.rotation.z);
-        if (!v.mortClip) {
-          const s0 = v.sc0 || 1;
-          v.root.scale.set(s0 * (1 + f * 0.08), s0 * (1 - f * 0.34), s0);
-        }
+        // Le clip « death » porte la chute. Sans clip, le corps se couche (échelle uniforme, plus d'aplat).
+        v.root.rotation.set(v.mortClip ? 0 : f * 1.48, yaw, 0);
+        v.root.scale.setScalar(v.sc0 || 1);
+        if (mort) v._geste = 'mort';
       }
       if (e.state === 'blink' && !e.blinked) alpha *= Math.max(0.1, 1 - e.st / 0.35);
       if (e.duel && e.dodgeT > 0) alpha *= 0.55;
@@ -23897,6 +24023,7 @@ function R3init(T) {
         if (!o.md) o.root.visible = true;
         if (o.n.rt && (o.px !== o.n.x || o.py !== o.n.y)) { o.px = o.n.x; o.py = o.n.y; o.root.position.set(W(o.n.x), hSol(o.n.x, o.n.y), W(o.n.y)); }
       }
+      if (o.n && o.n.geste) { o.root.position.set(W(o.n.x), hSol(o.n.x, o.n.y), W(o.n.y)); o.root.visible = true; }
       if (!o.update) return;
       if (dialogueFourreau()) { armesReposer(o.root); if (o.md) showInk(o.md.ink, !o.thin); }
       if (o.md) {
@@ -24054,10 +24181,20 @@ function R3init(T) {
       blobShadow(root, 0.45, 0.45);
       if (md) { o.md = md; o.lod = lodDetail(md); const acc = mergeAccessories(md); if (acc) { o.acc = acc.meshes.length; o.lod = o.lod.filter((q) => q.layers.mask).concat(acc.lod); } o.update = (t) => {
         const parle = dialogueFourreau() && P && typeof storyNpc === 'function' && storyNpc() === n;
+        if (n.geste) root.position.set(W(n.x), hSol(n.x, n.y), W(n.y));
         if (parle) { const dx = P.x - n.x, dy = P.y - n.y; root.rotation.y = dx * dx + dy * dy > 4 ? Math.atan2(-dy, dx) : -(Math.PI / 2); }
         else if (n.cap != null) root.rotation.y = -n.cap; // en marche (70_vie_ville.js)
         else root.rotation.y = -(Math.PI / 2 + Math.sin(t * 0.35 + n.anim) * 0.18);
-        const mv = n.cap != null; poserPnj(md, root, mv, t, n.anim, look, 1.2);
+        if (n.geste === 'mort') {
+          root.rotation.x = 0;
+          poseHumanModel(md, 'death', 1, false, t, 0.12);
+          if (!md.m.acts.death) root.rotateX(1.25);
+        } else {
+          root.rotation.x = 0;
+          const mv = n.cap != null; poserPnj(md, root, mv, t, n.anim, look, 1.2);
+          if (n.geste === 'esquive') sautEsquive(root, md.m, 0.55);
+          else if (n.geste === 'coup') reculCoup(root, md.m, 0.9, -root.rotation.y);
+        }
         showModelInk(md.m, !o.thin); showInk(md.ink, !o.thin);
       }; }
       else {
@@ -26393,10 +26530,15 @@ function R3init(T) {
         if (haut == null || y > haut) haut = y;
       }
       const clip = PV.m.cur && PV.m.cur.getClip ? PV.m.cur.getClip().name : null;
-      hero = { clip, ts: PV.m.vit != null ? +PV.m.vit.toFixed(2) : null, foul: PV.foul != null ? +PV.foul.toFixed(2) : null, sol: PV._sol != null ? +PV._sol.toFixed(2) : null, piedBas: bas != null ? +bas.toFixed(3) : null, piedHaut: haut != null ? +haut.toFixed(3) : null };
+      hero = {
+        clip, ts: PV.m.vit != null ? +PV.m.vit.toFixed(2) : null, foul: PV.foul != null ? +PV.foul.toFixed(2) : null,
+        sol: PV._sol != null ? +PV._sol.toFixed(2) : null, piedBas: bas != null ? +bas.toFixed(3) : null, piedHaut: haut != null ? +haut.toFixed(3) : null,
+        glisse: PV._glisse != null ? +PV._glisse.toFixed(3) : null, souffle: PV._souffle != null ? +PV._souffle.toFixed(3) : null,
+        geste: PV._geste || null, y: +PV.root.position.y.toFixed(3),
+      };
     }
     const betes = [];
-    for (const [e, v] of EV) if (v.root && v.root.visible) betes.push({ id: e.id, clip: v.cur || null, demarche: !!v.demarche, bouge: !!e.moving, flex: v.flex != null ? v.flex : null });
+    for (const [e, v] of EV) if (v.root && v.root.visible) betes.push({ id: e.id, clip: v.cur || null, demarche: !!v.demarche, bouge: !!e.moving, flex: v.flex != null ? v.flex : null, geste: v._geste || null, y: +v.root.position.y.toFixed(3), souffle: v._souffle != null ? +(+v._souffle).toFixed(3) : null });
     return { hero, betes };
   };
   const SB_A = new T.Vector3(), SB_B = new T.Vector3(), SB_C = new T.Vector3(), SB_Q = new T.Quaternion();
