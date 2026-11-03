@@ -95,7 +95,7 @@ html[data-cb="tritan"] #cv, html[data-cb="tritan"] #cv3, html[data-cb="tritan"] 
 #h-menu button { width: 38px; height: 38px; border-radius: 9px; background: var(--lacquer); box-shadow: 0 0 0 1px var(--line); display: grid; place-items: center; position: relative; font-family: var(--f-han); font-size: 19px; line-height: 1; }
 #h-menu button span { position: absolute; bottom: -1px; font-family: var(--f-body); font-size: 7.5px; letter-spacing: .04em; color: var(--muted); }
 #h-menu button.flag::after { content: ""; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--cinnabar); box-shadow: 0 0 6px var(--cinnabar); }
-#b-auto { position: absolute; top: calc(var(--sat) + 10px); right: calc(var(--sar) + clamp(124px, 18vw + 16px, 168px)); font-size: 11px; font-weight: 700; padding: 5px 9px; border-radius: 99px; background: var(--lacquer); box-shadow: 0 0 0 1px var(--line); color: var(--muted); z-index: 4; white-space: nowrap; }
+#b-auto { position: absolute; top: calc(var(--sat) + 10px); right: calc(var(--sar) + clamp(124px, 18vw + 16px, 168px)); font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 99px; background: var(--lacquer); box-shadow: 0 0 0 1px var(--line); color: var(--muted); z-index: 4; white-space: nowrap; min-height: 44px; min-width: 64px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
 #b-auto.on { color: #0b0c10; background: var(--gold); }
 #b-auto.on.pause { background: rgba(233,181,60,.35); color: #f3e3b8; } /* zone sûre : auto en pause */
 #h-boss { position: absolute; top: calc(var(--sat) + 10px); left: 50%; transform: translateX(-50%); width: min(44vw, 460px); text-align: center; }
@@ -2171,7 +2171,7 @@ body:has(#vcour) #net-parler { display: none !important; }
     text-align: center;
   }
   #h-center b { font-size: clamp(20px, 4.8vmin, 30px); }
-  #b-auto { min-height: 40px; min-width: 52px; padding: 8px 12px; box-sizing: border-box; overflow: visible; }
+  #b-auto { min-height: 44px; min-width: 64px; padding: 8px 12px; box-sizing: border-box; overflow: visible; }
   #b-auto::before {
     content: ''; position: absolute; left: 50%; top: 50%;
     width: max(100%, 44px); height: max(100%, 44px);
@@ -2255,7 +2255,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="2d74cdca4430" aria-label="Identifiant de version">Version générée : 2d74cdca4430</div>
+      <div class="meta" id="t-build" data-build="aa5d7b5ede1f" aria-label="Identifiant de version">Version générée : aa5d7b5ede1f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -33917,8 +33917,10 @@ function drawRegionMap(cv) {
   c.font = '600 ' + Math.round(11 * fs) + 'px ' + BODY_FONT; c.textAlign = 'center'; c.lineWidth = 3 * fs; c.strokeStyle = 'rgba(0,0,0,.7)'; c.fillStyle = '#f1e9d6';
   // [Grogrok] étiquettes hiérarchisées sans chevauchement : bourg et hameaux d'abord, lieux nommés du plan,
   // puis haltes (nom court) seulement s'il reste de la place. Fini la soupe « Cour des saules · … · Village de … ».
+  // [Grogrok] balayage UI : écart porté à 6×fs (était 3) ; en vue rapprochée on limite les enseignes du bourg
+  // pour éviter la soupe de noms sur 390 px / Relais.
   const pris = [];
-  const ecart = 3 * fs;
+  const ecart = 6 * fs;
   const etiq = (txt, x, y, taille, poids, coul) => {
     c.font = poids + ' ' + Math.round(taille * fs) + 'px ' + BODY_FONT;
     const w = c.measureText(txt).width / 2 + 4 * fs, h = taille * fs * 0.72;
@@ -33957,7 +33959,18 @@ function drawRegionMap(cv) {
     pris.push({ x0: x - 8 * fs * t, x1: x + 8 * fs * t, y0: y - 8 * fs * t, y1: y + 8 * fs * t });
     if (l.nom) poser(l.nom, x, y - 14 * fs * t, l.rang ? (l.rang === 2 ? 10 : 12) : 14, l.rang === 2 ? '600' : '700', l.rang ? '#3a2a1c' : '#5a1a10');
   }
-  for (const l of (sc.bourg ? sc.bourg.labels : sc.planLabels) || []) if (fogSeen(sc.id, l.x, l.y) && (!sc.safe || dist2(l.x, l.y, sc.safe.x, sc.safe.y) > (sc.safe.r || 600) ** 2)) poser(l.nom, ox + l.x * k, oy + l.y * k - 8 * fs, 11, '600', '#2e4a2a');
+  // Enseignes du bourg / labels du plan : en zoom, on n'affiche qu'une partie (les plus proches du héros),
+  // sinon la place du marché devient illisible. Hors zoom, on garde le filtre d'écart ci-dessus.
+  {
+    const raw = ((sc.bourg ? sc.bourg.labels : sc.planLabels) || []).filter((l) => fogSeen(sc.id, l.x, l.y) && (!sc.safe || dist2(l.x, l.y, sc.safe.x, sc.safe.y) > (sc.safe.r || 600) ** 2));
+    const tri = raw.slice().sort((a, b) => dist2(a.x, a.y, P.x, P.y) - dist2(b.x, b.y, P.x, P.y));
+    const maxEns = vue.zoom ? 6 : 14;
+    let nEns = 0;
+    for (const l of tri) {
+      if (nEns >= maxEns) break;
+      if (poser(l.nom, ox + l.x * k, oy + l.y * k - 8 * fs, 11, '600', '#2e4a2a')) nEns++;
+    }
+  }
   for (const z of sc.planZones || []) {
     let zx = 0, zy = 0; for (const [x, y] of z.poly) { zx += x; zy += y; } zx /= z.poly.length; zy /= z.poly.length;
     // [Claude] le nom d'une zone se dit au bourg avant d'y aller : en italique pâle tant qu'elle n'est pas explorée
