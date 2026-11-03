@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="d885cc4fdf72">
+<meta name="murim-build" content="a0fae3694c3d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="d885cc4fdf72" aria-label="Identifiant de version">Version générée : d885cc4fdf72</div>
+      <div class="meta" id="t-build" data-build="a0fae3694c3d" aria-label="Identifiant de version">Version générée : a0fae3694c3d</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6809,6 +6809,49 @@ recitRegion('souffle_paix', {
     livrer: '« Les Masques sourient dans ton dos. »',
   },
   apres: ['narr', 'Au Col, tu as brisé un clou pour rendre une paix. Dans la Forêt, on t\'a demandé d\'en payer le prix — ou de le trahir.'],
+});
+
+// ───────────────────────── Suite du prologue (masque de jade) : le prix du masque ─────────────────────────
+// Conséquence tardive de prologue:inconnue='marchander' (voie démoniaque). Aux Vallées, la femme au masque
+// revient collecter le prix de la vie qu'elle t'a vendue. recitRegion + si ; aucun champ de sauvegarde nouveau.
+recitRegion('prix_masque', {
+  name: 'Le prix du masque', region: 'vallee', quest: 8, key: 'prix_masque', who: 'jade', label: 'La dette du masque de jade',
+  si: { choix: { 'prologue:inconnue': 'marchander' } }, suite: 'prologue:inconnue', art: 'masque',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    jade: { name: 'Femme au masque de jade', title: 'celle qui t\'a vendu ta vie', glyph: '玉', color: '#6fe0b0' },
+    fu_val: { name: 'Fu le passeur', title: 'batelier des Cerisiers', glyph: '渡', color: '#c4a574' },
+  },
+  quand: 'Vallée de l\'Aurore : la femme au masque, au Hameau des Cerisiers (tu as marchandé ta vie)',
+  attente: '« Pas encore. Le prix n\'est pas mûr. »',
+  rappel: 'Le masque de jade attend son dû, {nom}.',
+  steps: ['Affronter le regard de jade, au Hameau des Cerisiers', 'Suivre Fu jusqu\'au Relais des Pèlerins', 'Lire les dettes gravées sur les bornes', 'Payer ou refuser au Relais', 'Encaisser le verdict du masque'],
+  labels: ['Lire une dette', 'Régler le prix'], objet: 'Éclat de masque de jade', slot: 'acc2',
+  intro: [['jade', 'Le masque de jade brille sous les cerisiers. « Aux bambous, tu as demandé : « Qu\'est-ce que j\'y gagne ? » Tu as gagné ta vie. Voici la facture. »'],
+    ['jade', '« Fu t\'attend au Relais. Trois dettes. Paie, et le masque te laisse. Refuse, et je reprends ce que je t\'ai prêté — ton souffle. »']],
+  arrivee: [['narr', 'Au Relais des Pèlerins, Fu le passeur pose trois tablettes de jade sur la table. Chacune porte un sceau que tu ne connais pas — et ton nom.'],
+    ['fu_val', '« Elle m\'a dit : le campagnard paie en or, en sang, ou en silence. Choisis avant la tombée. »']],
+  indices: ['Une tablette : « Livrer un nom du Relais aux Masques. »', 'Une seconde : « Verser le prix en or — assez pour racheter trois vies. »', 'Une troisième : « Refuser et tenir face au masque. »'],
+  conclusion: 'Aux bambous, tu as marchandé ta survie. Dans la Vallée, le masque de jade revient collecter. Ce que tu choisis dira si la dette s\'éteint, se transforme, ou t\'enchaîne.',
+  repaire: [['narr', 'Sous les cerisiers du Relais, la femme au masque attend. Fu s\'écarte.'],
+    ['jade', '« Or, trahison, ou défi. Tu as demandé le prix. Le voilà. »']],
+  question: 'Trois tablettes, un masque de jade, et la vie que tu as marchandée.',
+  choix: [
+    { k: 'tenir', rumeur: '« Sous les cerisiers, un campagnard a tenu face au masque de jade. On dit qu\'un éclat est resté dans sa manche. »', etiquette: 'dette refusée, masque défié', txt: 'Refuser de payer et tenir face au masque', hint: 'Voie orthodoxe · ne plus marchander', voie: 10, acte: 'aides', rep: { alliance: 80 }, lines: [['jade', '« Alors tu as appris. » Un éclat de jade tombe. « Garde-le. La prochaine fois, ne demande pas le prix avant d\'avoir sauvé. »']] },
+    { k: 'payer', rumeur: '« Un cultivateur a vidé sa bourse au Relais des Pèlerins. On dit que le masque de jade a disparu avec l\'or. »', etiquette: 'dette soldée en or', txt: 'Verser le prix en or et fermer la dette', hint: 'Voie libre · payer sans trahir', voie: 0, lines: [['jade', '« Compté. » Elle range les tablettes. « Tu as acheté ta vie une seconde fois. Ne me redis jamais « qu\'est-ce que j\'y gagne ». »']] },
+    { k: 'livrer', rumeur: '« Au Relais, un nom a disparu des registres. On dit que le masque de jade a souri. »', etiquette: 'nom livré aux Masques', txt: 'Livrer un nom du Relais pour que le masque oublie ta dette', hint: 'Voie démoniaque · trahir pour ne plus devoir', voie: -14, acte: 'voles', rep: { alliance: -180, legion: 120 }, lines: [['jade', '« Voilà qui est cohérent. » Elle prend le nom. « Tu as marchandé ta vie. Tu vends celle des autres. Nous nous comprenons. »']] },
+  ],
+  retour: {
+    tenir: '« Un éclat. Pas une absolution. » Elle s\'éloigne. « Les Cerisiers se souviendront. »',
+    payer: '« La dette est close. » Elle te jette une bourse vide. « Remplis-la autrement, désormais. »',
+    livrer: '« Le nom voyage déjà. » Son masque ne bouge pas. « Dors mal, {nom}. »',
+  },
+  merci: {
+    tenir: '« Tiens l\'éclat. Il pique quand tu mens. »',
+    payer: '« Compte mieux la prochaine fois. »',
+    livrer: '« Les Masques te doivent un sourire. »',
+  },
+  apres: ['narr', 'Aux bambous, tu as marchandé. Dans la Vallée, tu as payé — ou vendu — le prix.'],
 });
 
 // ───────────────────────── Suite du serment du Juste (chapitre III) : la route des faibles ─────────────────────────
