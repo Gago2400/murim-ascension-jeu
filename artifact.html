@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="11567c1af23c" aria-label="Identifiant de version">Version générée : 11567c1af23c</div>
+      <div class="meta" id="t-build" data-build="6d896a55b7a3" aria-label="Identifiant de version">Version générée : 6d896a55b7a3</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6634,6 +6634,66 @@ recitRegion('fuyards_dettes', {
   merci: { dechirer: '« Les Saules parlent de toi autrement, maintenant, {nom}. »', echelonner: '« Reviens au métier à tisser quand tu veux. »', saisir: '« Ta part est comptée, maître. »' },
   apres: ['narr', 'Une dette achetée un soir, à Qinghe, te suit jusqu\'aux Plaines. Les choix de l\'enfant sans talent commencent à peser le poids d\'un homme.'],
 });
+
+// ───────────────────────── Suite du serment de bannière (chapitre III) : le premier rapport (Claude) ─────────────────────────
+// Conséquence tardive du serment de bannière prêté à l'Académie de Jade (ch3:banniere). Deux apports :
+//  1) un récit-suite « Le premier rapport » au Col : si le joueur sert la Légion en secret (ch3:banniere='legion'),
+//     l'Émissaire voilé appelle son premier service, et le joueur peut obéir, jouer double, ou rompre ;
+//  2) une courte réplique du maître du village de départ qui réagit au serment (les trois issues), quand on y retourne.
+// Même mécanique recitRegion (helper, 02_voie_regions.js). Aucun champ de sauvegarde nouveau.
+
+recitRegion('rapport_legion', {
+  name: 'Le premier rapport', region: 'col', quest: 15, key: 'rapport', who: 'emissaire', label: 'Le service que la Légion réclame',
+  si: { choix: { 'ch3:banniere': 'legion' } }, suite: 'ch3:banniere', art: 'masque',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    emissaire: { name: 'Émissaire voilé', title: 'Légion du Ciel Brûlant', glyph: '焰', color: '#ff8a5c' },
+    col_gris: { name: 'Meneur gris', title: 'convoi de la Cendre', glyph: '灰', color: '#9a9aa4' },
+  },
+  quand: 'Col de la Brume : l\'Émissaire voilé, au Monastère isolé (tu sers la Légion en secret)',
+  attente: '« Pas encore. Prouve-moi d\'abord que tu sais tenir ta langue dans la brume. »',
+  rappel: 'La Légion attend ton premier rapport, {nom}.',
+  steps: ['Écouter l\'Émissaire voilé, au Monastère isolé', 'Repérer le convoi gris à l\'Auberge de la Brume', 'Suivre la route que la Légion veut libre', 'Rejoindre le convoi au Village des Bûcherons', 'Faire ton rapport à l\'Émissaire'],
+  labels: ['Lire une trace', 'Rejoindre le convoi'], objet: 'Pli de la Légion, à demi brûlé', slot: 'acc2',
+  intro: [['emissaire', '« Le pli que tu as glissé dans ta manche à l\'Académie, c\'était une dette, pas un cadeau. L\'heure est venue de la payer. Un convoi des nôtres passe le Col cette nuit. »'],
+    ['emissaire', '« La patrouille du monastère descend au même moment. Fais qu\'elle regarde ailleurs. Ou fais qu\'elle ne remonte pas. Repère le convoi à l\'Auberge de la Brume, et attends mon signe. »']],
+  arrivee: [['narr', 'À l\'Auberge de la Brume, six hommes boivent sans trinquer. À chaque manche, un clou gris cousu dans le tissu. Ils ne paient pas : l\'aubergiste n\'ose pas compter.'],
+    ['narr', 'Dehors, des empreintes de mules chargées montent vers le Village des Bûcherons, là où la brume avale la route.']],
+  indices: ['Un balisage neuf, posé de travers : il détourne la patrouille du monastère vers la mauvaise combe, loin de la route du convoi.',
+    'Un feuillet volé dans la manche d\'un moine : l\'heure de ronde de la patrouille de l\'Abbé Kong, soulignée deux fois.',
+    'Sous une bâche du convoi, des caisses percées de trous d\'air, et une petite main qui dépasse. Ce que la Légion veut faire passer n\'est pas du fer.'],
+  conclusion: 'La Légion veut que tu détournes la patrouille de Kong pour laisser passer un convoi de la Cendre, chargé d\'enfants en cage. Le serment que tu as prêté à l\'Académie a fait de toi leur main, cette nuit.',
+  repaire: [['narr', 'Au Village des Bûcherons, le convoi attend sous les sapins, bâches tendues. L\'Émissaire se tient en retrait, le visage dans l\'ombre de sa capuche.'],
+    ['emissaire', '« Le convoi est là. La patrouille de Kong descend dans une heure. Détourne-la, ou enterre-la. Prouve-moi que le pli que tu as gardé valait l\'encre, {nom}. »']],
+  question: 'Un convoi gris, une patrouille de moines qui approche, des cages qui respirent, et une flamme noire gravée dans la cire d\'un serment que tu as prêté à l\'aube.',
+  choix: [{ k: 'rompre', rumeur: '« L\'enfant de l\'Aube a brûlé son pli de la Légion devant leurs hommes, au Col, et ouvert les cages de ses mains. On dit que l\'Émissaire a juré de s\'en souvenir. »', etiquette: 'serment rompu, convoi libéré', txt: 'Prévenir la patrouille de Kong, ouvrir les cages, et brûler ton pli devant l\'Émissaire', hint: 'Voie orthodoxe · rompre avec la Légion', voie: 12, acte: 'aides', rep: { legion: -300, alliance: 150 }, lines: [['narr', 'Tu jettes le pli dans un feu de ronde. La patrouille de Kong fond sur le convoi ; les cages s\'ouvrent une à une. L\'Émissaire recule dans la brume sans un mot.']] },
+    { k: 'doubler', rumeur: '« Un convoi gris est passé le Col sans encombre, et s\'est fait prendre deux vallées plus bas, par l\'Alliance. Personne ne sait qui a soufflé la route. On a des soupçons. »', etiquette: 'convoi laissé passer, puis dénoncé', txt: 'Laisser le convoi passer, mais marquer sa route en secret pour que l\'Alliance l\'intercepte plus bas', hint: 'Voie libre · jouer les deux camps', voie: 2, lines: [['narr', 'Le convoi s\'enfonce dans la brume, intact. Sur chaque pierre du sentier, tu laisses une marque que seuls les éclaireurs de l\'Alliance savent lire.']] },
+    { k: 'obeir', rumeur: '« Au Col, une patrouille de moines a cherché toute la nuit dans la mauvaise combe pendant qu\'un convoi gris passait. Un jeune cultivateur de rizières leur aurait montré le mauvais chemin. »', etiquette: 'patrouille détournée, convoi passé', txt: 'Détourner la patrouille de Kong et laisser le convoi passer : la Légion se souvient des siens', hint: 'Voie démoniaque · tenir ton serment à la Légion', voie: -12, acte: 'executes', rep: { legion: 300, alliance: -200 }, lines: [['emissaire', '« Voilà un agent. » La patrouille s\'égare dans la mauvaise combe ; le convoi glisse vers le désert. « Le Ciel Brûlant n\'oublie pas une main propre, ni une main sale. »']] }],
+  retour: { rompre: '« Tu as brûlé ton pli devant mes hommes. Courageux. Stupide. La Légion n\'oublie pas un serment rompu. » Il te laisse le pli à demi consumé, comme une insulte. « Garde-le. Il te rappellera de ne jamais nous tourner le dos. »', doubler: '« Le convoi est passé, puis l\'Alliance l\'a pris, deux vallées plus bas. » Il te dévisage longtemps. « Je ne sais pas encore si tu es habile ou dangereux. Les deux, sans doute. Voilà ta part. »', obeir: '« La patrouille a cherché dans la mauvaise combe toute la nuit. Le convoi est au désert. » Il pose une bourse scellée d\'une flamme noire. « Le Ciel Brûlant se souvient des siens, {nom}. »' },
+  merci: { rompre: '« Ne monte plus au Col seul, {nom}. La brume a des amis à nous. »', doubler: '« À bientôt, agent. Ou faut-il dire, traître ? »', obeir: '« La Légion t\'appellera encore. Sois prêt. »' },
+  apres: ['narr', 'Ce que tu as glissé dans ta manche à l\'Académie « au cas où » avait un prix. Cette nuit, au Col, on te l\'a fait payer.'],
+});
+
+// ── Réplique du maître du village de départ : il réagit au serment de bannière du chapitre III ──
+const BANNIERE_MAITRE = {
+  serment: '« On m\'écrit de l\'Académie : tu as prêté le serment du Juste. Le village relève la tête quand on dit ton nom. Ne le fais pas mentir. »',
+  libre: '« À l\'Académie, tu n\'as signé aucune bannière, paraît-il. Ici, on appelle ça de la prudence. Ailleurs, de la lâcheté. Choisis qui tu laisses décider pour toi. »',
+  legion: '« Des hommes en gris sont repassés au village. Ils ont souri en prononçant ton nom, cette fois. » Il ne te regarde pas. « Dis-moi que ce n\'est pas ce que je crois. »',
+};
+if (typeof genRegion === 'function') {
+  const genRegionAvantBanniere = genRegion;
+  genRegion = function (R) {
+    const sc = genRegionAvantBanniere(R);
+    try {
+      const choix = S && S.voie && S.voie.choix && S.voie.choix['ch3:banniere'];
+      if (sc && sc.type === 'region' && S && sc.id === S.start && choix && BANNIERE_MAITRE[choix]) {
+        const m = sc.npcs && sc.npcs.find((n) => n.role === 'master' && !n.innkeeper);
+        if (m) { m.lignes = [BANNIERE_MAITRE[choix]].concat(m.lignes || []); m.banniereReagit = choix; }
+      }
+    } catch (e) { /* une réplique d'ambiance ne doit jamais casser la génération */ }
+    return sc;
+  };
+}
 
 // ───────────────────────── Récit-suite de la trame : la voix du clou (Claude) ─────────────────────────
 // Première suite greffée sur un choix de la trame principale (et non d'un récit régional) : si le joueur a GARDÉ
