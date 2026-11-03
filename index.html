@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="6d896a55b7a3">
+<meta name="murim-build" content="e9934002985f">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="6d896a55b7a3" aria-label="Identifiant de version">Version générée : 6d896a55b7a3</div>
+      <div class="meta" id="t-build" data-build="e9934002985f" aria-label="Identifiant de version">Version générée : e9934002985f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -53359,6 +53359,91 @@ if (typeof genRegion === 'function') {
     if (sc && sc.id === 'qinghe') poserEntreeCrypte(sc);
     return sc;
   };
+}
+
+// Pièges des sept donjons génériques (docs/DONJONS.md : « des coups qui se lisent »).
+// Avant ce lot, seule la Crypte du Sceau avait des pièges (dalles du couloir, 90_donjon_sceau.js) ;
+// ruines, tour, forge, sanctuaire, abysses de sang, palais et cœur n'étaient qu'une traversée
+// sans risque entre deux portes. On ajoute des pièges de sol télégraphiés sur le chemin : un repère
+// permanent (fissure) montre l'emplacement, puis un cercle d'alerte (windFloor) prévient avant de
+// frapper. Avoidable en s'écartant. Réutilise le mécanisme de la Crypte (addTele + windFloor),
+// aucun type de rendu nouveau, pas de piège dans la salle du gardien ni dans la première salle.
+
+// Un piège par thème de donjon : même mécanique (cercle au sol télégraphié), repère et couleur
+// propres, élément connu du jeu quand il y en a un. Pas de dégât d'une seule voie.
+const PIEGE_STYLE = {
+  ruines: { label: 'Éboulement', color: '#d8c8a0', elem: null },
+  tour: { label: 'Piège d\'ombre', color: '#b7a8d0', elem: null },
+  forge: { label: 'Dalle brûlante', color: '#ffb080', elem: 'feu' },
+  sanctuaire: { label: 'Éclat de foudre', color: '#bfe0ff', elem: 'foudre' },
+  abysses_sang: { label: 'Geyser de sang', color: '#d87070', elem: null },
+  palais: { label: 'Éclat spectral', color: '#cfc6a0', elem: null },
+  coeur: { label: 'Faille du vide', color: '#c0a0e0', elem: null },
+};
+
+function donjonPiegeActif(sc) {
+  return sc && sc.type === 'dungeon' && !sc.isBoss
+    && sc.dungeon !== 'grotte' && sc.dungeon !== 'crypte_sceau'
+    && DUNGEONS[sc.dungeon] && sc.room > 1;
+}
+
+// Part des PV max par coup : modeste et télégraphiée, un peu plus dure dans les donjons de haut niveau.
+function donjonPiegeDegats(sc) {
+  const D = DUNGEONS[sc.dungeon];
+  const niv = (D && D.lvl && D.lvl[1]) || 20;
+  return clamp(0.05 + niv / 2000, 0.05, 0.09);
+}
+
+// Pose les pièges d'une salle : 2 ou 3 sur le chemin, décalés de l'axe pour qu'on puisse zigzaguer.
+function donjonPiegesSalle(sc) {
+  if (!donjonPiegeActif(sc)) return;
+  const W = sc.w, H = sc.h, voie = H / 2;
+  const style = PIEGE_STYLE[sc.dungeon] || PIEGE_STYLE.ruines;
+  const rng = mulberry32(hashStr(sc.dungeon + '-' + sc.room + '-piege'));
+  const n = 2 + (sc.room % 2); // 2 ou 3 selon la salle
+  sc.pieges = sc.pieges || [];
+  sc.piegeStyle = style;
+  for (let k = 0; k < n; k++) {
+    const t = (k + 1) / (n + 1);
+    const x = 340 + t * (W - 560) + (rng() - 0.5) * 48;
+    const cote = rng() < 0.5 ? -1 : 1;
+    const y = voie + cote * (46 + rng() * 78);
+    sc.pieges.push({ x, y, r: 72, cd: 0.6 + rng() * 1.6 });
+    // repère permanent au sol : une fissure marquée, pour apprendre où ne pas rester
+    sc.flats.push({ type: 'crack', x, y, s: 1.25, v: 0.7 });
+  }
+}
+
+// Déclenche un piège quand le héros reste dessus : cercle d'alerte puis frappe. Les donjons à plan
+// propre (Grotte, Crypte) gardent leur propre logique.
+function donjonPiegesTick(dt) {
+  const sc = G.scene;
+  if (!sc || !sc.pieges || !sc.pieges.length) return;
+  if (!donjonPiegeActif(sc)) return;
+  if (P.dead || !P.st) return;
+  const frac = donjonPiegeDegats(sc);
+  const style = sc.piegeStyle || PIEGE_STYLE.ruines;
+  for (const pg of sc.pieges) {
+    if (pg.cd > 0) { pg.cd -= dt; continue; }
+    if (dist(P.x, P.y, pg.x, pg.y) > pg.r) continue;
+    pg.cd = 5;
+    const wind = typeof windFloor === 'function' ? windFloor(1.15, false) : 1.15;
+    addTele(null, { shape: 'circle', x: pg.x, y: pg.y, r: 1.55 * M, wind, dmg: P.st.hp * frac, elem: style.elem || undefined });
+    if (typeof floatText === 'function') floatText(pg.x, pg.y - 22, style.label, style.color, 0.8);
+  }
+}
+
+if (typeof genDungeonRoom === 'function') {
+  const genDungeonRoomAvantPieges = genDungeonRoom;
+  genDungeonRoom = function (did, room) {
+    const sc = genDungeonRoomAvantPieges(did, room);
+    donjonPiegesSalle(sc);
+    return sc;
+  };
+}
+if (typeof updateZones === 'function') {
+  const updateZonesAvantPieges = updateZones;
+  updateZones = function (dt) { donjonPiegesTick(dt); updateZonesAvantPieges(dt); };
 }
 
 'use strict';
