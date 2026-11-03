@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="10638d0e7bf3" aria-label="Identifiant de version">Version générée : 10638d0e7bf3</div>
+      <div class="meta" id="t-build" data-build="432a0557f8f8" aria-label="Identifiant de version">Version générée : 432a0557f8f8</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7417,6 +7417,7 @@ function migrate(s) {
   normalizeCult(s);
   normalizeAlch(s);
   estamperObjetsQuete(s);
+  normalizeItems(s);
   const d = newSaveDefaults();
   for (const k in d) if (s[k] === undefined) s[k] = d[k];
   for (const k in d.settings) if (s.settings[k] === undefined) s.settings[k] = d.settings[k];
@@ -7469,6 +7470,21 @@ function saveItems(s) {
   if (Array.isArray(s.bag)) for (const it of s.bag) if (isObj(it)) out.push(it);
   if (isObj(s.base) && Array.isArray(s.base.chest)) for (const it of s.base.chest) if (isObj(it)) out.push(it);
   return out;
+}
+
+// Objets d'anciennes sauvegardes : `spec` / `sockets` / `base` / `sec` peuvent manquer.
+// Sans garde, computeStats / itemScore / fiche UI plantent (« it.spec is not iterable ») au Continuer.
+function normalizeItems(s) {
+  for (const it of saveItems(s)) {
+    if (!isObj(it)) continue;
+    if (!Array.isArray(it.spec)) it.spec = [];
+    if (!isObj(it.base)) it.base = {};
+    if (!isObj(it.sec)) it.sec = {};
+    if (!Array.isArray(it.sockets)) {
+      const n = (typeof RARITIES !== 'undefined' && RARITIES[it.rar | 0] && RARITIES[it.rar | 0].sockets) || 0;
+      it.sockets = new Array(n).fill(null);
+    }
+  }
 }
 function estamperObjetsQuete(s) {
   if (typeof objetNomEstQuete !== 'function') return;
@@ -7756,7 +7772,7 @@ function itemScore(it) {
   v += (s.atk || 0) / bA + (s.qipwr || 0) / bA * 0.8 + (s.def || 0) / bD + (s.hp || 0) / bH + (s.qimax || 0) / bQ * 0.6;
   v += (s.sword || 0) / (5 + L) * 0.5 + (s.crit || 0) * 6 + (s.critdmg || 0) * 2 + (s.atkspd || 0) * 6 + (s.lifesteal || 0) * 8;
   v += (s.move || 0) * 4 + (s.dodgecd || 0) * 0.8 + (s.cdr || 0) * 6 + (s.qicost || 0) * 3 + (s.elemres || 0) * 3 + (s.qiregen || 0) / (2 + L * 0.2) * 0.4;
-  v += it.spec.length * 0.4;
+  v += (Array.isArray(it.spec) ? it.spec : []).length * 0.4;
   return v * L;
 }
 // Écart réel (après forge, trempe, gemmes) entre deux objets du même emplacement : même source que les flèches de la fiche.
@@ -7820,7 +7836,7 @@ function computeStats(P) {
   for (const k in S.equip) {
     const it = S.equip[k]; if (!it) continue;
     const s = itemStats(it); for (const sk in s) eq[sk] = (eq[sk] || 0) + s[sk];
-    for (const sp of it.spec) spec[sp.k] = (spec[sp.k] || 0) + sp.v;
+    for (const sp of (Array.isArray(it.spec) ? it.spec : [])) spec[sp.k] = (spec[sp.k] || 0) + sp.v;
     if (k === 'arme' && it.elem) weaponElem = it.elem;
   }
   const g = (k) => eq[k] || 0;
@@ -29133,7 +29149,7 @@ function itemCard(it, compare) {
     const dEl = compare && Math.abs(dlt) > 0.0001 ? el('span', { class: 'd ' + (dlt > 0 ? 'pos' : 'neg') }, (dlt > 0 ? '▲ ' : '▼ ') + fmtStat(d.k, Math.abs(dlt)).replace(/^[+−]/, '')) : null;
     ul.append(el('li', null, el('span', null, STAT_NAMES[d.k] + ' ' + (v ? fmtStat(d.k, v) : '—')), dEl));
   }
-  for (const sp of it.spec) { ul.append(el('li', { class: 'spec' }, el('span', null, typeof fmtSpec === 'function' ? fmtSpec(sp) : (sp.k + ' ' + (sp.v * 100).toFixed(0) + ' %')))); }
+  for (const sp of (Array.isArray(it.spec) ? it.spec : [])) { ul.append(el('li', { class: 'spec' }, el('span', null, typeof fmtSpec === 'function' ? fmtSpec(sp) : (sp.k + ' ' + (sp.v * 100).toFixed(0) + ' %')))); }
   if (it.elem) ul.append(el('li', { class: 'spec' }, el('span', { style: 'color:' + ELEMS[it.elem].color }, 'Élément : ' + ELEMS[it.elem].name + ' (' + ELEMS[it.elem].fx + ')')));
   it.sockets.forEach((g, i) => ul.append(el('li', { class: 'sock' }, el('span', null, g ? '◆ ' + GEMS[g.type].name + ' ' + GEM_GRADES[g.grade].toLowerCase() : '◇ Emplacement de gemme libre'))));
   let cmp = null;
@@ -30688,7 +30704,7 @@ function legendDefeated(e) {
   const first = !S.legends[L.id]; S.legends[L.id] = (S.legends[L.id] || 0) + 1;
   const it = makeItem(e.lvl, first ? 4 : (Math.random() < 0.3 ? 4 : 3), L.slot);
   it.name = L.item; it.legend = L.id;
-  if (!it.spec.length) it.spec.push({ k: 'bossdmg', v: 0.12 });
+  if (!Array.isArray(it.spec)) it.spec = []; if (!it.spec.length) it.spec.push({ k: 'bossdmg', v: 0.12 });
   dropLoot(e.x, e.y, 'item', it);
   dropLoot(e.x, e.y, 'mat', { k: 'essence', n: randi(3, 6) });
   if (Math.random() < 0.1) dropLoot(e.x, e.y, 'tech', pick(TECH_POOL.rare));
