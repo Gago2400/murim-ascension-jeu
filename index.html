@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="b217b54750e6">
+<meta name="murim-build" content="11567c1af23c">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="b217b54750e6" aria-label="Identifiant de version">Version générée : b217b54750e6</div>
+      <div class="meta" id="t-build" data-build="11567c1af23c" aria-label="Identifiant de version">Version générée : 11567c1af23c</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -10080,6 +10080,7 @@ function executeTech(id, tgt) {
   const opts = { isTech: true, techId: id, elem: T.elem, ignoreDef: T.ignoreDef, stun: T.stun, knock: T.knock, slow: T.slow, drain: T.drain, critBonus: T.critBonus, ignoreRes: T.ignoreRes, qi: T.dmg === 'qi', hybrid: T.dmg === 'hybrid' };
   let res = { n: 0, big: false }; const f = P.face;
   const ecol = T.elem ? ELEMS[T.elem].color : col; opts.col = ecol;
+  sfxTech(T, pw); // voix de forme (arc, tourbillon, onde) + teinte d'élément (07_audio.js)
   switch (T.shape) {
     case 'arc': {
       const R = T.range * M;
@@ -11762,6 +11763,33 @@ function sfx(name) {
   }
   if (rec) rec.forEach((l) => sfxVariants(l[0]).forEach(loadSample));
   sfxSynth(name);
+}
+
+// ───────── Son d'une technique : voix de forme + teinte d'élément ─────────
+// executeTech (05_combat.js) sonorise déjà projectile, rayon, zone, frappe céleste, pas/clignement et soins
+// (sfx 'qi'/'ult'/'dodge'/'heal', échantillon enregistré si présent). Ici on donne une voix aux formes jusque-là
+// muettes à la lancée (large arc, tourbillon, onde de choc) et une teinte d'élément à toutes : le feu crépite,
+// l'eau coule, le métal sonne, la terre gronde, la foudre claque. Tout en synthèse, posé sur le bus d'effets.
+function sfxTechElem(elem, pw) {
+  if (!AC.ctx || !elem) return;
+  const v = 0.045 + (pw || 0) * 0.011;
+  switch (elem) {
+    case 'feu': noiseBurst(0.34, { ft: 'bandpass', f: 1800, fto: 560, q: 1.2, vol: v * 1.1 }); tone(140, 0.3, { type: 'sawtooth', to: 70, vol: v * 0.7, lp: 700 }); break;
+    case 'eau': tone(520, 0.3, { type: 'sine', to: 230, vol: v }); noiseBurst(0.26, { ft: 'lowpass', f: 720, fto: 300, vol: v * 0.5 }); break;
+    case 'bois': tone(330, 0.4, { type: 'triangle', to: 220, vol: v }); tone(495, 0.3, { type: 'triangle', vol: v * 0.5, delay: 0.05 }); break;
+    case 'metal': tone(2100, 0.26, { type: 'square', vol: v * 0.5, lp: 5000 }); tone(3150, 0.3, { vol: v * 0.3, delay: 0.02 }); break;
+    case 'terre': tone(80, 0.42, { type: 'square', to: 40, vol: v * 1.3, lp: 400 }); noiseBurst(0.2, { ft: 'lowpass', f: 160, vol: v }); break;
+    case 'foudre': noiseBurst(0.18, { ft: 'highpass', f: 2600, fto: 5000, q: 0.8, vol: v }); tone(1600, 0.12, { type: 'square', to: 420, vol: v * 0.5, lp: 4000 }); break;
+  }
+}
+function sfxTech(T, pw) {
+  if (!AC.ctx || !S || !S.settings.sound || !T) return;
+  pw = pw == null ? (T.rar || 0) : pw;
+  // voix de base pour les formes muettes à la lancée (les autres sont déjà sonorisées par executeTech)
+  if (T.shape === 'arc') sfx(T.cat === 'poing' ? 'hit' : 'swing');
+  else if (T.shape === 'spin') { sfx('swing'); tone(300, 0.5, { type: 'triangle', to: 180, vol: 0.06 + pw * 0.01 }); noiseBurst(0.3, { ft: 'bandpass', f: 1400, fto: 480, q: 1, vol: 0.05 }); }
+  else if (T.shape === 'nova') { tone(90, 0.45, { type: 'square', to: 42, vol: 0.12, lp: 600 }); noiseBurst(0.35, { ft: 'lowpass', f: 700, fto: 150, vol: 0.09 }); }
+  sfxTechElem(T.elem, pw);
 }
 
 // volumes (réglages persistants, sans changement de format de sauvegarde) et coupure générale
