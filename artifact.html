@@ -952,6 +952,10 @@ html.hud-boss #fps {
 #h-quest .q-goal { letter-spacing: .01em; animation: goalPulse 1.8s ease-in-out infinite; }
 @keyframes goalPulse { 50% { color: #fff8dc; } }
 #minimap { box-shadow: 0 0 0 1px #e0c070, 0 0 0 4px rgba(22, 12, 8, .92), 0 8px 16px rgba(0, 0, 0, .45); }
+/* [Claude] paysage shots 720/780 : minimap moins opaque (après les ombres peintes, pour qu'elles ne réécrasent pas). */
+@media (orientation: landscape) and (max-height: 820px) {
+  #minimap { background: rgba(0,0,0,.28); box-shadow: 0 0 0 1px rgba(224,192,112,.45), 0 0 0 2px rgba(22,12,8,.55), 0 4px 10px rgba(0,0,0,.28); }
+}
 /* Guide : bandeau ou coin du geste. Jamais au centre de l'écran. */
 #coach { position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--sat) + var(--qt, 74px) + 6px); right: auto; bottom: auto; transform: none; width: min(220px, calc(100vw - var(--sal) - var(--sar) - 28px)); z-index: 4; padding: 8px 10px 6px; box-sizing: border-box; color: #f7f0e2; background: rgba(16, 10, 8, .94); border: 1px solid rgba(217, 180, 94, .6); border-left: 3px solid #c9432f; border-radius: 3px 12px 12px 3px; box-shadow: 0 12px 28px rgba(0, 0, 0, .45); pointer-events: auto; }
 #coach[data-anc="quete"] { top: calc(var(--sat) + var(--qt, 86px) + var(--qh, 52px) + 6px); }
@@ -2279,7 +2283,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="afd8c6b64866" aria-label="Identifiant de version">Version générée : afd8c6b64866</div>
+      <div class="meta" id="t-build" data-build="e3fc1c32c355" aria-label="Identifiant de version">Version générée : e3fc1c32c355</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
