@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="e3a269d087be" aria-label="Identifiant de version">Version générée : e3a269d087be</div>
+      <div class="meta" id="t-build" data-build="b217b54750e6" aria-label="Identifiant de version">Version générée : b217b54750e6</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -11679,7 +11679,10 @@ function pisteSuivante(nom) {
 function musiqueContexte(c, scene, pistesDispo, indice) {
   const hab = MUSIQUES[c] || MUSIQUES.exploration;
   if (c === 'combat' || c === 'boss' || c === 'donjon' || !scene || scene.type !== 'region') return hab;
-  const ps = MUSIQUE_REGION[scene.id]; if (!ps) return hab;
+  const ps = MUSIQUE_REGION[scene.id];
+  // Régions sans piste dédiée : une région corrompue (Marécages, Abysses) prend la musique sourde du donjon
+  // au lieu de la flûte d'exploration, pour qu'elle pèse au lieu de sembler bucolique.
+  if (!ps) return (scene.pal && scene.pal.mood === 'corrompu') ? MUSIQUES.donjon : hab;
   if (scene.id === 'qinghe') return pistesDispo ? ps[(indice | 0) % ps.length] : hab;
   if ((AUD.regionCassee && AUD.regionCassee[scene.id]) || !ps.every((n) => !!audioUrl(n))) return hab;
   const idx = (AUD.regionIdx && AUD.regionIdx[scene.id]) || 0;
