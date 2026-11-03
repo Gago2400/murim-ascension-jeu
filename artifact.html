@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="a35f9f16c32b" aria-label="Identifiant de version">Version générée : a35f9f16c32b</div>
+      <div class="meta" id="t-build" data-build="a3f6bc832bcd" aria-label="Identifiant de version">Version générée : a3f6bc832bcd</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -57830,6 +57830,64 @@ const genRegionAvantHorsToits = genRegion;
 genRegion = function (R) {
   return horsToitsCorriger(genRegionAvantHorsToits(R));
 };
+
+// ───────────────────────── Offrandes des lieux remarquables (exploration) ─────────────────────────
+// Chaque landmark (26_lieux.js) peut être honoré une fois : or + herbe, aucun bonus de stats.
+// État : S.exploration.landmarks[regionId] = 1. Interaction près du monument.
+
+function explEnsure() {
+  if (!S.exploration || typeof S.exploration !== 'object') S.exploration = {};
+  if (!S.exploration.landmarks || typeof S.exploration.landmarks !== 'object') S.exploration.landmarks = {};
+  return S.exploration;
+}
+
+function explLandmarkFait(id) {
+  return !!(explEnsure().landmarks[id]);
+}
+
+function explLandmarkOffrir() {
+  const sc = G.scene; if (!sc || !sc.landmark) return false;
+  const id = sc.id;
+  if (explLandmarkFait(id)) { toast('Tu as déjà honoré ce lieu.', 'info'); return false; }
+  if (P.combatT < 4) { toast('Pas pendant le combat', 'warn'); return false; }
+  explEnsure().landmarks[id] = 1;
+  const or = 25 + Math.min(40, (S.level || 1) * 2);
+  S.gold = (S.gold || 0) + or;
+  const herbe = (sc.region && sc.region.type === 'corrompue') ? 'sang' : (sc.region && sc.region.type === 'grise') ? 'givre' : 'brume';
+  const alch = typeof alchEnsure === 'function' ? alchEnsure() : (S.alch || (S.alch = { herbes: { brume: 0, givre: 0, sang: 0 } }));
+  if (!alch.herbes) alch.herbes = { brume: 0, givre: 0, sang: 0 };
+  alch.herbes[herbe] = (alch.herbes[herbe] || 0) + 1;
+  const nom = (sc.landmark && sc.landmark.label) || 'ce lieu';
+  const H = typeof HERBES !== 'undefined' ? HERBES[herbe] : null;
+  toast('Tu honores ' + nom + '. +' + or + ' or' + (H ? ', +1 ' + H.nom : '') + '.', 'gold');
+  if (typeof sfx === 'function') sfx('quest');
+  if (typeof saveGame === 'function') saveGame();
+  return true;
+}
+
+if (typeof findInteract === 'function') {
+  const findInteractAvantExpl = findInteract;
+  findInteract = function () {
+    const it = findInteractAvantExpl();
+    const sc = G.scene, lm = sc && sc.landmark;
+    if (!lm || !P) return it;
+    const d = dist2(P.x, P.y, lm.x, lm.y);
+    const ray = (lm.r || 70) + 50;
+    if (d < ray * ray) {
+      const fait = explLandmarkFait(sc.id);
+      const label = fait ? ('Lieu honoré · ' + (lm.label || '')) : ('Honorer · ' + (lm.label || 'lieu remarquable'));
+      if (!it || d < 130 * 130) return { kind: 'landmark', ref: lm, label };
+    }
+    return it;
+  };
+}
+if (typeof doInteract === 'function') {
+  const doInteractAvantExpl = doInteract;
+  doInteract = function (it) {
+    if (it && it.kind === 'landmark') { explLandmarkOffrir(); return; }
+    return doInteractAvantExpl(it);
+  };
+}
 
 'use strict';
 // [Grok] Rues nettes, toutes les régions. Les cours elliptiques ne recouvrent plus la chaussée
