@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="0a2fca4d2447">
+<meta name="murim-build" content="89bcd693513d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="0a2fca4d2447" aria-label="Identifiant de version">Version générée : 0a2fca4d2447</div>
+      <div class="meta" id="t-build" data-build="89bcd693513d" aria-label="Identifiant de version">Version générée : 89bcd693513d</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6304,6 +6304,38 @@ recitRegion('serment_meishan', {
   apres: ['narr', 'Sur la montagne, on dit qu\'un vœu tient le ciel, mais qu\'un fils tient sa mère. Les deux sont lourds. Peu d\'hommes portent les deux sans en lâcher un.'],
 });
 
+// ───────────────────────── Exploration Meishan : les trois thés ─────────────────────────
+recitRegion('trois_thes', {
+  name: 'Les trois thés', region: 'meishan', quest: 6, key: 'trois_thes', who: 'ms_cha', label: 'Trois cueillettes à remonter avant la brume',
+  art: 'aube', lieux: { repaire: 'hameau1' },
+  cast: {
+    ms_cha: { name: 'Mère Cha', title: 'maîtresse des terrasses', glyph: '茶', color: '#d8d4cc' },
+    ms_yun: { name: 'Yun le porteur', title: 'dos des cimes', glyph: '雲', color: '#a8b0a0' },
+  },
+  quand: 'Meishan : Mère Cha, au refuge (trois paniers de thé avant la brume)',
+  attente: '« Les feuilles ne sont pas prêtes. Remonte plus tard. »',
+  rappel: 'Les trois thés attendent encore, {nom}.',
+  steps: ['Prendre les paniers auprès de Mère Cha', 'Cueillir à la Bergerie des Cimes', 'Lire les marques de brume', 'Remonter au Hameau du Thé', 'Revenir auprès de Mère Cha'],
+  labels: ['Lire une marque', 'Remettre les feuilles'], objet: 'Boîte à thé de Mère Cha', slot: 'acc2',
+  intro: [['ms_cha', '« Trois paniers. Trois hauteurs. » Elle te tend une boîte vide. « Bergerie, marques de brume, Hameau. Tu rapportes les feuilles — ou tu vends la route aux Masques. »'],
+    ['ms_cha', '« Yun t\'attend en haut. Ne bois pas le premier thé : il est pour le rite. »']],
+  arrivee: [['narr', 'À la Bergerie des Cimes, Yun pose un panier. L\'air pique.'],
+    ['ms_yun', '« Les marques de brume sont sur les bornes. Quelqu\'un compte nos cueillettes. »']],
+  indices: ['Une borne : « Cueillette du soir — noms. »', 'Une seconde marque, plus fraîche, vers le Hameau.', 'Un panier déjà ouvert : on a pris la liste, pas les feuilles.'],
+  conclusion: 'Les paniers de Mère Cha portent aussi des noms. Au Hameau du Thé, tu choisis.',
+  repaire: [['narr', 'Au Hameau du Thé, le dernier panier contient une tablette.'],
+    ['ms_cha', '« Livre les feuilles. Brûle les noms. Ou vends-les. »']],
+  question: 'Trois thés, une tablette, et la brume qui monte.',
+  choix: [
+    { k: 'livrer', rumeur: '« Mère Cha a reçu ses trois paniers intacts. On dit qu\'un campagnard n\'a pas lu les noms. »', etiquette: 'thés livrés sans ouvrir', txt: 'Livrer les feuilles et la tablette fermée', hint: 'Voie orthodoxe', voie: 6, acte: 'aides', lines: [['ms_cha', '« Rare. » Elle te rend la boîte pleine. « Garde-la. »']] },
+    { k: 'bruler', rumeur: '« De la fumée sur les terrasses. Des noms, dit-on. »', etiquette: 'tablette brûlée', txt: 'Brûler la tablette, garder les feuilles', hint: 'Voie libre', voie: 1, lines: [['ms_cha', '« Le feu coûte. Les feuilles restent. Tiens. »']] },
+    { k: 'vendre', rumeur: '« Une liste de cueilleurs a changé de mains à Meishan. »', etiquette: 'noms vendus', txt: 'Vendre la tablette aux Masques', hint: 'Voie démoniaque', voie: -10, acte: 'voles', rep: { legion: 70, alliance: -70 }, lines: [['ms_cha', 'Elle détourne les yeux. « Ne remonte plus. »']] },
+  ],
+  retour: { livrer: '« La boîte est à toi. »', bruler: '« Bois sans lire. »', vendre: '« … »' },
+  merci: { livrer: '« Les cimes te voient. »', bruler: '« L\'odeur partira. »', vendre: '« … »' },
+  apres: ['narr', 'Trois thés. Meishan se souvient de la façon dont tu les as portés.'],
+});
+
 // ───────────────────────── Récits des Montagnes du Dragon : le péage des cordées et l'œuf de grue (Grogrok) ─────────────────────────
 // Suite de 02_voie_regions.js : deux récits propres aux Montagnes, sans lien avec le réseau de Cendre Grise.
 // Même mécanique recitRegion et RECITS (34_voie.js), aucun champ de sauvegarde nouveau.
@@ -6937,6 +6969,43 @@ recitRegion('faim_collines', {
     revendre: '« … »',
   },
   apres: ['narr', 'À Qinghe tu as vendu une meule. Aux Plaines, la faim a présenté la facture.'],
+});
+
+// ───────────────────────── Suite démoniaque : avoir fait chanter Vieux Pan (Longwan) ─────────────────────────
+recitRegion('pension_pan', {
+  name: 'La pension du faux héros', region: 'longwan', quest: 8, key: 'pension_pan', who: 'lw_shun2', label: 'La Veuve Shun sait ce que tu as pris à Pan',
+  si: { choix: { 'recit:heros_longwan': 'chanter' } }, suite: 'recit:heros_longwan', art: 'lanternes',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    lw_shun2: { name: 'Veuve Shun', title: 'veuve de De', glyph: '順', color: '#c8b0a0' },
+    lw_pan2: { name: 'Vieux Pan', title: 'héros forcé', glyph: '潘', color: '#a89070' },
+  },
+  quand: 'Longwan : Veuve Shun, au Port (tu as monnayé la honte de Pan)',
+  attente: '« Pas encore. Pan n\'a plus de voix ce matin. »',
+  rappel: 'La pension de Pan te rattrape, {nom}.',
+  steps: ['Écouter la Veuve Shun au Port', 'Suivre Pan jusqu\'à la Crique aux Lanternes', 'Lire les comptes de la pension', 'Trancher à la chapelle des noyés', 'Revenir auprès de Shun'],
+  labels: ['Lire un compte', 'Trancher'], objet: 'Rame gravée de De', slot: 'acc2',
+  intro: [['lw_shun2', '« Tu as vendu le silence de Pan. » Elle te montre un registre. « Sa pension te nourrit. De, lui, n\'a plus de nom. »'],
+    ['lw_shun2', '« À la chapelle, tu rends l\'argent, tu gravures De, ou tu vends encore Pan. »']],
+  arrivee: [['narr', 'À la Crique, Pan range des casiers. Ses mains tremblent autrement.'],
+    ['lw_pan2', '« Tu reviens. » Il ne lève pas les yeux. « La mer ne m\'a pas fait ça. »']],
+  indices: ['Un compte : pension détournée — ton sceau.', 'Une plaque de bronze encore au nom de Pan.', 'Une rame neuve, sans nom, dans la chapelle.'],
+  conclusion: 'Tu as monnayé un héros. Ici, la veuve et la chapelle demandent le prix.',
+  repaire: [['narr', 'À la chapelle des noyés, Shun et Pan attendent.'],
+    ['lw_shun2', '« Rends. Grave. Ou vends encore. »']],
+  question: 'Une pension, une plaque, et un nom de mort.',
+  choix: [
+    { k: 'rendre', rumeur: '« Vieux Pan a racheté sa maison. On dit que celui qui l\'avait fait chanter a tout rendu. »', etiquette: 'pension rendue, De nommé', txt: 'Rendre la pension et faire graver De sur la plaque', hint: 'Voie orthodoxe · réparer', voie: 14, acte: 'aides', lines: [['lw_pan2', '« Tu n\'es pas la mer. » Il pose la plaque. « Elle, je lui pardonne encore moins. »']] },
+    { k: 'graver', rumeur: '« Une rame au nom de De est apparue. La pension, elle, n\'a pas bougé. »', etiquette: 'De gravé, pension gardée', txt: 'Graver De sans rendre l\'or', hint: 'Voie libre', voie: 0, lines: [['lw_shun2', '« Un nom. Pas une vie. » Elle passe le pouce sur le bois. « C\'est déjà plus que Pan n\'avait donné. »']] },
+    { k: 'encore', rumeur: '« Pan a quitté le port. On dit qu\'il paie encore quelqu\'un, plus loin. »', etiquette: 'chantage poursuivi', txt: 'Exiger une nouvelle pension et taire De', hint: 'Voie démoniaque', voie: -14, acte: 'voles', rep: { alliance: -100, legion: 80 }, lines: [['lw_pan2', '« Alors fini. » Il te tend une bourse. « Ne reviens plus. La mer est plus juste. »']] },
+  ],
+  retour: {
+    rendre: '« La plaque porte De. » Shun te tend une rame. « Pour ceux qui ramènent les noms. »',
+    graver: '« La rame est là. L\'or aussi, chez toi. »',
+    encore: '« … » Elle ferme la chapelle.',
+  },
+  merci: { rendre: '« De dort. »', graver: '« Un peu. »', encore: '« Va-t\'en. »' },
+  apres: ['narr', 'Tu as vendu un héros. Longwan a compté ce que tu as rendu — ou repris.'],
 });
 
 // ───────────────────────── Suite du serment du Juste (chapitre III) : la route des faibles ─────────────────────────
@@ -58202,6 +58271,53 @@ genRegion = function (R) {
   return sc;
 };
 
+// ───────────────────────── Habitués de taverne (vie des bourgs) ─────────────────────────
+// Deux habitués près de la taverne du bourg (berceaux + plaines/vallee si taverne).
+// Répliques du soir, aucune stats. État S.commerces.habitues[region].day
+const HAB_LIGNES = {
+  qinghe: ['« La meule tourne encore dans ma tête. Une bière. »', '« Tang Rui est passé. Il n\'a pas payé sa tournée. »'],
+  longwan: ['« Les jonques sans lanternes… je n\'ai rien vu. »', '« Le sel a changé. Mei le sait. »'],
+  meishan: ['« Le thé d\'en haut gèle. On boit chaud ici. »', '« Un pèlerin sans prière a demandé les Grues. »'],
+  vallee: ['« Les Cerisiers murmurent des noms. Je bois pour ne pas les entendre. »', '« Fu le passeur doit encore trois tournées. »'],
+  plaines: ['« L\'Académie compte les grains. Moi je compte les verres. »', '« Un convoi de Jade a manqué le marché. »'],
+};
+function habituesEnsure() {
+  if (typeof ensureCommerces === 'function') ensureCommerces();
+  if (!S.commerces || typeof S.commerces !== 'object') S.commerces = {};
+  if (!S.commerces.habitues || typeof S.commerces.habitues !== 'object') S.commerces.habitues = { day: '' };
+  const h = S.commerces.habitues;
+  const day = typeof todayKey === 'function' ? todayKey() : '';
+  const renew = typeof jourDoitRenouveler === 'function' ? jourDoitRenouveler(h.day) : h.day !== day;
+  if (renew) { h.day = day; h.par = {}; }
+  if (!h.par || typeof h.par !== 'object') h.par = {};
+  return h;
+}
+function habituesPoser(sc) {
+  if (!sc || sc.type !== 'region' || !HAB_LIGNES[sc.id] || sc.habituesPose || typeof bourgPersonne !== 'function') return;
+  const tav = (sc.decor || []).find((d) => d.type === 'taverne' || d.taverne);
+  const B = sc.bourg && sc.bourg.rect;
+  let x, y;
+  if (tav) { x = tav.x + 70; y = tav.y + 50; }
+  else if (B) { x = (B.x0 + B.x1) / 2 + 80; y = (B.y0 + B.y1) / 2 + 60; }
+  else return;
+  const lignes = HAB_LIGNES[sc.id];
+  for (let i = 0; i < 2; i++) {
+    bourgPersonne(sc, i ? 'passante' : 'passant', 920 + i, x + i * 45, y + (i ? 20 : 0), 'auberge');
+    const n = sc.npcs[sc.npcs.length - 1];
+    n.name = (i ? 'Habituée' : 'Habitué') + ' de la taverne';
+    n.habitue = true;
+    n.lignes = [lignes[i % lignes.length], '« Reviens ce soir. On aura d\'autres histoires. »'];
+  }
+  sc.habituesPose = 1;
+  habituesEnsure();
+}
+const genRegionAvantHab = genRegion;
+genRegion = function (R) {
+  const sc = genRegionAvantHab(R);
+  if (sc && sc.type === 'region') habituesPoser(sc);
+  return sc;
+};
+
 // ───────────────────────── Haltes de route entre villages (vie des routes) ─────────────────────────
 // Une pierre de halte sur chaque grande route nommée (jusqu'à 3 / région), à mi-chemin.
 // Interaction courte : se reposer une fois par jour → or modeste, aucun bonus de stats.
@@ -58393,6 +58509,38 @@ if (typeof doInteract === 'function') {
   doInteract = function (it) {
     if (it && it.kind === 'landmark') { explLandmarkOffrir(); return; }
     return doInteractAvantExpl(it);
+  };
+}
+
+// ───────────────────────── Pèlerinage des trois berceaux (exploration) ─────────────────────────
+// Honorer Qinghe + Longwan + Meishan débloque un toast et un titre cosmétique (pas de stats).
+const PEL_BERCEAUX = ['qinghe', 'longwan', 'meishan'];
+function pelerinageComplet() {
+  if (typeof explEnsure !== 'function') return false;
+  const L = explEnsure().landmarks || {};
+  return PEL_BERCEAUX.every((id) => L[id]);
+}
+function pelerinageVerifier() {
+  if (typeof explEnsure !== 'function') return;
+  const e = explEnsure();
+  if (e.pelerinage) return;
+  if (!pelerinageComplet()) return;
+  e.pelerinage = 1;
+  if (typeof grantTitle === 'function') grantTitle('pelerin_trois', 'Pèlerin des Trois Berceaux');
+  else {
+    if (!Array.isArray(S.titles)) S.titles = [];
+    if (!S.titles.some((t) => t.id === 'pelerin_trois')) S.titles.push({ id: 'pelerin_trois', name: 'Pèlerin des Trois Berceaux' });
+    if (!S.title) S.title = 'pelerin_trois';
+  }
+  if (typeof toast === 'function') toast('Pèlerinage achevé : Qinghe, Longwan, Meishan. Titre « Pèlerin des Trois Berceaux ».', 'gold');
+  if (typeof saveGame === 'function') saveGame();
+}
+if (typeof explLandmarkOffrir === 'function') {
+  const avant = explLandmarkOffrir;
+  explLandmarkOffrir = function () {
+    const ok = avant();
+    if (ok) pelerinageVerifier();
+    return ok;
   };
 }
 
