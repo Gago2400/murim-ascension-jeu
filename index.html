@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="4c02d6e4ff9e">
+<meta name="murim-build" content="eb52eac20723">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="4c02d6e4ff9e" aria-label="Identifiant de version">Version générée : 4c02d6e4ff9e</div>
+      <div class="meta" id="t-build" data-build="eb52eac20723" aria-label="Identifiant de version">Version générée : eb52eac20723</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7461,6 +7461,40 @@ recitRegion('faim_collines', {
     revendre: '« … »',
   },
   apres: ['narr', 'À Qinghe tu as vendu une meule. Aux Plaines, la faim a présenté la facture.'],
+});
+
+// ───────────────────────── Suite démoniaque : la dette revendue (Montagnes du Dragon, rançon signée au capitaine) ─────────────────────────
+// Conséquence tardive de recit:peage_montagnes='rancon'. Le capitaine du péage a revendu la dette de Fei à un
+// usurier de passage, qui vient la faire valoir tout de suite : la fille de Fei, en service, jusqu'à ce qu'elle s'éteigne.
+recitRegion('dette_montagnes', {
+  name: 'La dette qui a changé de mains', region: 'montagnes', quest: 21, key: 'dette_montagnes', who: 'montagnes_lan', label: 'La dette de Fei, rachetée par un prêteur',
+  si: { choix: { 'recit:peage_montagnes': 'rancon' } }, suite: 'recit:peage_montagnes', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    montagnes_lan: { name: 'Guide Lan', title: 'gardienne des cordées', glyph: '嵐', color: '#c8d8e8' },
+    montagnes_qiu: { name: 'Usurier Qiu', title: 'acheteur de dettes de passage', glyph: '丘', color: '#8a7050' },
+  },
+  quand: 'Montagnes du Dragon : Guide Lan, au Temple ancien (la dette signée au capitaine a changé de mains)',
+  attente: '« Le prêteur ne presse pas encore. Reviens quand tu seras prêt à répondre pour ta dette, {nom}. »',
+  rappel: 'La dette de Fei a changé de mains, {nom}.',
+  steps: ['Écouter Guide Lan, au Temple ancien', 'Se rendre au Village des Gardiens, où le prêteur Qiu attend son dû', 'Examiner les papiers de la dette revendue', 'Trouver le prêteur Qiu, devant la maison de Fei', 'Revenir auprès de Guide Lan'],
+  labels: ['Examiner les papiers', 'Entrer dans la maison'], objet: 'Souche de la dette, brûlée', slot: 'acc2',
+  intro: [['montagnes_lan', '« Le capitaine a revendu la dette de Fei à un prêteur de passage, pour moins que sa valeur mais sans attendre dix ans. Qiu réclame son dû tout de suite : la fille de Fei, en service, jusqu\'à ce que la dette s\'éteigne. »'],
+    ['montagnes_lan', '« C\'est ta dette qu\'il a vendue, {nom}. Tu l\'as scellée devant le capitaine. Commence par le Village des Gardiens. »']],
+  arrivee: [['narr', 'Au village, Qiu étale ses papiers sur une caisse retournée : une dette scellée devant le capitaine, revendue sans que Fei en soit informé.'],
+    ['narr', 'Les voisins détournent le regard. Personne ne veut discuter avec un acheteur de dettes.']],
+  indices: ['Le sceau du capitaine, authentique, au bas d\'un papier qui porte maintenant un autre nom.',
+    'Une liste de trois autres dettes rachetées par Qiu cet hiver, toutes à des familles du col.',
+    'La porte de Fei, fermée à double tour : à l\'intérieur, on compte et recompte des pièces qui ne suffiront jamais.'],
+  conclusion: 'Qiu a racheté la dette de Fei au capitaine, à bas prix, et vient la faire valoir tout de suite : la fille de Fei entrera en service chez lui, le temps qu\'il faudra.',
+  repaire: [['narr', 'Devant la maison de Fei, Qiu attend, un papier plié dans la main, patient comme quelqu\'un qui a déjà gagné.'],
+    ['montagnes_qiu', '« La dette est à moi maintenant, scellée devant le capitaine. J\'ai payé comptant, je me fais payer de même. La fille, ou l\'équivalent, aujourd\'hui. »']],
+  question: 'Une dette rachetée, une fille promise en service, et {nom} au bout du papier qui l\'a scellée.',
+  choix: [{ k: 'racheter', rumeur: '« {nom} a payé une dette qu\'il avait lui-même scellée, et l\'a déchirée devant la famille. Qiu est reparti les mains vides. »', etiquette: 'dette rachetée et déchirée', txt: 'Racheter toi-même la dette à Qiu, au prix plein, et la déchirer devant Fei', hint: 'Voie orthodoxe · réparer', voie: 12, acte: 'aides', lines: [['montagnes_qiu', 'Il compte les pièces deux fois, méfiant, puis s\'en va sans un mot. Fei regarde le papier brûler dans l\'âtre.']] },
+    { k: 'negocier', rumeur: '« {nom} a acheté un an de sursis pour Fei. La dette, elle, tient toujours. »', etiquette: 'dette repoussée d\'un an', txt: 'Négocier avec Qiu un paiement partiel, pour repousser la dette d\'un an sans l\'effacer', hint: 'Voie libre · temporiser', voie: 2, lines: [['montagnes_qiu', '« Un an. Pas un jour de plus. » Il empoche la moitié de la somme et range son papier.']] },
+    { k: 'ceder', rumeur: '« La fille de Fei sert maintenant chez le prêteur Qiu. {nom} a touché sa part pour avoir scellé le papier. »', etiquette: 'fille livrée en service, commission touchée', txt: 'Laisser Qiu prendre la fille de Fei en service, et empocher une commission pour avoir scellé la dette', hint: 'Voie démoniaque · profiter encore', voie: -13, acte: 'voles', lines: [['montagnes_qiu', 'Il glisse quelques pièces supplémentaires dans ta main. « Pour le service rendu. » Fei ne dit rien, les yeux secs, au-delà des larmes.']] }],
+  retour: { racheter: '« La dette est cendres, et la fille est restée. » Elle te regarde longtemps. « Tu as réparé ce que tu avais cassé, {nom}. »', negocier: '« Un an de plus avant que ça recommence. » Elle secoue la tête. « Tu n\'as fait que repousser le jour, {nom}. »', ceder: '« La fille sert chez Qiu, maintenant. » Sa voix est froide. « Tu as vendu une enfant pour quelques pièces de plus, {nom}. »' },
+  merci: { racheter: '« Grimpe la tête haute, {nom}. »', negocier: '« Reviens avant que l\'année ne passe. »', ceder: '« Ne remonte plus au Temple ancien, {nom}. »' },
 });
 
 // ───────────────────────── Suite démoniaque : avoir fait chanter Vieux Pan (Longwan) ─────────────────────────
