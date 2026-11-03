@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="aa5d7b5ede1f">
+<meta name="murim-build" content="3189813a772b">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -730,6 +730,17 @@ html { overscroll-behavior: none; overflow: hidden; touch-action: manipulation; 
 /* [Grogrok] accueil et création au doigt : bouton « Commencer » toujours visible, titre à côté du héros en paysage */
 .cr-actions { position: sticky; bottom: calc(-12px - var(--sab)); z-index: 2; background: linear-gradient(to top, #14110f 62%, rgba(20,17,15,.92) 80%, rgba(20,17,15,0)); padding: 26px 0 calc(8px + var(--sab)); margin-bottom: -8px; }
 .cr-actions .btn.primary { flex: 1; }
+/* [Grogrok] CTA panneau collants : en paysage court Méditer / Valider / Vendre restent visibles sans scroll */
+.p-actions { position: sticky; bottom: calc(-10px - var(--sab)); z-index: 3; display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; background: linear-gradient(to top, #14110f 58%, rgba(20,17,15,.94) 78%, rgba(20,17,15,0)); padding: 22px 0 calc(8px + var(--sab)); margin: 4px 0 -6px; }
+.p-actions .btn { flex: 1 1 auto; min-height: 44px; }
+.p-actions .btn.primary { flex: 1 1 40%; }
+@media (orientation: landscape) and (max-height: 500px) {
+  .p-actions { padding-top: 16px; gap: 6px; }
+  .p-actions .btn { min-height: 40px; font-size: 13px; }
+  /* Cultivation : la échelle de rangs attend ; les actions priment sur 390 px de haut */
+  #panel[data-onglet="cult"] .cols > :last-child .ladder { max-height: 0; overflow: hidden; margin: 0; padding: 0; }
+  #panel[data-onglet="cult"] .cols > :last-child h3:first-child { display: none; }
+}
 @media (orientation: landscape) and (max-height: 500px) {
   #title-screen { place-items: center end; padding-right: max(28px, var(--sar)); }
   #title-screen.m3d { background: linear-gradient(to left, rgba(6,6,12,.92) 0%, rgba(6,6,12,.7) 34%, transparent 58%); }
@@ -2271,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="aa5d7b5ede1f" aria-label="Identifiant de version">Version générée : aa5d7b5ede1f</div>
+      <div class="meta" id="t-build" data-build="3189813a772b" aria-label="Identifiant de version">Version générée : 3189813a772b</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -28519,6 +28530,11 @@ function renderPerso(b) {
   // [Grogrok] le rang figurait deux fois (titre et carte du royaume) et le portrait venait après les quatre voies, sous le pli
   b.append(el('h2', null, S.name),
     el('p', null, 'Niveau ' + S.level + ' · Archétype : ' + archetype() + ' · ' + fac + (S.elu ? ' · Élu du Murim' : '')));
+  // [Grogrok] Valider collant tôt : en paysage court (~390 px) les attrs étaient sous le pli
+  b.append(el('div', { class: 'p-actions row' },
+    el('button', { class: 'btn primary', disabled: used === 0, onclick: () => { for (const k in UI.pend) S.attrs[k] += UI.pend[k]; S.points -= used; UI.pend = null; recomputeStats(); questEvent('alloc'); sfx('quest'); saveState(); renderPanel(); } }, 'Valider'),
+    el('button', { class: 'btn', disabled: used === 0, onclick: () => { UI.pend = null; renderPanel(); } }, 'Annuler'),
+    el('button', { class: 'btn danger', disabled: S.mats.reinit <= 0, onclick: () => { let t = 0; for (const k in S.attrs) { t += S.attrs[k]; S.attrs[k] = 0; } S.points += t; S.mats.reinit--; recomputeStats(); toast('Caractéristiques réinitialisées', 'info'); renderPanel(); } }, 'Réinitialiser (' + S.mats.reinit + ' pierre' + (S.mats.reinit > 1 ? 's' : '') + ')')));
   const left_ = el('div');
   { // aperçu du héros équipé (rendu 3D du jeu) et pièces portées
     const cv = heroPreview();
@@ -28536,10 +28552,7 @@ function renderPerso(b) {
       el('span', { class: 'v' + (pv ? ' pend' : '') }, String(S.attrs[A.k] + pv)),
       el('button', { class: 'pm', 'aria-label': 'Ajouter', disabled: left <= 0, onclick: () => { UI.pend[A.k]++; renderPanel(); } }, '+')));
   }
-  left_.append(el('div', { class: 'row', style: 'margin-top:10px' },
-    el('button', { class: 'btn primary', disabled: used === 0, onclick: () => { for (const k in UI.pend) S.attrs[k] += UI.pend[k]; S.points -= used; UI.pend = null; recomputeStats(); questEvent('alloc'); sfx('quest'); saveState(); renderPanel(); } }, 'Valider'),
-    el('button', { class: 'btn', disabled: used === 0, onclick: () => { UI.pend = null; renderPanel(); } }, 'Annuler'),
-    el('button', { class: 'btn danger', disabled: S.mats.reinit <= 0, onclick: () => { let t = 0; for (const k in S.attrs) { t += S.attrs[k]; S.attrs[k] = 0; } S.points += t; S.mats.reinit--; recomputeStats(); toast('Caractéristiques réinitialisées', 'info'); renderPanel(); } }, 'Réinitialiser (' + S.mats.reinit + ' pierre' + (S.mats.reinit > 1 ? 's' : '') + ')')));
+  // Valider / Annuler : barre .p-actions en tête (paysage court)
   // titres, réputation, apparence
   const rt = repTier(S.rep || 0);
   left_.append(el('h3', null, 'Réputation · ' + rt.name), el('p', null, fmt(S.rep || 0) + ' / 1 000' + (repDiscount() ? ' · −' + Math.round(repDiscount() * 100) + ' % chez les marchands' : ' · Quêtes, donjons, boss et Légendes la font monter.')));
@@ -28647,6 +28660,10 @@ function renderEquip(b) {
   for (const s of SLOTS) { const it = S.equip[s.k]; grid.append(itemTile(it, () => { UI.selJump = true; UI.selItem = it || null; renderPanel(); }, s.k)); }
   worn.append(el('h3', null, 'Porté'), grid);
   page.append(worn);
+  // [Grogrok] Vendre / Équiper le meilleur collants : visibles en paysage 390 px sans descendre le sac
+  page.append(el('div', { class: 'p-actions row' },
+    el('button', { class: 'btn', onclick: () => { sellToast(sellItems(typeof sacVendables === 'function' ? sacVendables((piece) => piece.rar <= 1) : S.bag.filter((piece) => piece.rar <= 1))); UI.selItem = null; renderPanel(); } }, 'Vendre communs et peu communs'),
+    el('button', { class: 'btn', onclick: () => { const n = typeof equiperMeilleur === 'function' ? equiperMeilleur() : 0; toast(n ? n + ' objet(s) équipé(s)' : 'Rien de mieux dans le sac', 'info'); UI.selItem = null; renderPanel(); } }, 'Équiper le meilleur')));
   const detail = el('div', { id: 'eq-detail' });
   const it = UI.selItem;
   if (it) {
@@ -28672,9 +28689,7 @@ function renderEquip(b) {
   for (const piece of sorted) bag.append(itemTile(piece, () => { UI.selJump = true; UI.selItem = piece; renderPanel(); }));
   if (!S.bag.length) bag.append(el('p', null, 'Ton sac est vide. Les ennemis laissent tomber de l\'équipement, les élites et les boss davantage.'));
   sack.append(bag);
-  sack.append(el('div', { class: 'row', style: 'margin-top:10px' },
-    el('button', { class: 'btn', onclick: () => { sellToast(sellItems(typeof sacVendables === 'function' ? sacVendables((piece) => piece.rar <= 1) : S.bag.filter((piece) => piece.rar <= 1))); UI.selItem = null; renderPanel(); } }, 'Vendre communs et peu communs'),
-    el('button', { class: 'btn', onclick: () => { const n = typeof equiperMeilleur === 'function' ? equiperMeilleur() : 0; toast(n ? n + ' objet(s) équipé(s)' : 'Rien de mieux dans le sac', 'info'); UI.selItem = null; renderPanel(); } }, 'Équiper le meilleur')));
+  // Vendre / Équiper : barre .p-actions au-dessus du détail
   page.append(sack);
   b.append(page);
 }
@@ -28786,12 +28801,12 @@ function renderCult(b) {
     if (info.cd > 0) right.append(el('p', { style: 'color:#ffb3a0' }, 'Méridiens instables : nouvelle tentative possible dans ' + fmtTime(info.cd / 1000) + '.'));
     if (typeof cultDeviated === 'function' && cultDeviated()) right.append(el('p', { style: 'color:#ffb3a0' }, CULT_PATHS[S.cult.path].dev));
     if (typeof cultReadout === 'function') right.append(el('p', { class: 'hint' }, cultReadout().trial));
+    // Tenter la percée → .p-actions (ci-dessous) ; parchemin / élixir restent près du taux
     const row = el('div', { class: 'row', style: 'margin-top:10px' });
-    row.append(el('button', { class: 'btn primary', disabled: !info.ready, onclick: () => runBreakthrough() }, 'Tenter la percée'));
     if (S.mats.parchemin > 0) row.append(el('button', { class: 'btn', onclick: () => { S.mats.parchemin--; addComp(5); sfx('quest'); renderPanel(); } }, 'Étudier un parchemin (+5) · ' + S.mats.parchemin));
     const troubled = info.cd > 0 || (typeof cultDeviated === 'function' && cultDeviated());
     if (troubled && S.mats.elixir > 0) row.append(el('button', { class: 'btn', onclick: () => { S.mats.elixir--; S.btCooldown = 0; if (typeof cultCalm === 'function') cultCalm(); toast('Élixir bu : tes méridiens se calment', 'info'); renderPanel(); } }, 'Boire un élixir · ' + S.mats.elixir));
-    right.append(row);
+    if (row.childNodes.length) right.append(row);
     right.append(el('p', { class: 'hint', style: 'margin-top:8px' }, 'Échec : le qi présent reflue (−30 %) et la régénération ralentit jusqu\'à une méditation. Niveau, compréhension, catalyseur et rang ne reculent pas.'));
     right.append(el('h3', null, 'Ce que débloque ' + R.name), el('p', null, R.unlock.join(' · ')));
   } else {
@@ -28803,14 +28818,18 @@ function renderCult(b) {
       right.append(el('div', { class: 'med' }, el('div', null, n + ' · ' + lv + ' / 40', el('small', null, d)), el('button', { class: 'btn sm', disabled: S.pa < cost || lv >= 40, onclick: () => { S.pa -= cost; S.asc[k]++; recomputeStats(); renderPanel(); } }, cost + ' PA')));
     }
   }
+  const sticky = el('div', { class: 'p-actions row' });
+  if (info) sticky.append(el('button', { class: 'btn primary', disabled: !info.ready, onclick: () => runBreakthrough() }, 'Tenter la percée'));
   right.append(el('h3', null, 'Méditation'));
   for (const k in MEDITATIONS) {
     const m = MEDITATIONS[k]; const c = medCheck(k);
     right.append(el('div', { class: 'med' + (c.ok ? '' : ' fermee') }, el('div', null, m.name + ' · ' + fmtTime(m.dur / timeDiv()), el('small', null, m.desc)),
-      c.ok ? el('button', { class: 'btn sm', onclick: () => { if (startMed(k)) closePanel(); } }, 'Méditer') : medFermee(c)));
+      c.ok ? null : medFermee(c)));
+    if (c.ok) sticky.append(el('button', { class: 'btn sm', onclick: () => { if (startMed(k)) closePanel(); } }, 'Méditer · ' + m.name));
   }
   right.append(el('p', { class: 'hint', style: 'margin-top:6px' }, 'Reste immobile : bouger, attaquer ou subir un coup interrompt la méditation.'));
-  b.append(el('h2', null, 'Cultivation · ' + RANKS[S.rank].name), el('div', { class: 'cols' }, right, left));
+  // [Grogrok] sticky juste sous le titre : visible dès l'ouverture en paysage court
+  b.append(el('h2', null, 'Cultivation · ' + RANKS[S.rank].name), sticky, el('div', { class: 'cols' }, right, left));
   if (typeof renderCultExtra === 'function') renderCultExtra(b);
 }
 function runBreakthrough() {
@@ -33971,11 +33990,22 @@ function drawRegionMap(cv) {
       if (poser(l.nom, ox + l.x * k, oy + l.y * k - 8 * fs, 11, '600', '#2e4a2a')) nEns++;
     }
   }
-  for (const z of sc.planZones || []) {
-    let zx = 0, zy = 0; for (const [x, y] of z.poly) { zx += x; zy += y; } zx /= z.poly.length; zy /= z.poly.length;
-    // [Claude] le nom d'une zone se dit au bourg avant d'y aller : en italique pâle tant qu'elle n'est pas explorée
-    if (fogSeen(sc.id, zx, zy)) poser(z.nom, ox + zx * k, oy + zy * k, 11, '600', 'rgba(60,40,24,.72)');
-    else poser(z.nom, ox + zx * k, oy + zy * k, 11, 'italic 600', 'rgba(72,54,36,.55)');
+  // [Grogrok] noms de zones : explorées d'abord ; carte entière / pincement éloigné → plafond bas,
+  // sans italiques non vues (sinon « Colline · Rizières · … » recouvre les bourgs à faible zoom).
+  {
+    const zs = (sc.planZones || []).map((z) => {
+      let zx = 0, zy = 0; for (const [x, y] of z.poly) { zx += x; zy += y; }
+      zx /= z.poly.length; zy /= z.poly.length;
+      return { z, zx, zy, vu: fogSeen(sc.id, zx, zy) };
+    }).sort((a, b) => (b.vu - a.vu) || dist2(a.zx, a.zy, P.x, P.y) - dist2(b.zx, b.zy, P.x, P.y));
+    const serre = !vue.zoom || zf <= 1.02; // vue d'ensemble ou pincement ≤ 1×
+    const maxZ = serre ? 4 : 8;
+    let nZ = 0;
+    for (const { z, zx, zy, vu } of zs) {
+      if (nZ >= maxZ) break;
+      if (serre && !vu) continue;
+      if (poser(z.nom, ox + zx * k, oy + zy * k, 11, vu ? '600' : 'italic 600', vu ? 'rgba(60,40,24,.72)' : 'rgba(72,54,36,.55)')) nZ++;
+    }
   }
   if (g0) drawGoalMark(c, gmx, gmy, true, '', Math.max(fs, 1.4));
   c.save(); c.translate(px, py); c.rotate(P.face);
