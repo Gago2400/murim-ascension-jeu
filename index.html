@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="af1691ebe1e2">
+<meta name="murim-build" content="25ac83703410">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2287,7 +2287,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="af1691ebe1e2" aria-label="Identifiant de version">Version générée : af1691ebe1e2</div>
+      <div class="meta" id="t-build" data-build="25ac83703410" aria-label="Identifiant de version">Version générée : 25ac83703410</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7123,6 +7123,46 @@ recitRegion('nuits_noires', {
   },
   merci: { rendre: '« La crique dort. »', bruler: '« Un peu. »', encore: '« Va-t\'en. »' },
   apres: ['narr', 'Tu as vendu des nuits. Longwan a compté ce que tu as rendu — ou repris.'],
+});
+
+// ───────────────────────── Suite démoniaque : la part qui manque (Marécages, Dou le noyé monnayé) ─────────────────────────
+// Conséquence tardive de recit:marecages_noms='chantage'. Le prêteur du Bourg, qui n'a jamais cru à la noyade de Dou,
+// a fini par remonter la piste des reçus jusqu'à celui qui se sert avant lui.
+recitRegion('dou_monnaye', {
+  name: 'La part qui manque', region: 'marecages', quest: 24, key: 'dou_monnaye', who: 'marecages_ning2', label: 'Le prêteur qui sent l\'arnaque de Dou',
+  si: { choix: { 'recit:marecages_noms': 'chantage' } }, suite: 'recit:marecages_noms', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    marecages_ning2: { name: 'Graveuse Ning', title: 'gardienne de la cabane des noms', glyph: '名', color: '#a8b8a0' },
+    marecages_meng: { name: 'Prêteur Meng', title: 'créancier du Bourg, qui compte deux fois', glyph: '債', color: '#8a7050' },
+  },
+  quand: 'Marécages de l\'Oubli : Graveuse Ning, au Hameau sur pilotis (Dou te paie pour ton silence)',
+  attente: '« Le marais n\'a rien de neuf pour toi, aujourd\'hui. »',
+  rappel: 'Le prêteur du Bourg recompte ses pertes, {nom}.',
+  steps: ['Écouter Graveuse Ning, au Hameau sur pilotis', 'Se rendre au Bourg de Cendre, où le prêteur recompte ses registres', 'Suivre les traces du prêteur Meng parmi les quais', 'Trouver le prêteur Meng, près du Bourg de Cendre', 'Revenir auprès de Graveuse Ning'],
+  labels: ['Examiner le registre', 'Entrer chez le prêteur'], objet: 'Registre raturé du prêteur Meng', slot: 'acc2',
+  intro: [['marecages_ning2', '« Le poisson de la veuve de Dou se vend trop bien pour une veuve, {nom}. Le prêteur du Bourg a dû le remarquer, lui aussi. »'],
+    ['marecages_ning2', '« Un homme à la ceinture pleine de reçus demande pourquoi une morte paie encore ses dettes. Va voir au Bourg de Cendre, avant qu\'il ne devine le reste. »']],
+  arrivee: [['narr', 'Au Bourg de Cendre, le prêteur Meng relit un registre taché d\'eau de marais, une colonne entière rayée au nom de Dou.'],
+    ['narr', 'Un scribe murmure : « Il dit qu\'un mort ne paie jamais deux fois. Et pourtant. »']],
+  indices: ['Un reçu froissé, signé d\'une croix que seul un pêcheur trace ainsi — daté d\'après la noyade officielle de Dou.',
+    'Une pièce de cuivre marquée d\'un poisson gravé au couteau : la façon dont Dou paie, sans jamais signer son vrai nom.',
+    'Une note du prêteur à lui-même : « Quelqu\'un d\'autre encaisse avant moi. Trouver qui. »'],
+  conclusion: 'Le prêteur Meng a remonté la piste des reçus jusqu\'à toi : il sait que quelqu\'un d\'autre se sert avant lui sur le dos d\'un mort.',
+  repaire: [['narr', 'Près des quais du Bourg de Cendre, le prêteur Meng t\'attend, son registre sous le bras, pas du tout surpris de te voir.'],
+    ['marecages_meng', '« Un noyé qui paie deux prêteurs. L\'un, c\'est moi. L\'autre porte tes bottes, à en juger par la vase. Alors : on partage, ou je ressuscite ton pêcheur devant tout le Bourg ? »']],
+  question: 'Le registre de Meng, le secret de Dou entre vos deux mains, et une veuve qui ne sait toujours rien.',
+  choix: [
+    { k: 'liberer', rumeur: '« Dou a payé sa dette au Bourg de sa propre bourse, et {nom} a payé le reste. Le noyé ne doit plus rien à personne. »', etiquette: 'dette réglée, Dou libéré de tout', txt: 'Payer la dette de Dou à Meng de ta poche et renoncer à ta part, pour qu\'il n\'ait plus personne à craindre', hint: 'Voie orthodoxe · libérer deux fois', voie: 14, acte: 'aides', lines: [['marecages_meng', 'Il compte les pièces deux fois, incrédule. « Un noyé qui ne doit plus rien. Première fois que je vois ça. » Il raye le nom de Dou pour de bon.']] },
+    { k: 'partager', rumeur: '« Le prêteur Meng a cessé de parler de noyés ressuscités, au Bourg. On dit qu\'il a trouvé un meilleur associé que ses registres. »', etiquette: 'second silence acheté', txt: 'Céder une part de ta propre part à Meng pour qu\'il se taise aussi, sans rien dire à Dou', hint: 'Voie libre · acheter un second silence', voie: 2, lines: [['marecages_meng', '« Voilà qui est raisonnable. » Il referme son registre. « Un mort qui paie deux vivants, personne n\'a besoin de savoir lequel compte le plus. »']] },
+    { k: 'livrer', rumeur: '« Le prêteur Meng a repris Dou en plein jour, au Bourg. On dit que {nom} a touché une commission sur un mort qui ne l\'était pas. »', etiquette: 'Dou livré à Meng', txt: 'Vendre à Meng tout ce que tu sais sur Dou, et empocher une commission sur sa capture', hint: 'Voie démoniaque · vendre ce qu\'il te reste de Dou', voie: -15, acte: 'voles', lines: [['marecages_meng', '« Voilà qui vaut bien plus que des reçus froissés. » Il compte ta commission sans lever les yeux. « Les noyés devraient rester noyés, cultivateur. »']] },
+  ],
+  retour: {
+    liberer: '« Dou est allé payer Meng lui-même, la tête haute. Plus personne ne le fait taire, pas même toi. » Elle pose son burin. « Tu as fini ce que tu avais commencé à gâcher. »',
+    partager: '« Meng ne reparle plus de noyé ressuscité. » Elle hésite. « Combien te reste-t-il, après ce partage, {nom} ? »',
+    livrer: '« Le Bourg a repris Dou en plein jour. Sa femme ne pêche plus. » Elle ne te regarde plus en face. « Le mur porte son nom, maintenant. Pour de bon. »',
+  },
+  merci: { liberer: '« Le mur ne connaîtra jamais ton nom, {nom}. »', partager: '« Le marais garde les comptes, lui aussi. »', livrer: '« Ne reviens plus sous mon toit. »' },
 });
 
 // ───────────────────────── Suite du prologue (masque de jade) : le prix du masque ─────────────────────────
