@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="dd498c01e908" aria-label="Identifiant de version">Version générée : dd498c01e908</div>
+      <div class="meta" id="t-build" data-build="d885cc4fdf72" aria-label="Identifiant de version">Version générée : d885cc4fdf72</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -57913,6 +57913,101 @@ const genRegionAvantAmbulants = genRegion;
 genRegion = function (R) {
   const sc = genRegionAvantAmbulants(R);
   if (sc && sc.type === 'region') ambulantsPoser(sc);
+  return sc;
+};
+
+// ───────────────────────── Haltes de route entre villages (vie des routes) ─────────────────────────
+// Une pierre de halte sur chaque grande route nommée (jusqu'à 3 / région), à mi-chemin.
+// Interaction courte : se reposer une fois par jour → or modeste, aucun bonus de stats.
+// État S.commerces.haltes[regionId].day / .n
+
+const HALTE_LIMITE = 2;
+
+function halteEnsure() {
+  if (typeof ensureCommerces === 'function') ensureCommerces();
+  if (!S.commerces || typeof S.commerces !== 'object') S.commerces = {};
+  if (!S.commerces.haltes || typeof S.commerces.haltes !== 'object') S.commerces.haltes = { day: '' };
+  const h = S.commerces.haltes;
+  const day = typeof todayKey === 'function' ? todayKey() : '';
+  const renew = typeof jourDoitRenouveler === 'function' ? jourDoitRenouveler(h.day) : h.day !== day;
+  if (renew) { h.day = day; h.par = {}; }
+  if (!h.par || typeof h.par !== 'object') h.par = {};
+  return h;
+}
+
+function halteRestant(id) {
+  const h = halteEnsure();
+  return Math.max(0, HALTE_LIMITE - ((h.par[id] && h.par[id].n) || 0));
+}
+
+function haltePoser(sc) {
+  if (!sc || sc.type === 'dungeon' || sc.haltesRoute) return;
+  const rd = sc.routesDessinees || sc.qingheRoutes || sc.routesVillages;
+  const routes = (rd && rd.neuves) || sc.paths || [];
+  if (!routes.length || typeof bourgPersonne !== 'function') return;
+  const longueur = (pts) => { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); return L; };
+  const cands = routes.map((pts) => ({ pts, L: longueur(pts) })).filter((r) => r.L >= 2200).sort((a, b) => b.L - a.L).slice(0, 3);
+  const haltes = [];
+  cands.forEach((r, i) => {
+    const cum = [0]; for (let k = 1; k < r.pts.length; k++) cum.push(cum[k - 1] + Math.hypot(r.pts[k].x - r.pts[k - 1].x, r.pts[k].y - r.pts[k - 1].y));
+    const mid = r.L * (0.4 + (i % 3) * 0.08);
+    let k = 1; while (k < cum.length - 1 && cum[k] < mid) k++;
+    const a = r.pts[k - 1], b = r.pts[k], l = cum[k] - cum[k - 1] || 1, u = (mid - cum[k - 1]) / l;
+    const x = a.x + (b.x - a.x) * u, y = a.y + (b.y - a.y) * u;
+    const nx = -(b.y - a.y) / Math.hypot(b.x - a.x, b.y - a.y || 1), ny = (b.x - a.x) / Math.hypot(b.x - a.x, b.y - a.y || 1);
+    const hx = x + nx * 55, hy = y + ny * 55;
+    sc.decor.push({ type: 'statue', x: hx, y: hy, s: 0.7, v: 0.3, r: 14, halte: true, rot: 0 });
+    haltes.push({ x: hx, y: hy, r: 70 });
+  });
+  if (haltes.length) sc.haltesRoute = haltes;
+}
+
+function halteSeReposer() {
+  const sc = G.scene; if (!sc || !sc.haltesRoute) return false;
+  if (P.combatT < 4) { toast('Pas pendant le combat', 'warn'); return false; }
+  const rest = halteRestant(sc.id);
+  if (rest <= 0) { toast('Assez de pauses sur cette route aujourd\'hui', 'info'); return false; }
+  const h = halteEnsure();
+  if (!h.par[sc.id]) h.par[sc.id] = { n: 0 };
+  h.par[sc.id].n++;
+  const or = 8 + Math.min(20, (S.level || 1));
+  S.gold = (S.gold || 0) + or;
+  toast('Tu te reposes à la borne de halte. +' + or + ' or · ' + (HALTE_LIMITE - h.par[sc.id].n) + ' restante' + (HALTE_LIMITE - h.par[sc.id].n > 1 ? 's' : ''), 'gold');
+  if (typeof sfx === 'function') sfx('coin');
+  if (typeof saveGame === 'function') saveGame();
+  return true;
+}
+
+if (typeof findInteract === 'function') {
+  const findInteractAvantHalte = findInteract;
+  findInteract = function () {
+    const it = findInteractAvantHalte();
+    const sc = G.scene; if (!sc || !sc.haltesRoute || !P) return it;
+    let best = null, bd = Infinity;
+    for (const h of sc.haltesRoute) {
+      const d = dist2(P.x, P.y, h.x, h.y);
+      if (d < h.r * h.r && d < bd) { bd = d; best = h; }
+    }
+    if (best) {
+      const rest = halteRestant(sc.id);
+      const label = rest > 0 ? ('Se reposer · halte ' + rest + '/' + HALTE_LIMITE) : 'Halte · demain';
+      if (!it || bd < 100 * 100) return { kind: 'halte', ref: best, label };
+    }
+    return it;
+  };
+}
+if (typeof doInteract === 'function') {
+  const doInteractAvantHalte = doInteract;
+  doInteract = function (it) {
+    if (it && it.kind === 'halte') { halteSeReposer(); return; }
+    return doInteractAvantHalte(it);
+  };
+}
+
+const genRegionAvantHaltes = genRegion;
+genRegion = function (R) {
+  const sc = genRegionAvantHaltes(R);
+  if (sc && sc.type === 'region') haltePoser(sc);
   return sc;
 };
 
