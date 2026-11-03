@@ -2270,7 +2270,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="5b0c1cb7e21c" aria-label="Identifiant de version">Version générée : 5b0c1cb7e21c</div>
+      <div class="meta" id="t-build" data-build="8e7a7109d08f" aria-label="Identifiant de version">Version générée : 8e7a7109d08f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6489,6 +6489,41 @@ recitRegion('duels_plaines', {
   apres: ['narr', 'Dans les rizières, on dit qu\'un dé honnête flotte toujours dans l\'eau de riz ; celui de Hao, lui, coule à pic.'],
 });
 
+// ───────────────────────── Exploration multi-étapes Plaines : les trois sacs de riz ─────────────────────────
+// Quête locale hors trame : une porteuse demande d'apporter trois sacs de riz (grenier → digues → marché).
+// recitRegion classique, aucun champ de sauvegarde nouveau.
+recitRegion('trois_sacs', {
+  name: 'Les trois sacs de riz', region: 'plaines', quest: 12, key: 'trois_sacs', who: 'pl_fen', label: 'Trois sacs de riz à livrer avant la criée',
+  art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    pl_fen: { name: 'Porteuse Fen', title: 'bras du grenier', glyph: '米', color: '#d8c87a' },
+    pl_dao: { name: 'Vieux Dao', title: 'gardien des digues', glyph: '稼', color: '#8a9c6a' },
+  },
+  quand: 'Plaines de Jade : Porteuse Fen, au Bourg du Clan Gao (trois sacs de riz à livrer avant la criée)',
+  attente: '« Les sacs ne sont pas encore pesés. Reviens avant la criée. »',
+  rappel: 'Les trois sacs de riz attendent encore, {nom}.',
+  steps: ['Prendre les sacs auprès de Fen, au Bourg du Clan Gao', 'Livrer le premier au Hameau des Digues', 'Lire les marques sur la route', 'Remettre le dernier au Marché des Rizières', 'Revenir auprès de Fen'],
+  labels: ['Lire une marque', 'Remettre le sac'], objet: 'Corde de jute de Fen', slot: 'acc2',
+  intro: [['pl_fen', '« Trois sacs. Trois portes. » Elle te tend une corde nouée. « Digues, route, Marché. Tu livres le riz — ou tu vends ce que tu trouves dessous. »'],
+    ['pl_fen', '« Dao t\'attend aux digues. Ne défais pas la toile du premier : il compte pour le greffe du clan. »']],
+  arrivee: [['narr', 'Au Hameau des Digues, Dao pose le sac contre la diguette. La toile sent la terre mouillée.'],
+    ['pl_dao', '« Les bornes de la route portent des marques fraîches. Quelqu\'un compte nos sacs pour les Masques. »']],
+  indices: ['Une borne : « Sac du soir — noms. »', 'Une seconde marque, plus fraîche, vers le Marché des Rizières.', 'Un sac déjà entaillé : on a pris la liste, pas le riz.'],
+  conclusion: 'Les sacs de Fen portent aussi des noms. Au Marché des Rizières, tu choisis.',
+  repaire: [['narr', 'Au Marché des Rizières, le dernier sac cache une tablette sous la toile.'],
+    ['pl_fen', '« Livre le riz. Brûle les noms. Ou vends-les. »']],
+  question: 'Trois sacs, une tablette de noms, et la criée qui approche.',
+  choix: [
+    { k: 'livrer', rumeur: '« Un campagnard a fini la tournée de Fen. Le Marché a eu ses trois sacs intacts. »', etiquette: 'sacs livrés sans ouvrir', txt: 'Livrer le sac fermé et rapporter la corde à Fen', hint: 'Voie orthodoxe · ne pas lire les noms', voie: 6, acte: 'aides', lines: [['pl_fen', '« Rare. » Elle te rend la corde nouée d\'un jeton. « Garde-la. »']] },
+    { k: 'bruler', rumeur: '« On a vu de la fumée près du Marché. Des sacs, dit-on. »', etiquette: 'tablette brûlée', txt: 'Brûler la tablette de noms et livrer le riz seul', hint: 'Voie libre · casser le courrier sans le vendre', voie: 1, lines: [['pl_fen', '« Le feu coûte. Le riz reste. Tiens, pour la peine. »']] },
+    { k: 'vendre', rumeur: '« Une tablette de noms a changé de mains aux Plaines. La porteuse Fen ne parle plus. »', etiquette: 'noms vendus', txt: 'Vendre la tablette aux Masques et garder l\'or des sacs', hint: 'Voie démoniaque · les noms valent plus que le riz', voie: -10, acte: 'voles', rep: { legion: 70, alliance: -70 }, lines: [['pl_fen', 'Elle détourne les yeux. « Ne reviens plus au grenier. »']] },
+  ],
+  retour: { livrer: '« Corde et jeton. » Elle sourit peu. « Reviens si tu veux porter sans lire. »', bruler: '« Le feu coûte. » Elle te tend une bourse légère. « Mais il nettoie. »', vendre: '« Garde l\'or. » Sa voix est plate. « Ne me redemande plus de sacs. »' },
+  merci: { livrer: '« Les digues te saluent, {nom}. »', bruler: '« L\'odeur partira. »', vendre: '« … »' },
+  apres: ['narr', 'Trois sacs, une corde. Les Plaines se souviennent de la façon dont tu les as portés.'],
+});
+
 // ───────────────────────── Récit de Qinghe : la meule qui tourne la nuit (Grogrok) ─────────────────────────
 // Suite de 02_voie_regions.js : un récit propre à Qinghe, sans lien avec le réseau de Cendre Grise.
 // Même mécanique recitRegion et RECITS (34_voie.js), aucun champ de sauvegarde nouveau.
@@ -7084,6 +7119,45 @@ recitRegion('pension_pan', {
   },
   merci: { rendre: '« De dort. »', graver: '« Un peu. »', encore: '« Va-t\'en. »' },
   apres: ['narr', 'Tu as vendu un héros. Longwan a compté ce que tu as rendu — ou repris.'],
+});
+
+// ───────────────────────── Suite démoniaque : avoir vendu la tablette de Han aux Masques (Qinghe) ─────────────────────────
+// Conséquence de recit:trois_paniers='vendre'. Mei des digues et Han te rattrapent.
+// recitRegion + si ; aucun champ de sauvegarde nouveau.
+recitRegion('tablette_vendue', {
+  name: 'La tablette vendue', region: 'qinghe', quest: 8, key: 'tablette_vendue', who: 'qh_mei2', label: 'Mei sait ce que tu as vendu aux Masques',
+  si: { choix: { 'recit:trois_paniers': 'vendre' } }, suite: 'recit:trois_paniers', art: 'lanternes',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    qh_mei2: { name: 'Mei des digues', title: 'jardinière', glyph: '梅', color: '#8fbc8f' },
+    qh_porteur2: { name: 'Porteur Han', title: 'bras du marché', glyph: '擔', color: '#c4a574' },
+  },
+  quand: 'Qinghe : Mei des digues, au Moulin de la Rivière (tu as vendu la tablette aux Masques)',
+  attente: '« Pas encore. Les digues n\'ont pas fini de compter leurs morts. »',
+  rappel: 'La tablette vendue te rattrape, {nom}.',
+  steps: ['Écouter Mei au Moulin de la Rivière', 'Suivre Han jusqu\'au Hameau des Saules', 'Lire les traces des Masques sur la route', 'Trancher au Hameau des Saules', 'Revenir auprès de Mei'],
+  labels: ['Lire une trace', 'Trancher'], objet: 'Tablette vierge du porteur', slot: 'acc2',
+  intro: [['qh_mei2', '« Tu as vendu la tablette de Han aux Masques. » Elle serre un panier vide. « Mon frère était dessus. Il a disparu trois jours après. »'],
+    ['qh_mei2', '« Au Hameau des Saules, tu rends l\'or, tu brûles ce qui reste de la liste, ou tu vends encore des noms. »']],
+  arrivee: [['narr', 'Au Hameau des Saules, Han compte des paniers vides, les mains sales de cendre.'],
+    ['qh_porteur2', '« Tu reviens. » Il ne lève pas les yeux. « Les Masques, eux, ne reviennent jamais les mains vides. »']],
+  indices: ['Un panier éventré, la tablette manquante.', 'Une marque grise fraîche sur une borne, vers les collines.', 'Une liste de noms à moitié brûlée, dans la cendre d\'un feu de camp.'],
+  conclusion: 'Tu as vendu des noms. Ici, la jardinière et le porteur demandent le prix.',
+  repaire: [['narr', 'Au Hameau des Saules, Mei et Han attendent près du feu.'],
+    ['qh_mei2', '« Rends. Brûle. Ou vends encore. »']],
+  question: 'Une bourse, une liste à moitié brûlée, et un frère qui ne reviendra pas.',
+  choix: [
+    { k: 'rendre', rumeur: '« Le porteur Han a reçu une bourse pleine. On dit que celui qui vendait les noms a tout rendu. »', etiquette: 'or rendu, liste détruite', txt: 'Rendre l\'or et détruire ce qui reste de la liste', hint: 'Voie orthodoxe · réparer', voie: 14, acte: 'aides', lines: [['qh_porteur2', '« Tu n\'es pas les Masques. » Il serre la bourse. « Eux, je ne leur pardonne rien. »']] },
+    { k: 'bruler', rumeur: '« Une liste a fini en cendres près des Saules. L\'or, lui, n\'est pas revenu. »', etiquette: 'liste brûlée, or gardé', txt: 'Brûler ce qui reste de la liste sans rendre l\'or', hint: 'Voie libre', voie: 0, lines: [['qh_mei2', '« Un feu. Pas un frère. » Elle regarde la cendre. « C\'est déjà plus que les Masques n\'auraient fait. »']] },
+    { k: 'encore', rumeur: '« Mei a quitté le moulin. On dit que le porteur vend encore des noms, plus loin. »', etiquette: 'noms revendus', txt: 'Exiger une nouvelle tablette et vendre encore', hint: 'Voie démoniaque', voie: -14, acte: 'voles', rep: { alliance: -100, legion: 80 }, lines: [['qh_porteur2', '« Alors fini. » Il te tend une corde vide. « Ne reviens plus. Les digues sont plus justes que toi. »']] },
+  ],
+  retour: {
+    rendre: '« L\'or est rendu. » Han te tend une tablette vierge. « Pour ceux qui portent sans vendre. »',
+    bruler: '« La cendre est là. L\'or aussi, chez toi. »',
+    encore: '« … » Elle quitte le feu.',
+  },
+  merci: { rendre: '« Les digues dorment. »', bruler: '« Un peu. »', encore: '« Va-t\'en. »' },
+  apres: ['narr', 'Tu as vendu des noms. Qinghe a compté ce que tu as rendu — ou repris.'],
 });
 
 // ───────────────────────── Suite du serment du Juste (chapitre III) : la route des faibles ─────────────────────────
