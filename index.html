@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="8d91c9f31280">
+<meta name="murim-build" content="e7a6ec4fdc70">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2287,7 +2287,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="8d91c9f31280" aria-label="Identifiant de version">Version générée : 8d91c9f31280</div>
+      <div class="meta" id="t-build" data-build="e7a6ec4fdc70" aria-label="Identifiant de version">Version générée : e7a6ec4fdc70</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6887,6 +6887,45 @@ if (typeof genRegion === 'function') {
     return sc;
   };
 }
+
+// ───────────────────────── Suite démoniaque : la marque invisible (Citadelle, Wen sous la coupe) ─────────────────────────
+// Conséquence tardive de recit:citadelle_sceaux='exploiter'. La Cour des Sceaux a fini par remarquer que les sceaux du
+// quartier des Artisans sont devenus trop parfaits pour être honnêtes, et a remonté le fil jusqu'à l'entrepôt de Wen.
+recitRegion('sceau_invisible', {
+  name: 'La marque invisible', region: 'citadelle', quest: 24, key: 'sceau_invisible', who: 'citadelle_fen2', label: 'La marque invisible dans la cire de Wen',
+  si: { choix: { 'recit:citadelle_sceaux': 'exploiter' } }, suite: 'recit:citadelle_sceaux', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    citadelle_fen2: { name: 'Maîtresse Fen', title: 'guilde des Artisans, qui sait ce que tu as fait', glyph: '匠', color: '#c9a24a' },
+    citadelle_zhuo: { name: 'Examinatrice Zhuo', title: 'Cour des Sceaux, qui lit la cire mieux que personne', glyph: '驗', color: '#9098c0' },
+  },
+  quand: 'Citadelle des Étoiles : Maîtresse Fen, à la Place des Maîtres (Wen grave encore sous ta coupe)',
+  attente: '« L\'entrepôt tourne encore. Reviens quand tu auras de quoi le protéger, ou l\'enterrer. »',
+  rappel: 'L\'examinatrice de la Cour des Sceaux ne quitte plus le quartier, {nom}.',
+  steps: ['Écouter Maîtresse Fen, à la Place des Maîtres', 'Se renseigner au Quartier des Artisans sur la Cour des Sceaux', 'Suivre la trace de l\'examinatrice parmi les ateliers', 'Trouver Examinatrice Zhuo, près de l\'entrepôt désaffecté', 'Revenir auprès de Maîtresse Fen'],
+  labels: ['Examiner les rapports', 'Entrer dans l\'entrepôt'], objet: 'Rapport scellé de la Cour des Sceaux', slot: 'acc2',
+  intro: [['citadelle_fen2', '« Les sceaux de ton atelier sont trop parfaits, {nom}. Une examinatrice de la Cour des Sceaux a remarqué qu\'aucune cire de la guilde ne porte un grain aussi régulier. Elle pose des questions, et elle les pose bien. »'],
+    ['citadelle_fen2', '« Si elle remonte jusqu\'à l\'entrepôt, c\'est toute la guilde qui répond pour ton Wen. Va voir ce qu\'elle sait, avant qu\'elle ne le découvre elle-même. »']],
+  arrivee: [['narr', 'Au Quartier des Artisans, les graveurs baissent la voix en parlant de la Cour des Sceaux : « Elle a déjà fait fermer deux ateliers cette année, pour moins que ça. »']],
+  indices: ['Un rapport abandonné sur un établi : la liste des sceaux suspects, tous tracés jusqu\'à un seul entrepôt désaffecté.',
+    'Une convocation jamais envoyée, pliée dans un tiroir : l\'examinatrice connaît déjà l\'adresse, et attend autre chose avant d\'agir.',
+    'Une note glissée sous la porte de l\'entrepôt, de la même main que les rapports : « Je sais ce que ça vaut. Parlons-en avant la Cour. »'],
+  conclusion: 'L\'examinatrice Zhuo n\'est pas venue fermer l\'atelier : elle est venue négocier sa part, ou reprendre toute l\'affaire pour elle-même.',
+  repaire: [['narr', 'Dans l\'entrepôt, Wen grave toujours, les mains à nouveau tremblantes. Près de lui, Examinatrice Zhuo tourne un faux sceau entre ses doigts, sans se presser.'],
+    ['citadelle_zhuo', '« Un travail remarquable. Trop, pour rester invisible longtemps. » Elle pose le sceau. « La Cour ferme les ateliers comme celui-ci. Ou elle les reprend, selon qui lui parle en premier. »']],
+  question: 'Le burin de Wen qui tremble de nouveau, le sceau qui tourne entre les doigts de Zhuo, et une offre qui ne sera pas répétée.',
+  choix: [
+    { k: 'demanteler', rumeur: '« L\'entrepôt du quartier des Artisans a brûlé cette nuit. On dit que {nom} s\'est livré à la Cour des Sceaux à la place d\'un apprenti. »', etiquette: 'atelier détruit, Wen rendu à lui-même', txt: 'Détruire l\'atelier devant Zhuo, libérer Wen pour de bon et répondre toi-même devant la Cour des Sceaux', hint: 'Voie orthodoxe · payer pour de vrai', voie: 13, acte: 'aides', lines: [['citadelle_zhuo', 'Elle regarde les moules fondre sans un mot, puis te dévisage. « Peu de gens répondent à la place d\'un autre. La Cour s\'en souviendra, pour ou contre toi. »']] },
+    { k: 'acheter', rumeur: '« L\'examinatrice de la Cour des Sceaux a cessé de rôder au quartier des Artisans. On dit qu\'elle a trouvé une affaire plus discrète ailleurs. »', etiquette: 'second silence acheté', txt: 'Acheter le silence de Zhuo de ta propre bourse, et libérer Wen sans rien dire à la guilde', hint: 'Voie libre · payer pour que ça s\'arrête', voie: 2, lines: [['citadelle_zhuo', '« Voilà qui est raisonnable. » Elle empoche sans compter deux fois. « L\'apprenti disparaît de mes rapports. Le reste ne me regarde plus. »']] },
+    { k: 'associer', rumeur: '« Les sceaux du quartier des Artisans portent désormais un cachet de la Cour elle-même. Personne ne les examine plus. »', etiquette: 'Cour des Sceaux associée', txt: 'Associer Zhuo à l\'atelier : elle couvre les sceaux de son cachet, tu gardes Wen, vous partagez le double prix', hint: 'Voie démoniaque · doubler la mise', voie: -16, acte: 'voles', lines: [['citadelle_zhuo', '« Voilà qui vaut bien plus qu\'un rapport brûlé. » Elle scelle l\'entente de son propre cachet. « Un atelier que la Cour couvre elle-même : personne ne viendra plus jamais regarder la cire de près. »']] },
+  ],
+  retour: {
+    demanteler: '« Wen a quitté l\'entrepôt la tête haute, sans regarder derrière lui. Toi, tu réponds encore devant la Cour. » Elle pose sa main sur ton épaule. « Peu de maîtres auraient fait ce choix pour un apprenti qui n\'était même pas le leur. »',
+    acheter: '« L\'examinatrice ne revient plus. Wen grave de nouveau pour la guilde, officiellement cette fois. » Elle hésite. « Combien t\'a coûté ce silence, {nom} ? »',
+    associer: '« Les sceaux du quartier portent un cachet que je ne reconnais plus. » Elle ne te regarde plus en face. « La Cour elle-même ferme les yeux, maintenant. Sur quoi d\'autre, je préfère ne pas savoir. »',
+  },
+  merci: { demanteler: '« La guilde te doit plus qu\'elle ne peut payer, {nom}. »', acheter: '« Le quartier respire, du moins pour l\'instant. »', associer: '« … Ne reviens plus à la guilde. »' },
+});
 
 // ───────────────────────── Récit-suite de la trame : la voix du clou (Claude) ─────────────────────────
 // Première suite greffée sur un choix de la trame principale (et non d'un récit régional) : si le joueur a GARDÉ
