@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="84ee1c01945f">
+<meta name="murim-build" content="e3a269d087be">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="84ee1c01945f" aria-label="Identifiant de version">Version générée : 84ee1c01945f</div>
+      <div class="meta" id="t-build" data-build="e3a269d087be" aria-label="Identifiant de version">Version générée : e3a269d087be</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -20949,7 +20949,7 @@ function R3init(T) {
       // le visage, et des lamelles dessinées. Le héros en armure épique ou mieux garde le général.
       const lourde = o.heros && o.armor === 'armure' && (o.armRar || 0) >= 3 && dispo.has('general');
       const t = lourde ? ['general', 'sabreur_tete'] : ['sabreur', 'sabreur_tete'];
-      if (o.armor === 'armure' && !lourde) t.push('rodeur_epaule', 'rodeur_epaule2');
+      // Épaulières Quaternius : boules grises sur le sabreur. Le héros en armure légère s'en passe aussi.
       if (o.hat === 'hood') t.push('rodeur_capuche');
       // PNJ : le chapeau de paille dessiné (large) se lit de loin ; le petit chapeau skinné ne changeait pas la silhouette
       // Le chapeau skinné descend sur les yeux. On garde le cône de paille, posé plus haut.
@@ -20957,7 +20957,7 @@ function R3init(T) {
     }
     const arm = o.armor === 'armure', bottes = o.bootsType === 'bottes' || o.bootsType === 'jambieres' || (!o.bootsType && !!o.greaves);
     const t = [arm ? 'rodeur_corps' : 'paysan_corps', o.bracers ? 'rodeur_bras' : 'paysan_bras', bottes || o.armor === 'robe' ? 'rodeur_jambes' : 'paysan_jambes' /* pantalon ajusté sous la robe longue : l'ample perçait le pan */, bottes ? 'rodeur_bottes' : 'paysan_pieds'];
-    if (arm) t.push('rodeur_epaule', 'rodeur_epaule2');
+    // Épaulières Quaternius retirées : demi-sphères grises.
     if (o.hat === 'hood') t.push('rodeur_capuche');
     return new Set(t.filter((k) => dispo.has(k)));
   }
@@ -21081,23 +21081,6 @@ function R3init(T) {
     if (o.armor === 'armure' && !pieces) {
       const pl = o.plateGlow ? glowMat(o.plate || '#8a8f99', o.plateGlow, 'metal') : tm(o.plate || '#8a8f99', 'metal');
       seg(/^spine_01$/i, /^spine_03$/i, 0.2 * fs, 0.215 * fs, pl, 0.2, 1.05);
-      for (const sd of ['l', 'r']) {
-        const up = modelBone(m, new RegExp('^upperarm_' + sd + '$', 'i'));
-        if (up) { const g = boneGroup(m, up); mesh(g, 'hemi', pl, 0, 0.02, 0, 0.11 * fs, 0.09, 0.11 * fs); }
-      }
-    } else if (o.armor === 'armure' && !o.heros) { // lamelles laquées sur le sabreur : plastron, rangs, épaulières, liseré rouge
-      const lac = o.plate || '#1c1614', lm = tm(lac, 'metal'), lm2 = tm(shade(lac, 0.22), 'metal'), rd = tm(o.trim || '#9a2428', 'cloth');
-      const sp = boneAnchor(m, /^spine_01$/i);
-      if (sp) {
-        mesh(sp, 'box', lm, 0.16 * fs, 0.2, 0, 0.05, 0.36, 0.34 * fs);
-        for (let i = 0; i < 5; i++) mesh(sp, 'box', i % 2 ? lm2 : lm, 0.2 * fs, -0.02 + i * 0.07, 0, 0.02, 0.03, 0.38 * fs);
-        mesh(sp, 'box', rd, 0.21 * fs, 0.36, 0, 0.014, 0.024, 0.4 * fs);
-        mesh(sp, 'box', rd, 0.19 * fs, -0.05, 0, 0.014, 0.02, 0.36 * fs);
-      }
-      for (const sd of ['l', 'r']) {
-        const up = modelBone(m, new RegExp('^upperarm_' + sd + '$', 'i'));
-        if (up) { const g = boneGroup(m, up); mesh(g, 'hemi', lm, 0, 0.05, 0, 0.11 * fs, 0.08, 0.11 * fs); mesh(g, 'box', rd, 0, 0.02, 0.08, 0.09 * fs, 0.016, 0.02); }
-      }
     } else if (o.armor === 'tunique') { d.skirt.scale.y *= 0.62; d.skirt.position.y += 0.15; d.trim.position.y += 0.29; }
     // brassards (gants) et jambières
     if (o.bracers && !pieces) for (const sd of ['l', 'r']) seg(new RegExp('^lowerarm_' + sd + '$', 'i'), new RegExp('^hand_' + sd + '$', 'i'), 0.082 * fs, 0.09 * fs, o.bracersMetal ? tm(o.bracers, 'metal') : tm(o.bracers, 'cloth'), 0.35, 0.8);
@@ -46825,24 +46808,10 @@ function varieteCarrure(root, p, femme, T) {
   }
 }
 
-function varietePieces(p) {
-  const out = [];
-  const hair = p.age > 0.72 ? '#f4f1ea' : p.hair;
-  const poil = (p.age > 0.6 || p.coif === 'casque') ? '#f4f1ea' : hair;
-  out.push(['sourcils' + (p.sourcil || 0), hair]);
-  out.push(['nez' + (p.nez || 0), p.skin]);
-  if (p.moustache) out.push(['moustache', poil]);
-  if (p.barbeForme === 'pointe') out.push(['barbePointe', poil]);
-  if (p.barbeForme === 'bouc') out.push(['barbeBouc', poil]);
-  if (p.barbeForme === 'longue') out.push(['barbeLongue', poil]);
-  if (p.ventre > 1.05) out.push(['ventre', p.skin]);
-  if (p.age > 0.72 && p.coif !== 'casque' && p.coif !== 'capuche') {
-    out.push(['cheveuxGris', '#ffffff']);
-    out.push(['rides', '#5c4638']);
-  }
-  if (p.coif === 'queue' || p.coif === 'libres' || p.coif === 'straw' || p.coif === 'bandeau' || p.coif === 'coiffe') out.push([p.coif, p.coif === 'straw' || p.coif === 'bandeau' || p.coif === 'coiffe' ? VAR_COL[p.coif] : hair]);
-  if (p.prop) out.push([p.prop, VAR_COL[p.prop]]);
-  return out;
+function varietePieces() {
+  // Plus de boîtes, cônes ni cartes posés sur le visage : la peinture du sabreur n'est pas dans le dépôt.
+  // Teint, cheveux, taille et carrure (clavicule) restent.
+  return [];
 }
 
 function varieteRedresser(root) {
