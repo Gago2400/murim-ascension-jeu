@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="3189813a772b" aria-label="Identifiant de version">Version générée : 3189813a772b</div>
+      <div class="meta" id="t-build" data-build="5277d973b567" aria-label="Identifiant de version">Version générée : 5277d973b567</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -17159,9 +17159,8 @@ function R3init(T) {
           if (!laque) {
             paint = 'stone';
             const cry = sc.dungeon === 'crypte_sceau';
-            const light2 = id === 'domaine' || id === 'citadelle';
-            const dehors = sc.type === 'region' && !d.gardeCube && !cry && !light2;
-            const c = cry ? ['#d8d2c4', '#9a9488'] : light2 ? ['#d8d4e4', '#b8b2c8'] : ['#4a4650', '#3a3640'];
+            const dehors = sc.type === 'region' && !d.gardeCube && !cry;
+            const c = cry ? ['#d8d2c4', '#9a9488'] : ['#4a4650', '#3a3640'];
             if (cry) {
               // fût rond et chapiteau : le prisme à six faces se lisait comme un empilement de cubes
               put('cyl18', 't', c[1], 0, 0.2, 0, 0.52, 0.4, 0.52);
@@ -17352,33 +17351,11 @@ function R3init(T) {
           break;
         }
         case 'statue': {
-          const eh = (typeof ECHELLE_HEROS !== 'undefined' && ECHELLE_HEROS.statue) || { m: 1.75, natif: 2.25, elu: 2.2 };
-          const ks = (d.elu ? eh.elu : eh.m) / eh.natif; // [Grok] héros 1,75 m, Élu 2,2 m ; d.s (0,75 à 2,6) ne change plus la taille
-          base.compose(V1.set(X, hSol(d.x, d.y), Z), Q1.setFromEuler(E1.set(0, -(d.rot || 0), 0)), S1.set(ks, ks, ks));
-          paint = 'stone';
-          const cry = sc.dungeon === 'crypte_sceau';
-          const stone = cry ? '#ddd6c8' : '#c4c0d0';
-          put('box', 't', cry ? '#8e877c' : '#9a96a8', 0, 0.28, 0, 1.4, 0.55, 1.4);
-          if (d.bris) {
-            // figure brisée, lisible : robe sur le socle, cou cassé, tête au sol. Pas un fuseau gris.
-            put('cyl18', 't', cry ? '#d5cec0' : '#d9d2c4', 0, 0.98, 0, 0.28, 0.86, 0.28);
-            put('cyl18', 't', cry ? '#c8c0b0' : '#c4b8a4', 0, 1.48, 0, 0.11, 0.14, 0.11);
-            put('sph', 't', cry ? '#e4dcd0' : '#ddd4c6', 0.55, 0.2, 0.32, 0.16);
-            put('cyl', 't', cry ? '#b0a898' : '#a89e90', 0.72, 0.1, 0.12, 0.07, 0.22, 0.07, 0.5, 0.2, 0.7);
-          } else {
-            put('taper', 't', stone, 0, 1.25, 0, 0.36, 1.45, 0.3);
-            put('sph', 't', stone, 0, 2.25, 0, 0.32);
-          }
-          if (!d.bris) put('cyl', 't', cry ? '#eee6d4' : '#d4d0e0', 0.3, 2.0, 0.35, 0.04, 1.2, 0.04, 0, 0, -0.4);
-          if (cry && !d.bris) put('oct', 'b', '#ffe7a0', 0, 1.35, 0.22, 0.16, 0.22, 0.06, 0, 0, 0, false);
+          // Pas de statue dans les packs. Le cube / quille primitive se lisait en pavé. On retire (méthode GLB ou rien).
           break;
         }
         case 'crystal': case 'voidcrystal': {
-          const c = d.type === 'voidcrystal' ? '#b84aff' : id === 'domaine' ? '#ffe9a8' : '#8fe3ff';
-          put('oct', 'b', c, -0.25, 0.75, 0, 0.18, 0.85, 0.18, 0, 0, 0.2, true);
-          put('oct', 'b', shade(c, 0.25), 0.2, 0.95, 0.1, 0.2, 1.05, 0.2, 0.15, 0, -0.15, true);
-          put('oct', 'b', shade(c, -0.15), 0.42, 0.55, -0.2, 0.15, 0.62, 0.15, -0.2, 0, -0.4, true);
-          light(d.x, d.y, 0.9 * s, c, 2.6 * s, false, c);
+          // Pas de cristal GLB. MeshBasic interdit sur un solide. On retire plutôt que des octogones non éclairés.
           break;
         }
         case 'shrine': {
@@ -18371,6 +18348,21 @@ function R3init(T) {
       paint = 'cloth'; put('box', 't', d.coul || '#8a2a20', 0, 2.15 * k, 0, 0.03, 1.6 * k, 0.7 * k); put('box', 't', shade(d.coul || '#8a2a20', -0.35), 0, 1.33 * k, 0, 0.035, 0.08 * k, 0.72 * k);
       paint = ''; put('sph', 'b', '#e0b040', 0, 3.28 * k, 0, 0.08, 0.08, 0.08, 0, 0, 0, false);
     }
+    if (lmk && (lmk.k === 'tour' || lmk.k === 'palais')) {
+      // Tour des Étoiles / Palais flottant : pagode ou temple du pack, déjà chargé (bourg). Pas de dalles sur baguettes.
+      const nom = lmk.k === 'tour'
+        ? (ASIE.parts.tour_pagode ? 'tour_pagode' : (ASIE.parts.pagode ? 'pagode' : null))
+        : (ASIE.parts.temple_asie ? 'temple_asie' : (ASIE.parts.pagode ? 'pagode' : null));
+      const k = lmk.k === 'tour' ? (nom === 'tour_pagode' ? 0.52 : 0.62) : (nom === 'temple_asie' ? 0.095 : 0.62);
+      if (AM && nom && ASIE.parts[nom]) {
+        const mx = new T.Matrix4().compose(V1.set(W(lmk.x), hSol(lmk.x, lmk.y), W(lmk.y)), Q1.identity(), S1.set(k, k, k));
+        if (!asieInst.has(nom)) asieInst.set(nom, []);
+        asieInst.get(nom).push({ mx });
+      }
+    }
+    if (lmk && lmk.k === 'fleche') {
+      // Pas de flèche GLB. Empiler rocher_mousse (large, plat) lisait en masse brune flottante. On retire.
+    }
     if (lmk && lmk.k === 'ruine') {
       // Sanctuaire Englouti : temple du pack Asie déjà chargé, enfoncé dans l'eau. Rochers du pack en berge.
       if (AM && ASIE.parts.temple_asie) {
@@ -18449,7 +18441,7 @@ function R3init(T) {
       } else if (d.type === 'bones') {
         // Pas de crâne/os dans les packs. On retire le rendu 3D (reste dans R3_FLAT3D pour ne pas repeindre le sol).
       } else if (d.type === 'floatrock') {
-        floaters.push(d);
+        // Dode + bande MeshBasic : bloc noir non éclairé. Pas de rocher volant dans le pack. On retire.
       }
     }
     buildGrassField(sc, root);
@@ -18551,14 +18543,7 @@ function R3init(T) {
       im.computeBoundingSphere(); root.add(im); jumeauOcc(im); cullable(im);
     }
     bourgEnseignes(sc, root); panneauxTextes(sc, root);
-    // rochers flottants (Abysses) : animés individuellement
-    floaters = floaters.map((d) => {
-      const g = group(root, W(d.x), 0, W(d.y));
-      const rock = mesh(g, 'dode', sharedToon('#3a2a40', 'stone'), 0, 1.9, 0, 0.8 * d.s, 0.5 * d.s, 0.7 * d.s, 0.4, d.v * 6, 0.2);
-      mesh(g, 'box', sharedBasic('#c85aff'), 0, 1.55, 0, 0.35, 0.05, 0.1, 0, d.v * 6, 0, false);
-      blobShadow(g, 0.8 * d.s, 0.5 * d.s);
-      return { g, rock, d };
-    });
+    // Rochers flottants : plus de dode / MeshBasic. floaters reste vide (anim no-op).
     wheels = [];
     for (const d of sc.decor) if (d.roue) {
       const s = d.s || 1;
@@ -26810,33 +26795,13 @@ const LANDMARK3D = (() => {
     q.put('cyl18', 't', '#0c1814', 0.45, 0.09, 0.55, 1.05, 0.10, 0.88, 0, -0.18, 0, false);
   };
   const tour = (q) => {
-    const wall = '#ddd6c6', roof = '#34404a';
-    plinth(q, 4.4, 4.4, 0.5, '#8a8478');
-    for (let i = 0; i < 4; i++) {
-      const r = 1.55 - i * 0.25, y = 0.5 + i * 1.3;
-      q.set('plaster'); q.put('cyl6', 't', wall, 0, y + 0.5, 0, r, 1.0, r);
-      q.put('box', 'b', '#ffe08a', 0, y + 0.55, r * 0.87, 0.3, 0.4, 0.04, 0, 0, 0, false);
-      q.set('roof'); q.put('cone', 't', roof, 0, y + 1.15, 0, r + 0.55, 0.45, r + 0.55);
-    }
-    q.set(''); q.put('oct', 'b', '#bfe8ff', 0, 6.3, 0, 0.32, 0.55, 0.32, 0, 0, 0, true);
-    q.light(q.x, q.y, 6.3, '#bfe8ff', 3.2, false, '#bfe8ff');
+    // Tour des Étoiles : pagode du pack (tour_pagode), posée dans buildDecor. Plus l'empilement de boîtes.
   };
   const fleche = (q) => {
-    q.set('stone'); q.put('dode', 't', '#2a1e30', 0, 0.35, 0, 3.0, 0.8, 2.8, 0.1, 0.3, 0);
-    q.put('oct', 'b', '#b84aff', 0, 3.2, 0, 0.8, 3.4, 0.8, 0, 0.3, 0.05, true);
-    q.put('oct', 'b', '#d68aff', -1.1, 1.5, 0.5, 0.4, 1.4, 0.4, 0, 0, 0.35, true); q.put('oct', 'b', '#8a3ad0', 1.2, 1.3, -0.3, 0.45, 1.3, 0.45, 0.2, 0, -0.4, true);
-    q.put('oct', 'b', '#e8c0ff', 0.9, 4.9, 0.6, 0.18, 0.35, 0.18, 0, 0, 0, false); q.put('oct', 'b', '#e8c0ff', -0.8, 5.5, -0.4, 0.15, 0.3, 0.15, 0, 0, 0, false);
-    q.light(q.x, q.y, 3.2, '#b84aff', 5.0, false, '#c070ff');
+    // Flèche : retirée (pas de modèle de flèche ; une pile de rocher_mousse se lisait en masse).
   };
   const palais = (q) => {
-    const gold = '#e0b850', white = '#ece6f4';
-    q.set('stone'); q.put('box', 't', '#d8d0e8', 0, 0.3, 0, 6.4, 0.6, 4.8); q.put('box', 't', '#c8c0dc', 0, 0.75, -0.2, 5.4, 0.3, 3.8);
-    q.set('wood'); for (const x of [-1.9, -0.65, 0.65, 1.9]) q.put('cyl', 't', gold, x, 1.95, 1.2, 0.13, 2.1, 0.13);
-    q.set('plaster'); q.put('box', 't', white, 0, 1.95, -0.4, 4.2, 2.1, 2.6);
-    q.set('roof'); q.put('roof', 't', gold, 0, 3.0, 0, 2.4, 1.3, 5.8, 0, Math.PI / 2, 0); roofX(q, gold, 4.2, 2.6, 0.9);
-    q.set('stone'); for (const sx of [-1, 1]) { q.put('box', 't', '#d8d0e8', sx * 2.9, 0.9, 1.5, 0.7, 0.6, 0.7); q.put('cyl6', 't', white, sx * 2.9, 2.0, 1.5, 0.3, 1.6, 0.3); }
-    q.set(''); q.put('oct', 'b', '#ffe9a8', 0, 5.6, 0, 0.35, 0.6, 0.35, 0, 0, 0, true);
-    q.light(q.x, q.y, 5.6, '#ffe9a8', 3.6, false, '#ffe9a8');
+    // Palais flottant : temple_asie du pack, posé dans buildDecor. Plus la dalle sur baguettes.
   };
   // [Grogrok] repères visibles de loin : cascade haute de 9 m et colosse assis de 8 m
   const cascade = (q) => {
@@ -31246,7 +31211,7 @@ const LANDMARKS = {
   montagnes: { k: 'temple', label: 'Temple du Dragon' },
   marecages: { k: 'ruine', label: 'Sanctuaire Englouti' },
   citadelle: { k: 'tour', label: 'Tour des Étoiles' },
-  abysses: { k: 'fleche', label: 'Flèche de la Fracture' },
+  // Abysses : plus de Flèche (pas de GLB). Aucune quête ni route ne visait ce point.
   domaine: { k: 'palais', label: 'Palais flottant' },
 };
 
@@ -31259,7 +31224,7 @@ function landmarkParts(k, x, y) {
   if (k === 'stele') return [p('statue', 0, 0, 1.8, 70), p('rock', -28, 14, 1.1, 12), p('rock', 28, 14, 1.1, 12)];
   if (k === 'arbre') return [p('bigtree', 0, 0, 2.4, 70), p('bigtree', 40, 20, 1.3, 20), p('bush', -30, 16, 1.2, 0)];
   if (k === 'ruine') return [p('ruin', 0, 0, 2.2, 70), p('pillar', -34, 10, 1.2, 14), p('statue', 30, 12, 1.1, 14)];
-  if (k === 'tour' || k === 'fleche') return [p('crystal', 0, 0, 2.4, 70), p('pillar', 0, 8, 1.5, 16), p('lantern', -22, 6, 1, 6), p('lantern', 22, 6, 1, 6)];
+  if (k === 'tour') return [p('crystal', 0, 0, 2.4, 70), p('pillar', 0, 8, 1.5, 16), p('lantern', -22, 6, 1, 6), p('lantern', 22, 6, 1, 6)];
   if (k === 'palais') return [p('pillar', 0, 0, 1.8, 70), p('pillar', -42, 16, 1.3, 16), p('pillar', 42, 16, 1.3, 16), p('crystal', 0, -6, 1.4, 12)];
   return [p('statue', 0, 0, 1.6, 70), p('lantern', -24, 8, 1, 6), p('lantern', 24, 8, 1, 6)];
 }
