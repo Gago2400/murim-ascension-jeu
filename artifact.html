@@ -2270,7 +2270,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="469ba125fc5b" aria-label="Identifiant de version">Version générée : 469ba125fc5b</div>
+      <div class="meta" id="t-build" data-build="3951153c5f4b" aria-label="Identifiant de version">Version générée : 3951153c5f4b</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7042,6 +7042,47 @@ recitRegion('chasse_grue', {
   },
   merci: { liberer: '« Les Montagnes se souviennent de ceux qui réparent, {nom}. »', detourner: '« Que la neige garde ton secret. »', livrer: '« Ne reviens plus sur cette falaise. »' },
   apres: ['narr', 'Au marché de Jade, le collectionneur range une vitrine neuve. Sur l\'étiquette, à côté du prix : « Origine : Montagnes du Dragon. »'],
+});
+
+// ───────────────────────── Suite démoniaque : avoir vendu la honte de Shi An (Meishan) ─────────────────────────
+// Conséquence tardive de recit:meishan_serment='ebruiter'. Le courtier qui a payé pour le scandale du novice
+// revient : la première rumeur s'est bien vendue, il veut la seconde, sur le dos de Frère Kuan.
+recitRegion('scandale_jade', {
+  name: 'Les langues veulent plus', region: 'meishan', quest: 8, key: 'scandale_jade', who: 'meishan_yi2', label: 'Le courtier qui a payé pour la honte de Shi An',
+  si: { choix: { 'recit:meishan_serment': 'ebruiter' } }, suite: 'recit:meishan_serment', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    meishan_yi2: { name: 'Moine Yi', title: 'bonze de Meishan, la voix basse', glyph: '一', color: '#d8d0c0' },
+    meishan_bo: { name: 'Courtier Bo', title: 'langue de Jade', glyph: '賈', color: '#a0784a' },
+  },
+  quand: 'Meishan : Moine Yi, au Refuge de Meishan (tu as vendu la honte de Shi An aux langues de Jade)',
+  attente: '« Pas maintenant. Le monastère pleure encore assez pour un jour. »',
+  rappel: 'Le courtier de Jade rôde encore près du monastère, {nom}.',
+  steps: ['Écouter Moine Yi, au Refuge de Meishan', 'Se rendre au Hameau du Thé, où le courtier a payé des oreilles', 'Suivre les traces du courtier entre les marchands de laine', 'Trouver le campement du Courtier Bo, près de la Bergerie des Cimes', 'Revenir auprès de Moine Yi'],
+  labels: ['Écouter la rumeur', 'Entrer dans le camp'], objet: 'Carnet de comptes du courtier Bo', slot: 'acc2',
+  intro: [['meishan_yi2', '« Shi An dort sous l\'auvent du Hameau depuis qu\'on l\'a chassé. Et voilà qu\'un courtier de Jade revient, {nom}. Celui-là même qui t\'a payé pour sa honte. »'],
+    ['meishan_yi2', '« Il veut une seconde histoire, dit-il. La première s\'est bien vendue. Va voir ce qu\'il cherche, au Hameau du Thé. »']],
+  arrivee: [['narr', 'Au Hameau du Thé, les marchands de laine détournent le regard quand tu approches. Un enfant murmure : « Le courtier paie pour qu\'on parle du monastère. N\'importe quoi, pourvu que ça saigne. »'],
+    ['narr', 'Sur un étal, une pièce de Jade neuve traîne, oubliée : le prix d\'une langue qui a bien parlé.']],
+  indices: ['Une pièce de cuivre frappée d\'un caractère de Jade, glissée sous trois portes différentes du Hameau : le prix d\'une rumeur.',
+    'Un carnet déchiré où des noms de moines sont rayés un à un, sauf un : Frère Kuan, souligné deux fois.',
+    'Une note à l\'encre fraîche : « L\'aconit du pré des simples. Même filon. Paie double si c\'est encore vivant. »'],
+  conclusion: 'Le Courtier Bo remonte le fil de la première rumeur jusqu\'à Frère Kuan et son pré des simples : une seconde honte à vendre, dans le même monastère.',
+  repaire: [['narr', 'Près de la Bergerie des Cimes, le Courtier Bo compte des pièces de Jade sous une tente trop propre pour la montagne.'],
+    ['meishan_bo', '« Toi encore. La première histoire a nourri mes langues tout un hiver. Celle-ci vaut le double, si tu me dis où Kuan cache ses herbes. »']],
+  question: 'Le carnet du courtier, le nom de Frère Kuan souligné deux fois, et Shi An qui dort encore sous un auvent par ta faute.',
+  choix: [
+    { k: 'briser', rumeur: '« Le Courtier Bo a quitté Meishan sans un carnet, sans un nom, sans une pièce. Shi An dort au monastère, cette nuit. »', etiquette: 'courtier chassé, Shi An recueilli', txt: 'Brûler le carnet de Bo, le chasser de la montagne et ramener Shi An au monastère', hint: 'Voie orthodoxe · réparer deux fois', voie: 13, acte: 'aides', lines: [['meishan_bo', 'Il recule devant la flamme qui prend son carnet. « Il y a d\'autres montagnes, cultivateur. » Il ne revient pas.']] },
+    { k: 'detourner', rumeur: '« Le courtier est reparti avec une fausse histoire, payée par {nom}. Frère Kuan ne sait toujours rien. »', etiquette: 'fausse rumeur vendue', txt: 'Vendre à Bo une fausse rumeur sans valeur, pour qu\'il reparte satisfait', hint: 'Voie libre · détourner sans vendre Kuan', voie: 2, lines: [['meishan_bo', '« Un moine qui vole l\'argent des offrandes ? » Il note, content. « Voilà qui se vendra bien, même si c\'est faux. »']] },
+    { k: 'vendre', rumeur: '« Frère Kuan a quitté Meishan une nuit, sans un mot. On dit que {nom} a vendu jusqu\'à son nom. »', etiquette: 'Kuan livré au courtier', txt: 'Donner à Bo l\'emplacement du pré de Kuan et empocher le double', hint: 'Voie démoniaque · vendre ce qui reste', voie: -15, acte: 'voles', lines: [['meishan_bo', '« Voilà qui vaut le double, en effet. » Il compte deux fois la bourse. « Les langues de Jade se souviendront de ton nom, cultivateur. »']] },
+  ],
+  retour: {
+    briser: '« Shi An a repris son vœu ce matin, dans le silence. Frère Kuan ne sait rien de ce que tu as brûlé pour lui. » Moine Yi incline la tête. « Deux hontes éteintes, {nom}. »',
+    detourner: '« Le courtier est reparti content d\'un mensonge. » Il hésite. « Je ne sais pas ce que tu lui as vendu. Kuan dort tranquille, c\'est le principal. »',
+    vendre: '« Frère Kuan est parti avant l\'aube, sans un adieu. » Moine Yi ne te regarde plus en face. « Le monastère a perdu deux fils pour l\'or d\'un seul courtier. »',
+  },
+  merci: { briser: '« Les cloches de Meishan sonnent encore pour toi, {nom}. »', detourner: '« Le thé du refuge t\'est offert, en silence. »', vendre: '« Ne reviens plus sous ce toit. »' },
+  apres: ['narr', 'Au marché de Jade, le Courtier Bo tient boutique à côté des apothicaires qui vendent l\'aconit de Meishan. Les deux rumeurs se vendent côte à côte, à qui veut payer.'],
 });
 
 // ───────────────────────── Suite démoniaque : avoir repris les nuits noires (Longwan) ─────────────────────────
@@ -58558,12 +58599,18 @@ const CRIEUR_RUMEURS = {
     '« Sage Mu médite plus longtemps qu\'avant au Nexus Céleste. Le Gouffre du Dragon ne dort pas, dit-il. »',
     '« Un gardien de pierre a bougé d\'un pas, cette nuit, près du Monastère des Grues. Personne ne l\'a vu faire. »',
   ],
+  domaine: [
+    '« Un pèlerin a vu la Voix du Ciel descendre sur la Terrasse. Elle n\'a rien dit. »',
+    '« Greffière Jing dit que les jetons de mérite disparaissent plus vite que les prières. »',
+    '« Chambellan An a encore rayé un nom du registre des audiences. Personne n\'ose demander lequel. »',
+    '« Un jeune dragon a été vu hors de son nid, au-dessus du Palais flottant. Les gardes n\'osent pas le chasser. »',
+  ],
 };
 // [Claude] Placeable ≠ CRIEUR_RUMEURS : foret/col n'ont qu'un refuge (villeRefuge), pas de sc.bourg,
 // donc crieurPoser (qui lit sc.bourg.rect) reste no-op pour eux. Rumeurs gardées pour quand ils auront un bourg.
 // Désert/Marécages/Abysses : Fort des Caravanes, Village des Pilotis, Fort de la Trêve ont un vrai sc.bourg → crieur posé.
-// Montagnes : pas de bourg (Terre Préservée), mais un refuge (Temple ancien, sc.safe) → crieur posé dessus.
-const CRIEUR_BERCEAUX = ['qinghe', 'longwan', 'meishan', 'plaines', 'vallee', 'desert', 'marecages', 'abysses', 'citadelle', 'montagnes'];
+// Montagnes et Domaine : pas de bourg (Terre Préservée / Transcendante), mais un refuge (sc.safe) → crieur posé dessus.
+const CRIEUR_BERCEAUX = ['qinghe', 'longwan', 'meishan', 'plaines', 'vallee', 'desert', 'marecages', 'abysses', 'citadelle', 'montagnes', 'domaine'];
 
 function crieurEnsure() {
   if (typeof ensureCommerces === 'function') ensureCommerces();
@@ -58667,6 +58714,7 @@ const HAB_LIGNES = {
   abysses: ['« La voix a chanté encore, au bord. Je bois pour ne pas compter les noms. »', '« Vieux Gou vend ses éclats moins cher, ce soir. Mauvais signe. »'],
   citadelle: ['« Je compte les étoiles depuis l\'Ourse, pas les archives. »', '« Un automate m\'a regardé droit dans les yeux hier. Depuis, je bois plus fort. »'],
   montagnes: ['« La grue crie encore au-dessus du Monastère. Je préfère ne pas savoir pourquoi. »', '« Sage Mu dit que la Fracture se soigne. Moi, je soigne ma gorge. »'],
+  domaine: ['« L\'encens de l\'Autel me brûle la gorge. Une bière, au moins, ne juge pas. »', '« Tuan vend son vin plus cher qu\'un jeton de mérite. Je préfère payer en pièces. »'],
 };
 function habituesEnsure() {
   if (typeof ensureCommerces === 'function') ensureCommerces();
