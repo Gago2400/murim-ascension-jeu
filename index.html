@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="fb1284842525">
+<meta name="murim-build" content="ab062b152479">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2287,7 +2287,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="fb1284842525" aria-label="Identifiant de version">Version générée : fb1284842525</div>
+      <div class="meta" id="t-build" data-build="ab062b152479" aria-label="Identifiant de version">Version générée : ab062b152479</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -14083,6 +14083,10 @@ function drawDecor(d) {
       ctx.fillStyle = '#4a7a3a'; for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.ellipse(x + Math.cos(k * 2.2) * 16, y + Math.sin(k * 2.2) * 10, 5, 3, 0, 0, TAU); ctx.fill(); }
       break;
     }
+    case 'nenuphar': { // [Claude] flottent sur la lagune, pas de bassin (l'eau est déjà peinte par la rue)
+      for (let k = 0; k < 3; k++) { ctx.fillStyle = k % 2 ? '#5a8a46' : '#4a7a3a'; ctx.beginPath(); ctx.ellipse(x + Math.cos(k * 2.1) * 5, y + Math.sin(k * 2.1) * 5, 4, 2.4, 0, 0, TAU); ctx.fill(); }
+      break;
+    }
     case 'muraille': {
       const L = d.len || 160, e = d.ep ? 18 : 10, hgt = (d.haut || 3) * 12;
       ctx.save(); ctx.translate(x, y); ctx.rotate(d.rot || 0);
@@ -16727,6 +16731,13 @@ function R3init(T) {
   col *= 0.95 + 0.05 * (vague * 0.5 + 0.5);
   col = mix(col, vec3(0.78, 0.90, 0.86), smoothstep(0.78, 0.98, rive) * 0.30);
 ` + EAU_REFLET;
+  // [Claude] Marécages : même canal (lagune du Village des Pilotis), eau vaseuse olive-brun au lieu du cyan des autres rues
+  // d'eau. Rides un peu plus marquées (houle ×0,09 au lieu de ×0,05) : l'eau respire sans virer flashy.
+  const EAU_CUVE_MARAIS = `
+  vec3 col = fond;
+  col *= 0.91 + 0.09 * (vague * 0.5 + 0.5);
+  col = mix(col, vec3(0.46, 0.46, 0.28), smoothstep(0.78, 0.98, rive) * 0.26);
+` + EAU_REFLET;
   // Rizière : eau sombre vert-brun, reflet de ciel doux, houle faible. Pas de spéculaire toon
   // (une bande nette sur le plan). Le fond de casier (dalle unie) se lit à travers l'alpha.
   const EAU_RIZ = `
@@ -18547,6 +18558,14 @@ function R3init(T) {
           paint = 'stone'; put('cyl', 't', '#8a8276', 0, 0.06, 0, 2.1, 0.12, 2.1);
           paint = 'waterd'; put('cyl', 't', '#1e6070', 0, 0.13, 0, 1.85, 0.02, 1.85, 0, 0, 0, false);
           paint = ''; for (let k = 0; k < 3; k++) put('cyl', 't', '#4a7a3a', Math.cos(k * 2.2) * 1.3, 0.15, Math.sin(k * 2.2) * 1.3, 0.25, 0.01, 0.25, 0, 0, 0, false); // nénuphars
+          break;
+        }
+        case 'nenuphar': { // [Claude] flottent sur la lagune du Village des Pilotis : pas de bassin, l'eau est déjà la rue 'eau'
+          paint = '';
+          for (let k = 0; k < 3; k++) {
+            const a = k * 2.1, rr = k === 0 ? 0 : 0.24;
+            put('cyl', 't', k % 2 ? '#5a8a46' : '#4a7a3a', Math.cos(a) * rr, 0.05, Math.sin(a) * rr, 0.2 + (k % 2) * 0.05, 0.015, 0.2 + (k % 2) * 0.05, 0, 0, 0, false);
+          }
           break;
         }
         case 'puits': { // [Grok] toit posé sur les poteaux, échelle uniforme (le profil de toit n'est pas étiré)
@@ -20424,7 +20443,10 @@ function R3init(T) {
     // planches d'un quai (sol 'bois') : lames le long de x, teinte par lame, joints sombres ; procédural, sans texture
     // eau d'un canal (sol 'eau') : même matériau, fond plus sombre ; le bord (quai, rempart) porte l'écume. On n'y marche pas.
     // Canal : écume sur quelques dizaines de centimètres, pas un dégradé de 2 m le long du quai.
-    const EAU_GLSL = ' vBord = 1.0 - smoothstep(0.06, 0.40, e); vW = vRW;\n diffuseColor.rgb = vec3(0.10, 0.24, 0.28);\n' + EAU_CORPS.replaceAll('SHORE', 'vBord').replaceAll('FOND', 'diffuseColor.rgb').replaceAll('TEINTE', EAU_CUVE);
+    // [Claude] Marécages (lagune du Village des Pilotis) : fond et teinte vaseux (olive-brun), pas le cyan des autres canaux.
+    const eauMarais = sc.id === 'marecages';
+    const EAU_GLSL = ' vBord = 1.0 - smoothstep(0.06, 0.40, e); vW = vRW;\n diffuseColor.rgb = ' + (eauMarais ? 'vec3(0.09, 0.14, 0.08)' : 'vec3(0.10, 0.24, 0.28)') + ';\n'
+      + EAU_CORPS.replaceAll('SHORE', 'vBord').replaceAll('FOND', 'diffuseColor.rgb').replaceAll('TEINTE', eauMarais ? EAU_CUVE_MARAIS : EAU_CUVE);
     // rangs de théiers taillés (sol 'the') : haies vert sombre bosselées, sillons de terre entre deux rangs
     const THE_GLSL = ' float ry = fract(vRW.y / 0.9); float bos = 0.5 + 0.5 * sin(vRW.x * 8.0 + floor(vRW.y / 0.9) * 2.1) * sin(vRW.x * 3.1 + 1.0);\n'
       + ' float haie = smoothstep(0.06, 0.2, ry) * smoothstep(0.78, 0.64, ry) * (0.75 + 0.25 * bos);\n'
@@ -38581,15 +38603,25 @@ function citeRelierPortes(sc, poly) {
       { t: 'boutique', x: 270, y: -110, w: 112, h: 78, rot: 0, nom: 'Fumaisons du Marais', glyphe: '米', marchandise: 'riz' },
     ],
     rangees, modeles: ['maison_a', 'maison_c'], mur: '#8a7a5a', toit: '#3a4a3a', etals, objets,
-    arbre: 'deadtree', arbres: [[-520, -330], [520, -330], [-120, -580], [140, -560], [-400, -200], [400, -180], [-280, -520], [300, -500], [-620, 80], [620, 100]],
+    arbre: 'deadtree', arbres: [[-520, -330], [520, -330], [-120, -580], [140, -560], [-400, -200], [400, -180], [-280, -520], [300, -500], [-620, 80], [620, 100],
+      // [Claude] mangrove densifiée sur la berge, de part et d'autre de chaque ponton (hors des rangées de maisons)
+      [-520, 44], [-450, 44], [-310, 44], [-240, 44], [-140, 44], [-70, 44], [70, 44], [140, 44], [280, 44], [350, 44], [490, 44], [560, 44]],
     passants: [[0, -300], [-380, 300], [420, 300], [0, 420], [-300, -200], [300, -200]],
-    apres(sc, poly) {
+    apres(sc, poly, rng) {
       const s = sc.bourg.centre, X = (x) => s.x + x, Y = (y) => s.y + y;
       // [Grogrok] roseaux le long de la berge / lagune (lisibles depuis le bourg)
       for (let i = 0; i < 56; i++) {
         const t0 = i / 56;
         sc.flats.push({ type: 'tallgrass', x: X(-600 + t0 * 1200), y: Y(YB - 28 - (i % 4) * 14), s: 1.05 + (i % 5) * 0.05, v: (i * 0.17) % 1 });
         if (i % 2 === 0) sc.flats.push({ type: 'tallgrass', x: X(-560 + t0 * 1120), y: Y(YB + 36 + (i % 3) * 16), s: 1.0 + (i % 4) * 0.06, v: (i * 0.31) % 1 });
+      }
+      // [Claude] nénuphars sur la lagune : densité faible, dans les deux chenaux ouverts entre les rangées sur pilotis
+      // et au sud des maisons (DECOR_EAU les protège de decorHorsEau, 46_plans_regions.js).
+      for (const nx of [-190, 215]) for (const ny of [180, 270, 580]) {
+        sc.decor.push({ type: 'nenuphar', x: X(nx), y: Y(ny), s: 0.85 + rng() * 0.3, v: rng(), r: 0 });
+      }
+      for (const nx of [-440, -330, -220, -110, 110, 220, 330, 440]) {
+        sc.decor.push({ type: 'nenuphar', x: X(nx), y: Y(610), s: 0.85 + rng() * 0.3, v: rng(), r: 0 });
       }
       // [ChatGPT] Les pontons doivent être reconnus par la collision des canaux, pas seulement dessinés.
       for (const r of sc.rues) if (r.k === 'bois' && r.x0 >= X(-660) && r.x1 <= X(680) && r.y0 >= Y(-660) && r.y1 <= Y(640)) { r.quai = true; if (r.y1 === Y(640)) r.y1 += 20; }
@@ -41192,7 +41224,7 @@ function ancrerAquatique(o, force) {
 }
 // Barques, koïs, ponts et bornes vivent dans l'eau. Le reste (rochers, buissons, caisses, maisons)
 // est ramené sur la terre : le plan d'eau ne doit plus les couper.
-const DECOR_EAU = { bateau: 1, koi: 1, pont: 1, gue: 1, borne: 1 };
+const DECOR_EAU = { bateau: 1, koi: 1, pont: 1, gue: 1, borne: 1, nenuphar: 1 };
 function decorSurQuai(sc, x, y) {
   return (sc.rues || []).some((r) => r.quai && x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1);
 }
