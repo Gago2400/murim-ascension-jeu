@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="73f24cf61f72">
+<meta name="murim-build" content="76a403385fa5">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="73f24cf61f72" aria-label="Identifiant de version">Version générée : 73f24cf61f72</div>
+      <div class="meta" id="t-build" data-build="76a403385fa5" aria-label="Identifiant de version">Version générée : 76a403385fa5</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7001,6 +7001,47 @@ recitRegion('souffle_paix', {
     livrer: '« Les Masques sourient dans ton dos. »',
   },
   apres: ['narr', 'Au Col, tu as brisé un clou pour rendre une paix. Dans la Forêt, on t\'a demandé d\'en payer le prix — ou de le trahir.'],
+});
+
+// ───────────────────────── Suite de l'œuf vendu (Montagnes du Dragon) : le traqueur revient pour la grue entière ─────────────────────────
+// Conséquence tardive de recit:grue_montagnes='vendre'. Le collectionneur de Jade qui a payé l'œuf
+// envoie un traqueur chercher la grue adulte elle-même : « vivante, elle vaut dix fois l'œuf ».
+recitRegion('chasse_grue', {
+  name: 'La grue qu\'on veut vivante', region: 'montagnes', quest: 21, key: 'chasse_grue', who: 'montagnes_he', label: 'Le traqueur envoyé pour la grue entière',
+  si: { choix: { 'recit:grue_montagnes': 'vendre' } }, suite: 'recit:grue_montagnes', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    montagnes_he: { name: 'Gardien He', title: 'veilleur des falaises', glyph: '鶴', color: '#e8e8f0' },
+    montagnes_po: { name: 'Traqueur Po', title: 'chasseur payé par le collectionneur de Jade', glyph: '捕', color: '#8a6a52' },
+  },
+  quand: 'Montagnes du Dragon : Gardien He, au Temple ancien (tu as vendu l\'œuf au collectionneur de Jade)',
+  attente: '« Pas maintenant. Je compte les plumes tombées, et ça ne va pas vite. »',
+  rappel: 'Le traqueur de Jade est encore dans la neige, {nom}.',
+  steps: ['Écouter Gardien He, au Temple ancien', 'Se rendre au Village des Gardiens, où l\'on parle du traqueur', 'Suivre les pièges posés sur la falaise aux grues', 'Trouver le camp du traqueur, près du Monastère des Grues', 'Revenir auprès de Gardien He'],
+  labels: ['Examiner le piège', 'Entrer dans le camp'], objet: 'Collet désarmé du traqueur', slot: 'acc2',
+  intro: [['montagnes_he', '« Le collectionneur qui a payé pour l\'œuf, par toi, en veut plus. Il a envoyé un traqueur chercher la grue elle-même, vivante. L\'oiseau est vieux : elle ne survivra pas à la cage. »'],
+    ['montagnes_he', '« Tu as ouvert cette porte, {nom}. Le village en parle. Commence par le Village des Gardiens : le traqueur y a laissé des pièges. »']],
+  arrivee: [['narr', 'Au village, les Gardiens parlent d\'un homme poli qui paie bien pour qu\'on regarde ailleurs.'],
+    ['narr', 'Un enfant montre une empreinte de botte ferrée, toute neuve, qui monte vers la falaise aux grues.']],
+  indices: ['Un collet de fil d\'argent, tendu bas sur le sentier des grues : fait pour prendre un oiseau vivant, pas pour le tuer.',
+    'Une cage de bambou huilé, cachée sous une bâche, assez grande pour un oiseau adulte.',
+    'Une lettre scellée du collectionneur de Jade : « La grue entière vaut dix fois l\'œuf. Vivante. Je double si elle chante encore à l\'arrivée. »'],
+  conclusion: 'Le traqueur Po veut la grue vivante, pour le même collectionneur qui a payé l\'œuf. Il campe près du Monastère des Grues, et ses collets sont déjà posés.',
+  repaire: [['narr', 'Le camp du traqueur est une tente basse, à l\'abri du vent, à l\'ombre du Monastère des Grues. Po compte ses collets, un sourire tranquille.'],
+    ['montagnes_po', '« Encore toi. Le collectionneur se souvient de ton nom, cultivateur. Il dit que tu sais reconnaître une bonne affaire quand tu en vends une. »']],
+  question: 'Les collets sont posés, la cage est prête, et la grue, là-haut, crie encore pour un œuf qu\'elle ne retrouvera jamais.',
+  choix: [
+    { k: 'liberer', rumeur: '« Le traqueur de Jade a quitté les Montagnes sans rien, ses collets brûlés. La grue vole encore au-dessus du Monastère. »', etiquette: 'traqueur chassé, grue libre', txt: 'Détruire les collets, chasser Po des Montagnes et prévenir le Monastère des Grues', hint: 'Voie orthodoxe · réparer', voie: 11, acte: 'aides', lines: [['montagnes_po', 'Il recule devant ta lame, lâche la cage. « Le collectionneur trouvera un autre fou. Pas moi, pas ici. »']] },
+    { k: 'detourner', rumeur: '« Le traqueur de Jade est reparti les mains vides, une bourse de {nom} dans la poche. La grue, elle, ne sait toujours rien. »', etiquette: 'traqueur payé pour partir', txt: 'Payer Po pour qu\'il reparte et dise au collectionneur que la grue s\'est envolée trop loin', hint: 'Voie libre · acheter la paix', voie: 2, lines: [['montagnes_po', '« Voilà qui coûte moins cher qu\'une cage vide. » Il empoche la bourse et redescend sans se presser.']] },
+    { k: 'livrer', rumeur: '« La falaise aux grues est vide. Po et {nom} se sont partagé le prix, à parts égales. Le Monastère ne chante plus. »', etiquette: 'grue livrée, prix partagé', txt: 'Aider Po à poser la cage et partager avec lui le prix du collectionneur', hint: 'Voie démoniaque · finir ce que tu as commencé', voie: -14, acte: 'voles', lines: [['montagnes_po', '« Voilà un associé qui sait où les grues nichent. » À deux, la cage se ferme vite, et l\'oiseau ne crie plus.']] },
+  ],
+  retour: {
+    liberer: '« La grue tourne encore au-dessus du Temple. » Gardien He te tend le collet brûlé. « Tu as refermé ce que tu avais ouvert, {nom}. Pas tout le monde en est capable. »',
+    detourner: '« Le traqueur est reparti. » Il hésite. « Je ne sais pas ce que tu lui as dit, ou donné. La grue vole toujours, c\'est le principal. »',
+    livrer: '« Le nid est vide pour de bon, cette fois. » Gardien He ne te regarde plus en face. « La falaise ne criera plus. Ni pour toi, ni pour personne. »',
+  },
+  merci: { liberer: '« Les Montagnes se souviennent de ceux qui réparent, {nom}. »', detourner: '« Que la neige garde ton secret. »', livrer: '« Ne reviens plus sur cette falaise. »' },
+  apres: ['narr', 'Au marché de Jade, le collectionneur range une vitrine neuve. Sur l\'étiquette, à côté du prix : « Origine : Montagnes du Dragon. »'],
 });
 
 // ───────────────────────── Suite démoniaque : avoir repris les nuits noires (Longwan) ─────────────────────────
