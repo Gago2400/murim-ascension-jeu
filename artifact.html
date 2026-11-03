@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="eb52eac20723" aria-label="Identifiant de version">Version générée : eb52eac20723</div>
+      <div class="meta" id="t-build" data-build="f938017b8e58" aria-label="Identifiant de version">Version générée : f938017b8e58</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7059,6 +7059,47 @@ recitRegion('fumee_vendue', {
   merci: { rendre: '« Marche droit dans la brume, {nom}. »', liquider: '« Je garde ma lanterne allumée, maintenant. »', associer: '« Ne m\'adresse plus la parole, {nom}. »' },
 });
 
+// ───────────────────────── Suite orthodoxe : le prix qui tient (Col, encens réconcilié) ─────────────────────────
+// Miroir de la suite démoniaque « La fumée qui reste » (02_voie_regions_suites_col.js), greffée cette fois sur
+// recit:encens_col='reconcilier'. Le marchand de Jade qui achetait le bois moins cher avant l'accord de l'abbé
+// revient tenter de reprendre la place de Mère Wu, par un contrat dont personne ne lit la clause.
+recitRegion('prix_juste', {
+  name: 'Le prix qui tient', region: 'col', quest: 14, key: 'prix_juste', who: 'col_hu', label: 'Le marchand de Jade qui veut reprendre le bois',
+  si: { choix: { 'recit:encens_col': 'reconcilier' } }, suite: 'recit:encens_col', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    col_hu: { name: 'Petit Hu', title: 'fils de bûcheron du Village des Bûcherons', glyph: '伐', color: '#c8a070' },
+    col_shao: { name: 'Marchand Shao', title: 'marchand de Jade qui a perdu le marché', glyph: '韶', color: '#7a8a9a' },
+  },
+  quand: 'Col de la Brume : Petit Hu, au Monastère isolé (le marchand de Jade qui revient rôder)',
+  attente: '« Mère Wu m\'a dit d\'attendre ici, {nom}. Pas de bagarre sans toi. »',
+  rappel: 'Le marchand de Jade rôde encore autour de la remise, {nom}.',
+  steps: ['Écouter Petit Hu, au Monastère isolé', 'Se rendre à l\'Auberge de la Brume, où le marchand Shao a pris chambre', 'Examiner les comptes qu\'il propose aux bûcherons', 'Trouver ce que Shao prépare vraiment, au Village des Bûcherons', 'Revenir auprès de Petit Hu'],
+  labels: ['Examiner le contrat', 'Entrer dans la remise'], objet: 'Sifflet de bois de Petit Hu', slot: 'acc2',
+  intro: [['col_hu', '« {nom} ! Mère Wu t\'envoie chercher. Le marchand qui achetait notre bois moins cher, avant l\'accord de l\'abbé, est revenu. Il rôde autour de la remise depuis deux jours. »'],
+    ['col_hu', '« Il dit qu\'il paie mieux que le monastère, maintenant. Mère Wu ne veut pas l\'écouter seule. Va voir à l\'Auberge de la Brume, il y a pris chambre. »']],
+  arrivee: [['narr', 'À l\'auberge, l\'aubergiste pousse vers toi un parchemin oublié sur une table : un contrat à moitié rédigé, au nom du marchand Shao, pour « tout le bois du col, prix d\'avant l\'hiver ».'],
+    ['narr', 'Le prix qu\'il propose est plus haut que celui du monastère — sur le papier. Une clause en petits caractères parle d\'un « escompte de transport » retenu à chaque charretée.']],
+  indices: ['Un brouillon de contrat raturé : l\'escompte de transport, additionné sur dix charretées, efface toute la différence de prix annoncée.',
+    'Une bûcheronne qui raconte que Shao a déjà fait signer deux familles, sans leur lire la clause à voix haute.',
+    'Une lettre adressée à l\'intendance de Jade : Shao compte revendre le bois du col au double, une fois le monastère reparti les mains vides.'],
+  conclusion: 'Shao n\'a jamais vraiment baissé son prix : il a ajouté une clause que personne ne lit, pour reprendre en cachette ce que Mère Wu a gagné en plein jour.',
+  repaire: [['narr', 'Au Village des Bûcherons, Shao déroule son parchemin sur l\'établi, un sourire déjà prêt pour la signature.'],
+    ['col_shao', '« Le monastère paie juste, je sais. Mais moi, je paie en avance, pour dix charretées. Mère Wu n\'a qu\'à signer ici. Tu comptes rester regarder, {nom}, ou tu veux ta part pour que je signe plus vite ? »']],
+  question: 'Un contrat qui cache sa clause, Mère Wu qui hésite la plume en main, et Shao qui attend sa signature.',
+  choix: [
+    { k: 'devoiler', rumeur: '« Le marchand de Jade est parti sans contrat : {nom} a lu la clause à voix haute devant tout le village. Mère Wu garde le parchemin raturé, pour s\'en souvenir. »', etiquette: 'clause dévoilée, Shao chassé', txt: 'Lire le contrat à voix haute devant les bûcherons, révéler la clause cachée et chasser Shao', hint: 'Voie orthodoxe · dévoiler ce qui se cache dans les petits caractères', voie: 11, acte: 'aides', lines: [['col_shao', 'Il referme son parchemin trop vite. « Les mots, ça ne nourrit personne. » Il s\'en va sans saluer, et personne ne le retient.']] },
+    { k: 'renegocier', rumeur: '« Le contrat de Shao a été réécrit sans la clause, et {nom} a gardé une pièce pour la peine. Mère Wu signe, mais relit deux fois, maintenant. »', etiquette: 'contrat réécrit, commission gardée', txt: 'Forcer Shao à réécrire le contrat sans la clause, et garder une commission pour la négociation', hint: 'Voie libre · renégocier sans scandale', voie: 3, lines: [['col_shao', 'Il raye la clause en grommelant, puis compte ta part sans te regarder. « Content, cultivateur ? » Il s\'en va, le parchemin plus léger.']] },
+    { k: 'skimmer', rumeur: '« Le bois du col part encore vers Jade, sous un contrat que personne n\'a lu à voix haute. Mère Wu a signé en confiance. »', etiquette: 'clause gardée, bois détourné', txt: 'Laisser Mère Wu signer sans rien dire, et partager la clause cachée avec Shao', hint: 'Voie démoniaque · profiter du silence', voie: -13, acte: 'voles', lines: [['col_shao', 'Il te glisse la moitié de l\'escompte sans un mot de plus. « Voilà un cultivateur qui sait compter. » Mère Wu signe, confiante.']] },
+  ],
+  retour: {
+    devoiler: '« Mère Wu a brûlé le parchemin de Shao devant tout le village. » Petit Hu sourit, pour la première fois depuis deux jours. « Elle dit que tu lis mieux les contrats qu\'elle, {nom}. »',
+    renegocier: '« Le contrat est signé, sans la clause. » Il hausse les épaules. « Mère Wu n\'a pas demandé où est passée ta part, {nom}. Je n\'ai pas répondu. »',
+    skimmer: '« Mère Wu a signé, {nom}, en confiance. » Il ne te regarde plus en face. « Le bois repart vers Jade. Je ne sais pas ce que tu as gagné. »',
+  },
+  merci: { devoiler: '« Mère Wu te salue chaque fois que tu passes, maintenant. »', renegocier: '« Le bois tient son prix, à peu près. »', skimmer: '« Ne reviens plus au Village des Bûcherons, {nom}. »' },
+});
+
 // ───────────────────────── Suite démoniaque : la soif qui reste (Désert, citerne vendue aux caravanes) ─────────────────────────
 // Conséquence tardive de recit:desert_puits='vendre'. Un marchand de l'Oasis, qui note chaque gourde vendue,
 // a fini par remonter la piste des ventes jusqu'à celui qui tient la citerne cachée.
@@ -7097,6 +7138,47 @@ recitRegion('citerne_vendue', {
     monopole: '« L\'eau se vend au poids de l\'or, maintenant, et les chameliers rognent sur leurs outres pour payer. » Elle ne te regarde plus en face. « Le conseil cherche un nom. Le tien vient en tête. »',
   },
   merci: { rendre: '« Bois à notre eau quand tu veux, {nom}. »', partager: '« Le désert garde les comptes, lui aussi. »', monopole: '« Ne reviens plus boire ici. »' },
+});
+
+// ───────────────────────── Suite orthodoxe : le siège qu'on envie (Désert, miroir de « eau vendue ») ─────────────────────────
+// Conséquence tardive de recit:desert_puits='rendre'. Kuo réhabilité et assis au conseil de l'Oasis dérange un conseiller
+// qui convoitait ce siège : il invente des plaintes pour le reprendre. Même mécanique recitRegion et RECITS (34_voie.js),
+// aucun champ de sauvegarde nouveau. Miroir de 02_voie_regions_suites_desert.js (gréffé sur 'vendre').
+recitRegion('siege_envie', {
+  name: 'Le siège qu\'on envie', region: 'desert', quest: 19, key: 'siege_envie', who: 'desert_sha3', label: 'Le conseiller qui veut le siège de Kuo',
+  si: { choix: { 'recit:desert_puits': 'rendre' } }, suite: 'recit:desert_puits', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    desert_sha3: { name: 'Caravanière Sha', title: 'la doyenne qui défend le siège qu\'elle a donné', glyph: '沙', color: '#e0c890' },
+    desert_rong: { name: 'Conseiller Rong', title: 'le conseiller qui convoite le siège de Kuo', glyph: '議', color: '#8098b0' },
+  },
+  quand: 'Désert de Cendres : Caravanière Sha, au Refuge souterrain (le siège de Kuo menacé au conseil)',
+  attente: '« Le désert n\'a rien de neuf pour toi, aujourd\'hui. »',
+  rappel: 'Le siège de Kuo tient encore, {nom}, mais plus pour longtemps.',
+  steps: ['Écouter Caravanière Sha, au Refuge souterrain', 'Se rendre à l\'Oasis des Caravanes, où le conseil délibère', 'Examiner les plaintes portées contre Kuo', 'Trouver le conseiller Rong, près de l\'Oasis des Caravanes', 'Revenir auprès de Caravanière Sha'],
+  labels: ['Examiner les plaintes', 'Entrer dans la tente du conseil'], objet: 'Sceau de bronze du conseil', slot: 'acc1',
+  intro: [['desert_sha3', '« Trois plaintes déposées contre Kuo en une semaine, toutes de la même main. On dit qu\'il garde encore une citerne cachée, qu\'il la vide en secret pour ses amis. »'],
+    ['desert_sha3', '« Je l\'ai mis à ce siège, {nom}. Si c\'est un mensonge, je veux le savoir avant que le conseil ne le lui retire. Va voir à l\'Oasis. »']],
+  arrivee: [['narr', 'Devant la tente du conseil, les chameliers chuchotent : le vieux puisatier banni, revenu trop vite en grâce, aurait toujours sa citerne.'],
+    ['narr', 'Un rouleau de plaintes traîne sur un pupitre, toutes signées d\'un même sceau de cire, celui du conseiller Rong.']],
+  indices: ['Un rouleau de plaintes : la même écriture soignée derrière chaque accusation, celle d\'un scribe du conseil, pas d\'un chamelier.',
+    'Des traces de pas qui ne mènent à aucune citerne, mais tournent toujours autour de la tente où siège Rong.',
+    'Une lettre inachevée de Rong : « Le siège d\'un banni ne tient qu\'à la rumeur. Il suffit d\'en semer assez. »'],
+  conclusion: 'Le conseiller Rong invente des plaintes contre Kuo pour reprendre le siège qu\'il convoitait avant son retour en grâce.',
+  repaire: [['narr', 'Près de l\'Oasis, le conseiller Rong t\'attend sous sa tente, un nouveau rouleau de plaintes déjà à moitié écrit.'],
+    ['desert_rong', '« Un banni assis au conseil, et plus personne ne se souvient pourquoi il a été chassé. J\'écris ce que les chameliers n\'osent pas dire tout haut. Alors : tu laisses faire, ou tu veux ta part du siège ? »']],
+  question: 'Le rouleau de Rong, le siège de Kuo encore chaud, et un conseiller prêt à mentir pour le reprendre.',
+  choix: [
+    { k: 'denoncer', rumeur: '« Le rouleau de Rong a été lu devant tout le conseil, de sa propre écriture. Kuo garde son siège ; {nom} l\'a défendu. »', etiquette: 'Rong démasqué, siège défendu', txt: 'Porter le rouleau de plaintes devant le conseil et démasquer Rong publiquement', hint: 'Voie orthodoxe · défendre', voie: 10, acte: 'aides', lines: [['desert_rong', 'Il blêmit, le rouleau arraché des mains par un garde du conseil. « Ce n\'est pas... » Le conseil ne le laisse pas finir.']] },
+    { k: 'taire', rumeur: '« Les plaintes contre Kuo se sont taries, à l\'Oasis. On dit que le conseiller Rong a trouvé d\'autres soucis à écrire. »', etiquette: 'rumeur achetée au silence', txt: 'Accepter l\'or de Rong pour laisser la rumeur s\'éteindre, sans démentir ni dénoncer', hint: 'Voie libre · acheter le silence', voie: 2, lines: [['desert_rong', '« Voilà qui est raisonnable. » Il range son rouleau. « Un siège qui reste chaud profite mieux à deux qu\'à un conseil entier. »']] },
+    { k: 'pousser', rumeur: '« Le conseil délibère encore sur le siège de Kuo, et un cultivateur se murmure proche du conseiller Rong. »', etiquette: 'siège repris avec Rong', txt: 'S\'associer à Rong pour alimenter les plaintes et reprendre le siège à Kuo', hint: 'Voie démoniaque · pousser Kuo dehors', voie: -12, acte: 'voles', lines: [['desert_rong', '« Voilà un allié qui comprend le désert. » Il scelle son rouleau d\'un sceau neuf. « Un siège ne pardonne jamais deux fois, cultivateur. »']] },
+  ],
+  retour: {
+    denoncer: '« Le rouleau de Rong a parlé pour toi. » Elle pose sa main sur ton épaule. « Kuo garde son siège, et tu as rendu ce que Rong voulait prendre. »',
+    taire: '« Le conseiller Rong ne note plus rien. » Elle hésite. « Combien t\'a-t-il donné pour ton silence, {nom} ? »',
+    pousser: '« Le conseil vote la semaine prochaine, et Rong ne cesse de citer ton nom pour appuyer ses plaintes. » Elle ne te regarde plus en face. « J\'ai eu tort de croire que rendre l\'eau suffisait à te garder droit. »',
+  },
+  merci: { denoncer: '« Bois à notre eau quand tu veux, {nom}. »', taire: '« Le désert garde les comptes, lui aussi. »', pousser: '« Ne reviens plus boire ici. »' },
 });
 
 // ───────────────────────── Suite démoniaque : le troisième groupe (Domaine, raccourci de Kang repris) ─────────────────────────
