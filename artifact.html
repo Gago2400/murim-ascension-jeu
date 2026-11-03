@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="f4f721b0fc02" aria-label="Identifiant de version">Version générée : f4f721b0fc02</div>
+      <div class="meta" id="t-build" data-build="02d835cec3e7" aria-label="Identifiant de version">Version générée : 02d835cec3e7</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6768,6 +6768,75 @@ recitRegion('souffle_ermite', {
   merci: { rendre: '« Dors bien, enfant rendu à lui-même. »', contenir: '« Respire, surtout, {nom}. »', devorer: '« Ne t\'endors pas près de nos feux. »' },
   apres: ['narr', 'Au Col, tu avais bu un homme pour ne plus être « sans talent ». La forêt t\'a montré le prix de ce qu\'on avale. À toi de savoir si tu l\'as payé, ou seulement reporté.'],
 });
+
+// ───────────────────────── Suite de la lettre partagée avec Tang Rui (chapitre III) ─────────────────────────
+// Conséquence tardive du choix « partager » aux Ruines du Sage (ch3:tang). Deux apports :
+//  1) un récit-suite « Les yeux du clan » au Col : si Tang Rui est allié, il appelle la faveur promise ;
+//  2) une courte réplique du maître du village de départ qui a entendu parler de l'alliance Tang.
+// Même mécanique recitRegion. Aucun champ de sauvegarde nouveau.
+
+recitRegion('yeux_tang', {
+  name: 'Les yeux du clan', region: 'col', quest: 15, key: 'yeux_tang', who: 'tang', label: 'La faveur que Tang Rui te doit',
+  si: { choix: { 'ch3:tang': 'partager' } }, suite: 'ch3:tang', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    tang: { name: 'Tang Rui', title: 'prodige de l\'Académie', glyph: '唐', color: '#ffcf4a' },
+    col_mei: { name: 'Mei la relieuse', title: 'espionne à gages', glyph: '梅', color: '#c87890' },
+  },
+  quand: 'Col de la Brume : Tang Rui, au Monastère isolé (tu lui as tendu la lettre)',
+  attente: '« Pas encore. Les Masques ne bougent qu\'après la brume de midi. »',
+  rappel: 'Tang Rui attend encore ta réponse, {nom}.',
+  steps: ['Écouter Tang Rui, au Monastère isolé', 'Interroger les clients de l\'Auberge de la Brume', 'Suivre les marques laissées par les Masques', 'Rejoindre Mei la relieuse au Village des Bûcherons', 'Faire ton rapport à Tang Rui'],
+  labels: ['Lire une marque', 'Confronter la relieuse'], objet: 'Éventail brisé du clan Tang', slot: 'acc2',
+  intro: [['tang', '« Tu m\'as tendu une lettre aux Ruines. Idiot. » Il ferme l\'éventail. « Depuis, le clan Tang a des yeux ici. Trois. Et quelqu\'un vend leurs noms aux Masques de Cendre. »'],
+    ['tang', '« Je te dois une faveur. Je te demande de la prendre : trouve qui vend, à l\'Auberge de la Brume, et coupe la chaîne avant qu\'on coupe nos gens. »']],
+  arrivee: [['narr', 'À l\'Auberge de la Brume, un moine boit trop fort et parle trop bas. Sur la table voisine, une plume grise a laissé trois traits dans le vernis — le même signe que sur la lettre de M. X.'],
+    ['narr', 'Dehors, des empreintes montent vers le Village des Bûcherons : deux paires légères, une lourde. La lourde revient seule.']],
+  indices: ['Un billet glissé sous une chope : trois noms du clan Tang, et un prix en lingots de cendre.',
+    'Une capuche grise accrochée derrière l\'auberge, encore tiède : quelqu\'un a changé de peau avant de remonter.',
+    'Sous un sapin du sentier, une cire noire à l\'empreinte d\'un éventail brisé — preuve que les Masques surveillent déjà Tang Rui.'],
+  conclusion: 'Mei la relieuse, au Village des Bûcherons, vend les noms des yeux du clan Tang aux Masques. Tang Rui t\'a demandé de couper la chaîne. Ce que tu feras de la liste décidera si le clan Tang te doit encore, ou te craint.',
+  repaire: [['narr', 'Au Village des Bûcherons, Mei compte des lingots sous une bâche. À sa ceinture, la même plume grise.'],
+    ['col_mei', '« Les noms valent cher, et le clan Tang paie mal ses muets. » Elle te tend la liste. « Toi, tu paies combien pour que je me taise — ou pour que je parle plus fort ? »']],
+  question: 'Une liste de trois noms, des lingots de cendre, et la faveur que Tang Rui t\'a promise aux Ruines.',
+  choix: [
+    { k: 'proteger', rumeur: '« Au Col, un jeune cultivateur a brûlé une liste de noms devant les bûcherons. On dit que Tang Rui lui a tendu son éventail brisé. »', etiquette: 'liste brûlée, yeux sauvés', txt: 'Brûler la liste, prévenir les trois yeux, et livrer Mei à Tang Rui', hint: 'Voie orthodoxe · tenir la faveur', voie: 10, acte: 'aides', rep: { alliance: 150 }, lines: [['narr', 'Tu jettes la liste au feu. Mei crache, puis suit sans résistance quand Tang Rui paraît entre les sapins. « Voilà une dette payée, campagnard. Et une autre ouverte. »']] },
+    { k: 'taire', rumeur: '« Une liste de noms a disparu au Col. Les Masques cherchent encore. Les yeux du clan Tang aussi. »', etiquette: 'liste prise, silence gardé', txt: 'Prendre la liste sans prévenir personne, et laisser Mei partir', hint: 'Voie libre · garder le levier', voie: 2, lines: [['narr', 'Tu plies la liste dans ta manche. Mei s\'éloigne sans se retourner. Personne n\'est sauvé ; personne n\'est vendu — pour l\'instant.']] },
+    { k: 'vendre', rumeur: '« Les Masques ont eu trois noms du clan Tang, au Col, et Tang Rui a perdu le sourire. On dit qu\'un ami lui a vendu ses propres yeux. »', etiquette: 'liste vendue aux Masques', txt: 'Acheter la liste à Mei et la revendre aux Masques plus cher', hint: 'Voie démoniaque · trahir la faveur', voie: -12, acte: 'voles', rep: { legion: 200, alliance: -150 }, lines: [['col_mei', '« Un associé. » Elle te glisse la liste. Plus bas sur la piste, une capuche grise compte déjà les lingots.']] },
+  ],
+  retour: {
+    proteger: '« Les trois sont en vie. Mei pourrit dans une cellule du monastère. » Il te tend l\'éventail brisé. « Garde-le. Le clan Tang n\'oublie pas une faveur — ni deux. »',
+    taire: '« Tu as la liste, et je n\'ai rien. » Il te dévisage longtemps. « Je ne sais pas encore si tu es prudent ou lâche. Les deux, peut-être. Voilà de l\'or pour ton silence. »',
+    vendre: '« Trois yeux ont cessé de cligner. » Il ne sort pas l\'éventail. « Ne me parle plus de lettres, {nom}. »',
+  },
+  merci: {
+    proteger: '« Si le clan Tang te cherche, ce sera pour te protéger. Habitue-toi. »',
+    taire: '« Garde ta liste. Un jour, elle te coûtera plus cher que l\'or. »',
+    vendre: '« Les Masques sourient en disant ton nom. Moi non. »',
+  },
+  apres: ['narr', 'Aux Ruines, tu lui as tendu une lettre. Au Col, il t\'a tendu une dette. Tu as choisi comment la payer.'],
+});
+
+// ── Réplique du maître du village de départ : il a entendu parler de l'alliance Tang ──
+const TANG_MAITRE = {
+  partager: '« On dit qu\'un prodige de l\'Académie te doit une faveur. Le village relève la tête. Ne lui fais pas honte — ni à nous. »',
+  cacher: '« Tang Rui est repassé près d\'ici. Il n\'a pas demandé ton nom. Tant mieux, peut-être. »',
+  humilier: '« Des hommes du clan Tang ont demandé où tu étais né. Je n\'ai rien dit. Mais ils sauront. »',
+};
+if (typeof genRegion === 'function') {
+  const genRegionAvantTang = genRegion;
+  genRegion = function (R) {
+    const sc = genRegionAvantTang(R);
+    try {
+      const choix = S && S.voie && S.voie.choix && S.voie.choix['ch3:tang'];
+      if (sc && sc.type === 'region' && S && sc.id === S.start && choix && TANG_MAITRE[choix]) {
+        const m = sc.npcs && sc.npcs.find((n) => n.role === 'master' && !n.innkeeper);
+        if (m && !m.tangReagit) { m.lignes = [TANG_MAITRE[choix]].concat(m.lignes || []); m.tangReagit = choix; }
+      }
+    } catch (e) { /* une réplique d'ambiance ne doit jamais casser la génération */ }
+    return sc;
+  };
+}
 
 // ───────────────────────── Récits de la Vallée de l'Aurore : commerce et folklore du village (Grogrok) ─────────────────────────
 // Suite de 02_voie_regions.js : deux récits propres à la Vallée, sans lien avec le réseau de Cendre Grise.
