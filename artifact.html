@@ -1651,6 +1651,18 @@ body:has(#vcour) #net-parler { display: none !important; }
 #npc .carte-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #0b0a0d; }
 #npc .carte-zoom { position: absolute; right: 8px; bottom: 8px; z-index: 2; display: flex; gap: 6px; }
 #npc .carte-zoom .btn { min-width: 44px; min-height: 44px; box-sizing: border-box; padding: 8px 12px; }
+/* [Grogrok] Relais (#npc) en paysage : le canevas garde une hauteur bornée et visible
+   (pas de grille flex qui écrasait .carte-stage à 0 px avec height:fit-content sur la feuille).
+   L'ordre DOM (carte juste sous le h2) est corrigé dans 33_monde.js. */
+@media (orientation: landscape) and (max-height: 500px) {
+  #npc .carte-stage {
+    height: min(200px, 48dvh); min-height: 140px; flex: none;
+  }
+  #npc .monde-map { flex: none; }
+  #npc .carte-outils { margin: 0 0 6px; font-size: 10.5px; line-height: 1.2; }
+  #npc .carte-outils .carte-legende,
+  #npc .carte-outils .hint { margin: 0 0 3px; font-size: 10.5px; line-height: 1.2; }
+}
 #panel[data-onglet="map"] .carte-zoom .btn,
 #panel[data-onglet="map"] .reg .btn,
 #panel[data-onglet="quests"] .q .btn {
@@ -2243,7 +2255,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="9200dd58a05d" aria-label="Identifiant de version">Version générée : 9200dd58a05d</div>
+      <div class="meta" id="t-build" data-build="2d74cdca4430" aria-label="Identifiant de version">Version générée : 2d74cdca4430</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -4909,6 +4921,19 @@ function nuanceHex(hex, r, amp) {
   const h = (v) => Math.max(0, Math.min(255, v | 0)).toString(16).padStart(2, '0');
   return '#' + h(R) + h(G) + h(B);
 }
+// Hanfu à deux tons : écarte la clarté de c de celle de base d'au moins min (0..1), teinte conservée.
+// Robe claire → liseré poussé vers l'ombre ; robe sombre → liseré éclairci. Les tons déjà contrastés ne bougent pas.
+function contrasteHex(base, c, min) {
+  if (!c || c[0] !== '#' || !base || base[0] !== '#') return c;
+  const lum = (h) => { const [r, g, b] = parseColor(h); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255; };
+  const lb = lum(base), d = lum(c) - lb;
+  if (Math.abs(d) >= min) return c;
+  const f = (lb > 0.5 ? -1 : 1) * (min - Math.abs(d)) * 1.15; let [R, G, B] = parseColor(c);
+  if (f >= 0) { R += (255 - R) * f; G += (255 - G) * f; B += (255 - B) * f; }
+  else { R *= 1 + f; G *= 1 + f; B *= 1 + f; }
+  const h = (v) => Math.max(0, Math.min(255, v | 0)).toString(16).padStart(2, '0');
+  return '#' + h(R) + h(G) + h(B);
+}
 function seedRng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 // apparence complète d'un humain (options de buildHumanModel) : archétype + graine ; extra écrase le tirage
 function pnjLook(arch, seed, extra) {
@@ -4936,6 +4961,10 @@ function pnjLook(arch, seed, extra) {
   o.hair = nuanceHex(o.hair, r, 0.12); o.skin = nuanceHex(o.skin, r, 0.08);
   if (o.armor === 'armure' && o.plate) o.plate = nuanceHex(o.plate, r, 0.06);
   if (o.beard && o.beard[0] === '#') o.beard = nuanceHex(o.beard, r, 0.08);
+  // Hanfu à deux tons : col, revers, ourlet et ceinture détachés de la robe, même quand le tirage les a rapprochés
+  // (paysan brun sur brun, moine gris sur gris) ; les uniformes déjà francs (sectes, nobles, gardes) ne bougent pas.
+  o.robe2 = contrasteHex(o.robe, o.robe2, 0.17);
+  if (o.sash && o.sash[0] === '#') o.sash = contrasteHex(o.robe, o.sash, 0.15);
   if (o.cape === 'auto' || o.cape === true) o.cape = o.robe2;
   return o;
 }
@@ -14416,6 +14445,18 @@ function R3init(T) {
   // Rampes lisses pour le pelage et les écailles : le toon en cinq bandes rendait les bêtes trop « jouet ».
   const furRamp = new T.DataTexture(new Uint8Array([72, 72, 72, 255, 110, 110, 110, 255, 148, 148, 148, 255, 186, 186, 186, 255, 220, 220, 220, 255, 245, 245, 245, 255]), 6, 1, T.RGBAFormat);
   furRamp.minFilter = T.LinearFilter; furRamp.magFilter = T.LinearFilter; furRamp.generateMipmaps = false; furRamp.needsUpdate = true;
+  // Rampe des personnages (héros, PNJ, ennemis humains) : la même douceur que l'écran de création (creaGrad),
+  // mais à la place des cinq bandes dures de gradTex (toon « autocollant » en jeu, alors que la création montrait un fondu).
+  // Fondu soft (filtre linéaire), ombre un peu plus creusée (min 0,50) : les étoffes hanfu arrondissent au lieu d'aplatir ;
+  // léger passage chaud dans les hautes lumières et frais dans l'ombre (soie sous la lumière de scène). Neutre à ±6 : pas de dominante.
+  const persoGrad = (() => {
+    const n = 24, a = new Uint8Array(n * 4);
+    for (let i = 0; i < n; i++) {
+      const u = i / (n - 1), l = 0.50 + 0.50 * Math.pow(u, 0.82), v = 255 * l, warm = (u - 0.5) * 12; // chaud en lumière, frais à l'ombre
+      a.set([Math.round(Math.min(255, v + warm)), Math.round(v), Math.round(Math.max(0, v - warm)), 255], i * 4);
+    }
+    const t = new T.DataTexture(a, n, 1, T.RGBAFormat); t.minFilter = t.magFilter = T.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true; return t;
+  })();
 
   // géométries unitaires partagées
   const GEO = {};
@@ -20057,7 +20098,7 @@ function R3init(T) {
   // Corps humain stylisé (joueur, PNJ, ennemis humains). o : couleurs et accessoires, comme drawHuman en 2D.
   function buildHuman(parent, o, mats) {
     const tm = (c, surf) => {
-      const opt = { color: col(c), gradientMap: gradTex };
+      const opt = { color: col(c), gradientMap: persoGrad };
       if (typeof surf === 'string' && SURF[surf]) opt.map = SURF[surf];
       const m = new T.MeshToonMaterial(opt); mats.push(m); return m;
     };
@@ -20406,7 +20447,7 @@ function R3init(T) {
   }
   // matériau toon du corps fusionné : couleur de chaque pièce lue dans uPal[aPart] (même programme pour tous les PNJ)
   function bodyMat(pal) {
-    const tm = new T.MeshToonMaterial({ color: 0xffffff, gradientMap: gradTex }); tm.name = 'corps';
+    const tm = new T.MeshToonMaterial({ color: 0xffffff, gradientMap: persoGrad }); tm.name = 'corps';
     const u = { value: pal }; tm.userData.pal = u;
     tm.onBeforeCompile = (s) => {
       s.uniforms.uPal = u;
@@ -20490,7 +20531,7 @@ function R3init(T) {
           let c = rc ? col(rc) : (m.color ? m.color.clone() : col('#ffffff'));
           if (tex && rc) { const r0 = new T.Color().setRGB(tex[0], tex[1], tex[2], T.SRGBColorSpace); c = new T.Color(Math.min(2, c.r / Math.max(r0.r, 1e-3)), Math.min(2, c.g / Math.max(r0.g, 1e-3)), Math.min(2, c.b / Math.max(r0.b, 1e-3))); }
           const carte = rc && !tex && !hanfuTex ? null : (m.map || null);
-          const tm = new T.MeshToonMaterial({ color: c, map: carte, gradientMap: hanfuTex ? creaGrad() : gradTex, vertexColors: !!(o.geometry.attributes.color && partTag(m)), side: m.side === T.DoubleSide ? T.DoubleSide : T.FrontSide });
+          const tm = new T.MeshToonMaterial({ color: c, map: carte, gradientMap: hanfuTex ? creaGrad() : persoGrad, vertexColors: !!(o.geometry.attributes.color && partTag(m)), side: m.side === T.DoubleSide ? T.DoubleSide : T.FrontSide });
           tm.name = m.name; mats.push(tm); conv.set(m, tm);
         }
         return conv.get(m);
@@ -20896,7 +20937,7 @@ function R3init(T) {
       const hid = new Set(); m.obj.traverse((q) => { if (q.isMesh && q.material && (q.material.name || '').split('@')[0] === 'cheveux') { q.visible = false; hid.add(q.geometry); } });
       m.inks = m.inks.filter((k) => { if (hid.has(k.geometry)) { k.visible = false; return false; } return true; });
     }
-    const tm = (c, surf) => { const mm = new T.MeshToonMaterial({ color: col(c), gradientMap: gradTex, map: surf && SURF[surf] ? SURF[surf] : null }); mats.push(mm); return mm; };
+    const tm = (c, surf) => { const mm = new T.MeshToonMaterial({ color: col(c), gradientMap: persoGrad, map: surf && SURF[surf] ? SURF[surf] : null }); mats.push(mm); return mm; };
     const d = { m, tenue };
     // pan de robe (hanfu) : cône évasé de la taille aux mollets, sur la racine ; les jambes passent dessous.
     // Avec la tenue skinnée : pan seulement pour la robe (longue) et la tunique (courte), plus fin, sous la veste ; l'armure a ses basques.
@@ -20938,7 +20979,7 @@ function R3init(T) {
       seg(new RegExp('^lowerarm_' + sd + '$', 'i'), new RegExp('^hand_' + sd + '$', 'i'), 0.074 * fs, 0.076 * fs, trimM, 0.82, 0.9); // revers de manche
     }
     // ── équipement visible (joueur, PNJ, ennemis humains) : arme par type, armure, brassards, cape, coiffe ──
-    const glowMat = (c, g, surf) => { const mm = new T.MeshToonMaterial({ color: col(c), emissive: col(c), emissiveIntensity: g, gradientMap: gradTex, map: surf && SURF[surf] ? SURF[surf] : null }); mm.userData.em = mm.emissive.clone(); mats.push(mm); return mm; };
+    const glowMat = (c, g, surf) => { const mm = new T.MeshToonMaterial({ color: col(c), emissive: col(c), emissiveIntensity: g, gradientMap: persoGrad, map: surf && SURF[surf] ? SURF[surf] : null }); mm.userData.em = mm.emissive.clone(); mats.push(mm); return mm; };
     if (o.trim) trimM.color.copy(col(o.trim));
     if (o.trimGlow) { trimM.emissive.copy(col(o.trim || o.robe2 || o.robe)); trimM.emissiveIntensity = o.trimGlow; trimM.userData.em = trimM.emissive.clone(); }
     // armure lamellaire : plastron et épaulières de métal teinté ; tunique : pan de robe court
@@ -34022,6 +34063,13 @@ renderMap = function (b, free) {
         box.append(notice);
       }
     };
+    // [Grogrok] Insérer le canevas AVANT ranger(). En paysage, ranger() range .carte-intro
+    // dans .encre-carte : h2.nextSibling devient alors la liste des régions, et
+    // « nextSibling.after(box) » enterrait la carte du Relais sous ~11 lignes (invisible
+    // sans défilement). La carte du panneau s'en sortait grâce à la grille CSS paysage ;
+    // #npc n'avait pas cette grille. Ancrage : juste après le h2.
+    const h2ins = b.querySelector('h2');
+    if (h2ins) h2ins.after(box); else b.prepend(box);
     ranger();
     // [Claude] la fiche est vidée (innerHTML) sans retirer l'écouteur ni l'observateur : chaque ouverture de la carte
     // retenait un canevas de ~2 Mo et un arbre détaché ; ils se retirent d'eux-mêmes dès que la fiche n'est plus dans le document.
@@ -34032,7 +34080,6 @@ renderMap = function (b, free) {
     const rangerVivant = () => { if (!b.isConnected) { if (pays.removeEventListener) pays.removeEventListener('change', rangerVivant); if (ro) ro.disconnect(); return; } ranger(); };
     if (pays.addEventListener) pays.addEventListener('change', rangerVivant);
     carteFicheDetacher = () => { if (pays.removeEventListener) pays.removeEventListener('change', rangerVivant); if (ro) ro.disconnect(); };
-    const h2 = b.querySelector('h2'); if (h2 && h2.nextSibling) h2.nextSibling.after(box); else b.prepend(box);
     redessine();
     if (ro) ro.observe(stage);
     requestAnimationFrame(() => {
