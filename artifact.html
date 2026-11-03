@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="d5ca1e5bc73d" aria-label="Identifiant de version">Version générée : d5ca1e5bc73d</div>
+      <div class="meta" id="t-build" data-build="a8f6473809d8" aria-label="Identifiant de version">Version générée : a8f6473809d8</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -11493,9 +11493,17 @@ function die() {
     let n = 0;
     for (const m of AUTO_NAV.morts) if (dist2(m.x, m.y, P.x, P.y) < 220 * 220) n++;
     if (n >= 2) {
-      const r = n >= 3 ? 480 : 400;
+      // [Grogrok] Abysses / terres dures : 2 morts → éviter ; dès 3, rayon + fuite + pause chasse
+      // pour casser la boucle spawn↔meute (flake auto_fiabilite boucle ×4–5 selon le flux RNG).
+      const r = n >= 3 ? 640 : 400;
       autoMarquerEvite(P.x, P.y, r, AUTO_EVITE_MAX);
-      AUTO_NAV.tFuite = autoFuiteInterdite() ? 0 : 20; // #752 : pas de fuite en salle de boss
+      if (G.scene && G.scene.spawn) {
+        // Le respawn retombe au spawn : marquer aussi le berceau, sinon Auto ré-engage la même meute.
+        const rs = n >= 3 ? 560 : 300;
+        autoMarquerEvite(G.scene.spawn.x, G.scene.spawn.y, rs, AUTO_EVITE_MAX);
+      }
+      AUTO_NAV.tFuite = autoFuiteInterdite() ? 0 : (n >= 3 ? 36 : 20); // #752 : pas de fuite en salle de boss
+      AUTO_NAV.tPauseCible = Math.max(AUTO_NAV.tPauseCible || 0, n >= 3 ? 14 : 6);
       let fa = P.face + Math.PI;
       if (G.scene && G.scene.spawn && dist(P.x, P.y, G.scene.spawn.x, G.scene.spawn.y) < 100) {
         let dx = 0, dy = 0, ne = 0;
