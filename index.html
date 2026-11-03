@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="b8d5039fe68d">
+<meta name="murim-build" content="73f24cf61f72">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="b8d5039fe68d" aria-label="Identifiant de version">Version générée : b8d5039fe68d</div>
+      <div class="meta" id="t-build" data-build="73f24cf61f72" aria-label="Identifiant de version">Version générée : 73f24cf61f72</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -58446,10 +58446,17 @@ const CRIEUR_RUMEURS = {
     '« Frère Shou doit encore trois tournées à l\'Auberge de la Brume. Personne ne les réclame. »',
     '« L\'Ermite a tenu le troisième sceau trois cents hivers. On dit que le compte a repris. »',
   ],
+  desert: [
+    '« Le puits de l\'Oasis a encore baissé d\'une main. Le conseil rationne, et personne ne dit pourquoi. »',
+    '« Des cloches de bronze sans caravane ont été retrouvées dans le sable, près de l\'Avant-poste de la Légion. »',
+    '« Le Khan des Cendres a été vu sous la Forge des Anciens. Vieux Tao ne veut pas en parler. »',
+    '« Un Dard Écarlate a traversé le Souk de l\'Est sans piquer personne. Ça n\'annonce jamais rien de bon. »',
+  ],
 };
 // [Claude] Placeable ≠ CRIEUR_RUMEURS : foret/col n'ont qu'un refuge (villeRefuge), pas de sc.bourg,
 // donc crieurPoser (qui lit sc.bourg.rect) reste no-op pour eux. Rumeurs gardées pour quand ils auront un bourg.
-const CRIEUR_BERCEAUX = ['qinghe', 'longwan', 'meishan', 'plaines', 'vallee'];
+// Désert : le Fort des Caravanes (43_cite_plan_desert.js) a un vrai sc.bourg → crieur posé.
+const CRIEUR_BERCEAUX = ['qinghe', 'longwan', 'meishan', 'plaines', 'vallee', 'desert'];
 
 function crieurEnsure() {
   if (typeof ensureCommerces === 'function') ensureCommerces();
@@ -58546,6 +58553,7 @@ const HAB_LIGNES = {
   plaines: ['« L\'Académie compte les grains. Moi je compte les verres. »', '« Un convoi de Jade a manqué le marché. »'],
   foret: ['« Les peaux blanches coûtent trop cher pour un verre. »', '« Xiaoshu a volé une galette. Je paie sa tournée. »'],
   col: ['« L\'encens des pèlerins sent le mensonge. Une bière, ça, c\'est vrai. »', '« Tang Rui doit encore une tournée. Et une dette. »'],
+  desert: ['« Le puits baisse, mon verre aussi. Vieux Tao dit que c\'est la même soif. »', '« J\'ai vu le Khan des Cendres en rêve. En vrai, je préfère le vin de dattes. »'],
 };
 function habituesEnsure() {
   if (typeof ensureCommerces === 'function') ensureCommerces();
