@@ -112,8 +112,9 @@ html[data-cb="tritan"] #cv, html[data-cb="tritan"] #cv3, html[data-cb="tritan"] 
 #h-banner span { display: block; margin-top: 4px; font-size: clamp(12px, 2.3vmin, 15px); color: var(--gold); text-shadow: 0 1px 4px #000; }
 #h-banner::before, #h-banner::after { content: ""; display: block; height: 1px; margin: 6px auto; width: 70%; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
 @keyframes bannerIn { 0% { opacity: 0; transform: translate(-50%, 8px); } 12% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; } 100% { opacity: 0; } }
-/* Bannière (boss, région) : bande d'encre derrière le titre ; le journal et le suivi s'effacent pour ne pas se chevaucher à 390 px */
-#h-banner { padding: 6px 28px; background: radial-gradient(ellipse at center, rgba(10,7,6,.78) 0%, rgba(10,7,6,.55) 55%, transparent 75%); }
+/* Bannière (boss, région) : bande d'encre derrière le titre, resserrée et plus légère pour ne pas
+   masquer le paysage 3D qui vient de se révéler (entrée de région) ; le texte garde son ombre portée. */
+#h-banner { padding: 6px 28px; background: radial-gradient(ellipse at center, rgba(10,7,6,.55) 0%, rgba(10,7,6,.3) 45%, transparent 65%); }
 #hud #toasts, #hud #h-quest { transition: opacity .25s; }
 #hud:has(#h-banner) #toasts, #hud:has(#h-banner) #h-quest, #hud.annonce-centre #h-quest, #hud.annonce-centre #toasts { opacity: .18; } /* annonce centrale visible seulement : le journal s’efface dessous */
 #h-center { position: absolute; top: 34%; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; animation: centerPop 2.4s ease forwards; width: max-content; max-width: 92vw; }
@@ -2270,7 +2271,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="3951153c5f4b" aria-label="Identifiant de version">Version générée : 3951153c5f4b</div>
+      <div class="meta" id="t-build" data-build="fb1284842525" aria-label="Identifiant de version">Version générée : fb1284842525</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -3352,7 +3353,7 @@ const PAL = {
   foret: { g: '#26332a', g2: '#2e3f30', g3: '#1d2820', path: '#4a4a38', mood: 'gris', amb: 'spores' },
   desert: { g: '#7d6448', g2: '#6a5440', g3: '#8f7556', path: '#9a8262', mood: 'gris', amb: 'cendres' },
   montagnes: { g: '#56685e', g2: '#647a6c', g3: '#cfd6cf', path: '#b8a878', mood: 'celeste', amb: 'cristaux' },
-  marecages: { g: '#232c1c', g2: '#2c3822', g3: '#1a2214', path: '#3a4228', mood: 'corrompu', amb: 'toxique' },
+  marecages: { g: '#2a3220', g2: '#354228', g3: '#1c2416', path: '#4a3c28', mood: 'corrompu', amb: 'toxique' },  // [Grogrok] sol/chemin boueux lisibles
   citadelle: { g: '#4c4e5c', g2: '#5a5c6c', g3: '#3e404c', path: '#8a8aa0', mood: 'celeste', amb: 'etoiles', paved: true },
   abysses: { g: '#1a1020', g2: '#24142c', g3: '#120a16', path: '#5a1a2a', mood: 'corrompu', amb: 'faille' },
   domaine: { g: '#bdb8d0', g2: '#cfcadf', g3: '#a8a2c0', path: '#e8d8a0', mood: 'divin', amb: 'lumiere' },
@@ -3531,7 +3532,7 @@ const FLORE_REGIONS = {
   foret: { dom: 'bigtree', acc: 'deadtree', feuillu: { m: 'arbre_double', c: '#1f3426' } },
   desert: { dom: 'deadtree', acc: null, feuillu: { m: 'arbre_double', c: '#6a5834' } },
   montagnes: { dom: 'pine', acc: 'bambou', feuillu: { m: 'arbre_double', c: '#4e6258' } },
-  marecages: { dom: 'deadtree', acc: 'tree', feuillu: { m: 'arbre_double', c: '#24362a' } },
+  marecages: { dom: 'deadtree', acc: null, feuillu: { m: 'arbre_double', c: '#24362a' } },  // [Grogrok] mangrove dominante seule
   citadelle: { dom: 'pine', acc: 'tree', feuillu: { m: 'arbre_parasol', c: '#3e5a4a' } }, // [Grogrok] §2.1 : pins des remparts, quelques ormes
   abysses: { dom: 'deadtree', acc: null, feuillu: { m: 'arbre_double', c: '#2a2030' } }, // [Grogrok] §2.1 : arbres morts de la Fracture, rien de vert
 };
@@ -18026,6 +18027,32 @@ function R3init(T) {
           break;
         }
         case 'deadtree': {
+          // [Grogrok] Marécages : mangrove (échasses + houppier olive), pas le bâton nu.
+          if (id === 'marecages') {
+            // Mangrove : échasses écartées sous un houppier relevé (lisible vue plongeante).
+            paint = 'wood';
+            const tc = '#2c2418';
+            const k = [0.95, 1.1, 1.25][Math.floor(d.v * 3) % 3];
+            // tronc court au-dessus des pilotis
+            put('cyl', 't', tc, 0, 1.35 * k, 0, 0.16 * k, 0.7 * k, 0.16 * k);
+            for (let i = 0; i < 6; i++) {
+              const a = d.v * TAU + i * (Math.PI / 3);
+              const reach = 0.55 * k;
+              put('cyl', 't', i % 2 ? '#3a2c1c' : tc, Math.cos(a) * reach * 0.55, 0.55 * k, Math.sin(a) * reach * 0.55, 0.055 * k, 1.15 * k, 0.055 * k, Math.sin(a) * 1.15, 0.15, -Math.cos(a) * 1.15);
+            }
+            for (let i = 0; i < 4; i++) {
+              const a = d.v * TAU + i * 1.57 + 0.5;
+              put('cyl', 't', tc, Math.cos(a) * 0.28 * k, 1.55 * k, Math.sin(a) * 0.28 * k, 0.05 * k, 0.75 * k, 0.05 * k, Math.sin(a) * 0.85, 0.35, -Math.cos(a) * 0.85);
+            }
+            marqueArbre = true;
+            // houppier sombre olive, un peu plus haut pour laisser voir les échasses
+            poserTouffes('#2a3c28', [
+              [0, 2.15 * k, 0, 0.52 * k], [-0.45 * k, 1.95 * k, 0.25 * k, 0.34 * k], [0.48 * k, 1.98 * k, -0.2 * k, 0.34 * k],
+              [0.08 * k, 2.55 * k, 0.05 * k, 0.3 * k], [-0.25 * k, 2.25 * k, -0.35 * k, 0.3 * k], [0.3 * k, 2.2 * k, 0.32 * k, 0.28 * k],
+            ], d.v);
+            marqueArbre = false;
+            break;
+          }
           paint = 'wood';
           const tc = id === 'desert' ? '#4a3a2c' : '#2a2420';
           put('taper', 't', tc, 0, 0.9, 0, 0.14, 1.8, 0.14);
@@ -19291,17 +19318,24 @@ function R3init(T) {
       const s = d.s || 1; const X = W(d.x), Z = W(d.y);
       base.compose(V1.set(X, 0, Z), Q1.setFromEuler(E1.set(0, d.v * TAU, 0)), S1.set(s, s, s));
       if (d.type === 'grass' || d.type === 'tallgrass') {
-        const h = d.type === 'tallgrass' ? 0.75 : 0.38; const gc = shade(sc.pal.g2, 0.12);
+        // [Grogrok] Marécages : roseaux plus hauts, teinte olive-paille
+        const reed = id === 'marecages';
+        const h = d.type === 'tallgrass' ? (reed ? 1.1 : 0.75) : (reed ? 0.55 : 0.38);
+        const gc = reed ? '#4a5a32' : shade(sc.pal.g2, 0.12);
         paint = 'leaf';
-        for (let i = 0; i < 5; i++) put('cone4', 't', i % 2 ? gc : shade(gc, -0.12), (i - 2) * 0.17, h / 2, ((i * 7) % 3 - 1) * 0.1, 0.05, h, 0.05, 0, 0, (i - 2) * 0.12, false);
+        const n = reed && d.type === 'tallgrass' ? 7 : 5;
+        for (let i = 0; i < n; i++) put('cone4', 't', i % 2 ? gc : shade(gc, reed ? -0.08 : -0.12), (i - (n - 1) / 2) * 0.14, h / 2, ((i * 7) % 3 - 1) * 0.1, reed ? 0.035 : 0.05, h, reed ? 0.035 : 0.05, 0, 0, (i - 2) * 0.12, false);
       } else if (d.type === 'mushroom') {
-        const glow = id === 'foret' || id === 'marecages';
+        // [Grogrok] Marécages : chapeau olive toon (pas MeshBasic cyan = disque lime arcade)
+        const glow = id === 'foret';
+        const marec = id === 'marecages';
         for (let i = 0; i < 3; i++) {
           const ox = (i - 1) * 0.32, oz = (i % 2) * 0.18;
           paint = 'wood';
           put('cyl', 't', '#e8dcc8', ox, 0.12, oz, 0.04, 0.24, 0.04, 0, 0, 0, false);
           paint = '';
-          put('hemi', glow ? 'b' : 't', glow ? '#6ef0e6' : '#c0503a', ox, 0.22, oz, 0.2, 0.14, 0.2, 0, 0, 0, false);
+          const cap = marec ? '#3a5028' : (glow ? '#6ef0e6' : '#c0503a');
+          put('hemi', glow ? 'b' : 't', cap, ox, 0.22, oz, 0.2, 0.14, 0.2, 0, 0, 0, false);
         }
         if (glow) light(d.x, d.y, 0.3, '#6ef0e6', 1.2, true);
       } else if (d.type === 'flower') {
@@ -19333,12 +19367,19 @@ function R3init(T) {
         // dans l'herbe des Marécages (1588 flats). Deux dômes bas lime/olive, contraste fort
         // (leçon dunes #705 : un hémisphère pâle se lit comme une tache). Seau hemi déjà
         // présent via les champignons : pas d'appel de dessin en plus, pas de géo nouvelle.
+        // [Grogrok] Marécages : olive sombre (marais), pas le disque lime arcade.
         paint = '';
         const ta = (d.v || 0) * 6.2832;
-        put('hemi', 't', '#2e4a08', 0, 0.0, 0, 1.02, 0.07, 0.74, 0, ta, 0, false);
-        put('hemi', 't', '#b8ec28', 0, 0.02, 0, 0.80, 0.16, 0.56, 0, ta + 0.35, 0, false);
-        put('hemi', 't', '#e6ff58', Math.cos(ta) * 0.18, 0.05, Math.sin(ta) * 0.12, 0.40, 0.10, 0.28, 0, ta + 1.05, 0, false);
-        put('sph', 'b', '#f2ff88', Math.sin(ta) * 0.10, 0.18, Math.cos(ta) * 0.08, 0.055, 0.05, 0.055, 0, 0, 0, false);
+        if (id === 'marecages') {
+          put('hemi', 't', '#1a2810', 0, 0.0, 0, 1.05, 0.06, 0.78, 0, ta, 0, false);
+          put('hemi', 't', '#3a5020', 0, 0.015, 0, 0.78, 0.10, 0.55, 0, ta + 0.35, 0, false);
+          put('hemi', 't', '#4a6230', Math.cos(ta) * 0.16, 0.04, Math.sin(ta) * 0.12, 0.36, 0.08, 0.26, 0, ta + 1.05, 0, false);
+        } else {
+          put('hemi', 't', '#2e4a08', 0, 0.0, 0, 1.02, 0.07, 0.74, 0, ta, 0, false);
+          put('hemi', 't', '#b8ec28', 0, 0.02, 0, 0.80, 0.16, 0.56, 0, ta + 0.35, 0, false);
+          put('hemi', 't', '#e6ff58', Math.cos(ta) * 0.18, 0.05, Math.sin(ta) * 0.12, 0.40, 0.10, 0.28, 0, ta + 1.05, 0, false);
+          put('sph', 'b', '#f2ff88', Math.sin(ta) * 0.10, 0.18, Math.cos(ta) * 0.08, 0.055, 0.05, 0.055, 0, 0, 0, false);
+        }
       } else if (d.type === 'cloud') {
         // [Grok] QA fin : vapeur du Domaine. 3262 flats `cloud` étaient un blob blanc cuit
         // dans la dalle pâle — invisibles. Trois dômes soulevés, teinte bleutée (pas blanc
@@ -20628,8 +20669,9 @@ function R3init(T) {
       m.name = 'pluie'; m.frustumCulled = false; m.userData.ownGeo = true; m.userData.ownMat = true; world.add(m);
       pluie = { m, N, seed: Array.from({ length: N }, (_, i) => [((i * 7919) % 997) / 997, ((i * 104729) % 991) / 991, ((i * 1299709) % 983) / 983]) };
     }
-    if (sc.type === 'region' && (sc.id === 'montagnes' || sc.id === 'col')) {
+    if (sc.type === 'region' && (sc.id === 'montagnes' || sc.id === 'col' || sc.id === 'marecages')) {
       // brume-voile-uniforme : nappe basse, sans taches. Le test de profondeur laisse passer roche et arbres.
+      // [Grogrok] Marécages : même voile, teinte verdâtre, opacity un peu plus forte.
       if (!R3.brumeMat) {
         const c = document.createElement('canvas'); c.width = c.height = 2; const gx = c.getContext('2d');
         gx.fillStyle = '#ffffff'; gx.fillRect(0, 0, 2, 2);
@@ -20643,7 +20685,9 @@ function R3init(T) {
         mat.customProgramCacheKey = () => 'brume-voile-uniforme';
         mat.userData.keep = true; R3.brumeMat = mat;
       }
-      const mat = R3.brumeMat; mat.color.copy(col(sc.id === 'col' ? '#e4ebe8' : '#eef2f6'));
+      const mat = R3.brumeMat;
+      mat.color.copy(col(sc.id === 'col' ? '#e4ebe8' : sc.id === 'marecages' ? '#c5d2bc' : '#eef2f6'));
+      mat.opacity = sc.id === 'marecages' ? 0.12 : 0.09;
       const b = new T.Mesh(new T.PlaneGeometry(90, 70).rotateX(-Math.PI / 2), mat); b.userData.ownGeo = true; world.add(b);
       brumeV.push({ m: b });
     }
@@ -38537,10 +38581,16 @@ function citeRelierPortes(sc, poly) {
       { t: 'boutique', x: 270, y: -110, w: 112, h: 78, rot: 0, nom: 'Fumaisons du Marais', glyphe: '米', marchandise: 'riz' },
     ],
     rangees, modeles: ['maison_a', 'maison_c'], mur: '#8a7a5a', toit: '#3a4a3a', etals, objets,
-    arbre: 'deadtree', arbres: [[-520, -330], [520, -330], [-120, -580], [140, -560]],
+    arbre: 'deadtree', arbres: [[-520, -330], [520, -330], [-120, -580], [140, -560], [-400, -200], [400, -180], [-280, -520], [300, -500], [-620, 80], [620, 100]],
     passants: [[0, -300], [-380, 300], [420, 300], [0, 420], [-300, -200], [300, -200]],
     apres(sc, poly) {
       const s = sc.bourg.centre, X = (x) => s.x + x, Y = (y) => s.y + y;
+      // [Grogrok] roseaux le long de la berge / lagune (lisibles depuis le bourg)
+      for (let i = 0; i < 56; i++) {
+        const t0 = i / 56;
+        sc.flats.push({ type: 'tallgrass', x: X(-600 + t0 * 1200), y: Y(YB - 28 - (i % 4) * 14), s: 1.05 + (i % 5) * 0.05, v: (i * 0.17) % 1 });
+        if (i % 2 === 0) sc.flats.push({ type: 'tallgrass', x: X(-560 + t0 * 1120), y: Y(YB + 36 + (i % 3) * 16), s: 1.0 + (i % 4) * 0.06, v: (i * 0.31) % 1 });
+      }
       // [ChatGPT] Les pontons doivent être reconnus par la collision des canaux, pas seulement dessinés.
       for (const r of sc.rues) if (r.k === 'bois' && r.x0 >= X(-660) && r.x1 <= X(680) && r.y0 >= Y(-660) && r.y1 <= Y(640)) { r.quai = true; if (r.y1 === Y(640)) r.y1 += 20; }
       // Les vestiges interactifs gardent leur îlot : decorHorsEau ne doit pas les pousser sur un ponton.
@@ -40729,25 +40779,25 @@ const PLANS_REGIONS = {
     riviere: { nom: 'Eaux Mortes', larg: 320, pts: [[8000, -60], [7400, 2600], [8300, 5200], [7600, 8000], [8400, 10700]] },
     zones: [
       { id: 'pilotis', nom: 'Abords des Pilotis', poly: [[150, 60], [6800, 60], [6600, 3500], [150, 4200]],
-        flore: { tree: 0.3, bush: 0.4, deadtree: 0.3 }, densite: 14000, amas: 0.7,
+        flore: { deadtree: 0.62, bush: 0.28, rock: 0.1 }, densite: 14000, amas: 0.7,
         faune: { types: ['crapaud'], camps: 18, lvl: [50, 56] } },
       { id: 'roselieres', nom: 'Roselières', poly: [[6800, 60], [9200, 60], [9000, 10600], [6800, 10600]],
-        flore: { bush: 0.6, deadtree: 0.2, tree: 0.2 }, densite: 16000, amas: 0.7,
+        flore: { deadtree: 0.55, bush: 0.35, rock: 0.1 }, densite: 16000, amas: 0.7,
         faune: { types: ['crapaud', 'goule'], camps: 32, lvl: [54, 60] } },
       { id: 'tourbieres', nom: 'Tourbières', poly: [[9200, 60], [15950, 60], [15950, 3800], [9200, 4200]],
-        flore: { deadtree: 0.45, bush: 0.35, rock: 0.2 }, densite: 14000, amas: 0.7,
+        flore: { deadtree: 0.6, bush: 0.28, rock: 0.12 }, densite: 14000, amas: 0.7,
         faune: { types: ['goule', 'hydre'], camps: 32, lvl: [62, 70] } },
       { id: 'noyes', nom: 'Bois des Noyés', poly: [[150, 4200], [6600, 3500], [6800, 10600], [150, 10600]],
-        flore: { deadtree: 0.5, tree: 0.3, bush: 0.2 }, densite: 18000, amas: 0.8,
+        flore: { deadtree: 0.7, bush: 0.22, rock: 0.08 }, densite: 18000, amas: 0.8,
         faune: { types: ['goule'], camps: 40, lvl: [54, 60] } },
       { id: 'brumes', nom: 'Brumes Stagnantes', poly: [[9200, 4200], [15950, 3800], [15950, 6200], [9100, 6400]],
-        flore: { bush: 0.5, deadtree: 0.3, rock: 0.2 }, densite: 12000, amas: 0.6,
+        flore: { deadtree: 0.58, bush: 0.3, rock: 0.12 }, densite: 12000, amas: 0.6,
         faune: { types: ['crapaud', 'goule'], camps: 36, lvl: [58, 66] } },
       { id: 'autel', nom: 'Fondrières du Culte', poly: [[9100, 6400], [15950, 6200], [15950, 10600], [9000, 10600]],
-        flore: { deadtree: 0.5, bush: 0.3, rock: 0.2 }, densite: 16000, amas: 0.8, fond: [13500, 9500],
+        flore: { deadtree: 0.65, bush: 0.25, rock: 0.1 }, densite: 16000, amas: 0.8, fond: [13500, 9500],
         faune: { types: ['hydre', 'goule'], camps: 47, lvl: [62, 70] } },
     ],
-    rives: { flore: { bush: 0.5, deadtree: 0.3, tree: 0.2 }, de: 160, a: 420, pas: 90 },
+    rives: { flore: { deadtree: 0.55, bush: 0.35, rock: 0.1 }, de: 160, a: 420, pas: 90 },
     lieux: [
       { k: 'secte', x: 12800, y: 7600, nom: 'Autel du Culte Sanguin', porte: 'Porte des Crânes', chemin: true, r: 700, culte: true },
       { k: 'camp', x: 12000, y: 2000, nom: 'Repaire des Goules', ennemi: 'goule' },
