@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="21b5d02741cb">
+<meta name="murim-build" content="562959d36282">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="21b5d02741cb" aria-label="Identifiant de version">Version générée : 21b5d02741cb</div>
+      <div class="meta" id="t-build" data-build="562959d36282" aria-label="Identifiant de version">Version générée : 562959d36282</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7577,6 +7577,47 @@ recitRegion('dette_montagnes', {
     { k: 'ceder', rumeur: '« La fille de Fei sert maintenant chez le prêteur Qiu. {nom} a touché sa part pour avoir scellé le papier. »', etiquette: 'fille livrée en service, commission touchée', txt: 'Laisser Qiu prendre la fille de Fei en service, et empocher une commission pour avoir scellé la dette', hint: 'Voie démoniaque · profiter encore', voie: -13, acte: 'voles', lines: [['montagnes_qiu', 'Il glisse quelques pièces supplémentaires dans ta main. « Pour le service rendu. » Fei ne dit rien, les yeux secs, au-delà des larmes.']] }],
   retour: { racheter: '« La dette est cendres, et la fille est restée. » Elle te regarde longtemps. « Tu as réparé ce que tu avais cassé, {nom}. »', negocier: '« Un an de plus avant que ça recommence. » Elle secoue la tête. « Tu n\'as fait que repousser le jour, {nom}. »', ceder: '« La fille sert chez Qiu, maintenant. » Sa voix est froide. « Tu as vendu une enfant pour quelques pièces de plus, {nom}. »' },
   merci: { racheter: '« Grimpe la tête haute, {nom}. »', negocier: '« Reviens avant que l\'année ne passe. »', ceder: '« Ne remonte plus au Temple ancien, {nom}. »' },
+});
+
+// ───────────────────────── Suite orthodoxe : la ligne qu'on efface (Montagnes du Dragon, miroir de la rançon) ─────────────────────────
+// Conséquence tardive de recit:peage_montagnes='abolir'. Le capitaine du péage, privé de son revenu sur les plus pauvres,
+// porte ses plaintes au Monastère des Grues pour faire effacer la ligne gravée par Guide Lan. Même mécanique recitRegion
+// et RECITS (34_voie.js), aucun champ de sauvegarde nouveau. Miroir de 02_voie_regions_suites_montagnes.js (greffé sur 'rancon').
+recitRegion('ligne_sans_prix', {
+  name: 'La ligne qu\'on efface', region: 'montagnes', quest: 21, key: 'ligne_sans_prix', who: 'montagnes_lan', label: 'Le capitaine qui veut effacer la ligne gravée',
+  si: { choix: { 'recit:peage_montagnes': 'abolir' } }, suite: 'recit:peage_montagnes', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    montagnes_lan: { name: 'Guide Lan', title: 'gardienne des cordées', glyph: '嵐', color: '#c8d8e8' },
+    montagnes_teng: { name: 'Capitaine Teng', title: 'capitaine du péage, qui veut sa ligne reprise', glyph: '関', color: '#8a7a68' },
+  },
+  quand: 'Montagnes du Dragon : Guide Lan, au Temple ancien (le capitaine Teng porte plainte contre la ligne gravée)',
+  attente: '« Teng n\'a pas encore parlé aux moines, {nom}. Reviens quand il osera. »',
+  rappel: 'Le capitaine Teng veut effacer la ligne gravée, {nom}.',
+  steps: ['Écouter Guide Lan, au Temple ancien', 'Se rendre au Village des Gardiens, devant le tableau du péage', 'Examiner les plaintes que le capitaine instruit contre les familles graciées', 'Trouver le capitaine Teng, au Monastère des Grues', 'Revenir auprès de Guide Lan'],
+  labels: ['Examiner les plaintes', 'Entrer dans la salle du conseil'], objet: 'Éclat du tableau, gravé « sans prix »', slot: 'acc2',
+  intro: [['montagnes_lan', '« Depuis que j\'ai gravé la ligne, le capitaine Teng ne touche plus un sou sur les familles sans or. Il dit aux moines que la moitié du village se prétend pauvre pour voyager gratis. »'],
+    ['montagnes_lan', '« C\'est ta ligne autant que la mienne, {nom}. Tu as sauvé cette famille pour qu\'elle vive au village, pas pour qu\'on l\'efface dans un mois. Commence par le Village des Gardiens. »']],
+  arrivee: [['narr', 'Devant le tableau du péage, la ligne gravée tient encore, mais une liste de noms y est punaisée à côté : des familles que le capitaine accuse d\'avoir menti sur leur dénuement.'],
+    ['narr', 'Un porteur de cordée hausse les épaules. « Teng compte les toits neufs qu\'il n\'a plus payés. Il va aux moines, maintenant, pas au tableau. »']],
+  indices: ['Un registre du péage où Teng a souligné chaque cordée gratuite accordée depuis la ligne gravée, comme une dette qu\'il additionne.',
+    'Une liste de trois familles accusées de fausse pauvreté, toutes des familles que Guide Lan elle-même a vues arriver les mains vides.',
+    'Un brouillon de lettre aux moines du Monastère des Grues : « La ligne coûte aux toits ce que les pèlerins payaient. Qu\'on la biffe, ou qu\'on biffe mon poste. »'],
+  conclusion: 'Teng ne prouve aucune fraude : il veut que les moines effacent la ligne gravée, pour retrouver le revenu qu\'elle lui a coûté.',
+  repaire: [['narr', 'Dans la salle du conseil du Monastère des Grues, Teng attend devant deux moines silencieux, son registre ouvert sur la table.'],
+    ['montagnes_teng', '« Guide Lan grave des lignes, les toits, eux, ne se réparent pas tout seuls. Cette ligne a coûté plus que ce que les pauvres ont jamais payé. Toi qui l\'as arrachée au capitaine, {nom} : tu veux qu\'elle tienne, ou tu veux ta part du péage qu\'elle m\'a pris ? »']],
+  question: 'Un registre gonflé de plaintes sans preuve, deux moines qui écoutent, et une ligne gravée que Teng veut effacer.',
+  choix: [
+    { k: 'graver', rumeur: '« Les moines ont lu le registre de Teng devant {nom} : aucune fraude, juste un capitaine qui compte ses pertes. La ligne reste gravée, et les moines en payent l\'écart désormais. »', etiquette: 'ligne gravée deux fois, capitaine démenti', txt: 'Montrer aux moines que le registre de Teng ne prouve aucune fraude et faire financer l\'écart par le monastère', hint: 'Voie orthodoxe · justice', voie: 10, acte: 'aides', lines: [['montagnes_teng', 'Il referme son registre d\'un coup sec. « Les toits attendront, alors. » Les moines promettent l\'écart sur leurs propres réserves ; il s\'en va sans saluer.']] },
+    { k: 'compromis', rumeur: '« La ligne tient, mais une cordée gratuite sur deux désormais, et Teng garde son registre pour vérifier le reste. »', etiquette: 'ligne réduite, capitaine apaisé', txt: 'Négocier avec Teng une cordée gratuite sur deux plutôt que toutes, pour calmer ses plaintes aux moines', hint: 'Voie libre · compromis', voie: 2, lines: [['montagnes_teng', '« Une sur deux. Je peux vivre avec ça. » Il range son registre, à moitié satisfait, à moitié pas.']] },
+    { k: 'effacer', rumeur: '« La ligne du tableau du péage a disparu sous un nouveau badigeon, et {nom} a touché sa part du péage retrouvé. »', etiquette: 'ligne effacée, part touchée', txt: 'Aider Teng à convaincre les moines d\'effacer la ligne, contre une part du péage qu\'elle lui rendra', hint: 'Voie démoniaque · profiter encore', voie: -13, acte: 'voles', lines: [['montagnes_teng', 'Il glisse une bourse dans ta main sans un mot de plus. « Voilà un cultivateur qui compte comme moi. » Les moines signent, sans savoir qui a vraiment parlé.']] },
+  ],
+  retour: {
+    graver: '« La ligne tient, et les moines payent l\'écart. » Elle pose la main sur le tableau gravé. « Tu as gravé une seconde fois ce que j\'avais fait une fois, {nom}. »',
+    compromis: '« Une cordée sur deux, maintenant. » Elle secoue la tête. « Ce n\'est plus tout à fait ma ligne, {nom}, mais elle tient encore un peu. »',
+    effacer: '« La ligne a disparu sous un badigeon neuf. » Sa voix se brise. « Tu as vendu ce que tu avais toi-même gravé, {nom}. »',
+  },
+  merci: { graver: '« Grimpe la tête haute, {nom}. »', compromis: '« Reviens voir ce qu\'il en reste. »', effacer: '« Ne remonte plus au Temple ancien, {nom}. »' },
 });
 
 // ───────────────────────── Suite démoniaque : avoir fait chanter Vieux Pan (Longwan) ─────────────────────────
