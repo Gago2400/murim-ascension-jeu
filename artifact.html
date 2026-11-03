@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="d76f3f978de4" aria-label="Identifiant de version">Version générée : d76f3f978de4</div>
+      <div class="meta" id="t-build" data-build="243a7c16c80a" aria-label="Identifiant de version">Version générée : 243a7c16c80a</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7022,6 +7022,46 @@ recitRegion('sceau_invisible', {
     associer: '« Les sceaux du quartier portent un cachet que je ne reconnais plus. » Elle ne te regarde plus en face. « La Cour elle-même ferme les yeux, maintenant. Sur quoi d\'autre, je préfère ne pas savoir. »',
   },
   merci: { demanteler: '« La guilde te doit plus qu\'elle ne peut payer, {nom}. »', acheter: '« Le quartier respire, du moins pour l\'instant. »', associer: '« … Ne reviens plus à la guilde. »' },
+});
+
+// ───────────────────────── Suite orthodoxe : le sceau qu'on replaide (Citadelle, miroir de la marque invisible) ─────────────────────────
+// Conséquence tardive de recit:citadelle_sceaux='plaider'. Maître Mo, qui convoitait l'atelier de Wen pour son propre apprenti
+// le jour de son renvoi, profite de ta caution d'étranger pour faire rejuger sa réintégration devant la guilde. Même mécanique
+// recitRegion et RECITS (34_voie.js), aucun champ de sauvegarde nouveau. Miroir de 02_voie_regions_suites_citadelle.js (greffé sur 'exploiter').
+recitRegion('sceau_replaide', {
+  name: 'Le sceau qu\'on replaide', region: 'citadelle', quest: 24, key: 'sceau_replaide', who: 'citadelle_fen3', label: 'Le graveur qui veut rejuger la réintégration de Wen',
+  si: { choix: { 'recit:citadelle_sceaux': 'plaider' } }, suite: 'recit:citadelle_sceaux', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    citadelle_fen3: { name: 'Maîtresse Fen', title: 'guilde des Artisans, qui défend sa caution', glyph: '匠', color: '#c9a24a' },
+    citadelle_mo: { name: 'Maître Mo', title: 'ancien de la guilde, qui veut l\'atelier de Wen', glyph: '老', color: '#8a6a4a' },
+  },
+  quand: 'Citadelle des Étoiles : Maîtresse Fen, à la Place des Maîtres (Maître Mo veut rejuger la réintégration de Wen)',
+  attente: '« Mo n\'a pas encore réuni son conseil, {nom}. Reviens quand il osera. »',
+  rappel: 'Maître Mo veut rejuger la réintégration de Wen, {nom}.',
+  steps: ['Écouter Maîtresse Fen, à la Place des Maîtres', 'Se renseigner au Quartier des Artisans sur le conseil que prépare Maître Mo', 'Examiner les plaintes qu\'il instruit contre ta caution', 'Trouver Maître Mo, devant l\'atelier de Wen', 'Revenir auprès de Maîtresse Fen'],
+  labels: ['Examiner les plaintes', 'Entrer dans l\'atelier'], objet: 'Sceau de cire, premier tirage honnête de Wen', slot: 'acc2',
+  intro: [['citadelle_fen3', '« Maître Mo réunit un conseil contre la réintégration de Wen, {nom}. Il dit qu\'une caution d\'étranger ne pèse pas plus qu\'un vote de guilde, et qu\'il faut rejuger. »'],
+    ['citadelle_fen3', '« S\'il obtient ce conseil, Wen retourne à la rue, caution ou pas. Va voir ce qu\'il prépare, au Quartier des Artisans. »']],
+  arrivee: [['narr', 'Au Quartier des Artisans, les graveurs se taisent quand on parle du conseil de Maître Mo. Un apprenti finit par lâcher : « Il dit que les cautions d\'étrangers ne devraient pas peser plus qu\'un vote de guilde. »']],
+  indices: ['Un registre de vote déjà à moitié rempli, où Mo a compté les voix pour annuler la réintégration de Wen avant même de réunir le conseil.',
+    'Une vieille rancune : Mo avait proposé son propre apprenti pour reprendre l\'atelier de Wen, le jour même de son renvoi.',
+    'Une lettre adressée à toute la guilde, prête à être lue : « Une caution de passage ne répare pas une faute de guilde. »'],
+  conclusion: 'Mo ne défend aucune règle : il veut l\'atelier de Wen pour son propre apprenti, et profite de ta caution d\'étranger pour la contester.',
+  repaire: [['narr', 'Devant l\'atelier de Wen, Maître Mo relit sa lettre, satisfait. À l\'intérieur, Wen grave, sans savoir que son sort se décide dehors.'],
+    ['citadelle_mo', '« Une caution d\'étranger ne vaut pas un vote de guilde, {nom}. Tu peux la défendre devant tous, ou je peux oublier ce conseil, si mon apprenti reçoit enfin un atelier à lui. »']],
+  question: 'La lettre de Mo prête à être lue, l\'atelier de Wen qui tient à un fil, et un marché qu\'on te propose à mi-voix.',
+  choix: [
+    { k: 'defendre', rumeur: '« Maître Mo a dû lire sa propre lettre devant toute la guilde, et personne n\'a voté. Wen garde son atelier ; {nom} a défendu la caution jusqu\'au bout. »', etiquette: 'Mo démasqué, atelier défendu', txt: 'Porter la lettre de Mo devant la guilde entière et démasquer sa rancune', hint: 'Voie orthodoxe · défendre', voie: 10, acte: 'aides', lines: [['citadelle_mo', 'Il range la lettre sans un mot, puis s\'incline, raide. « La guilde a tranché. Mon apprenti attendra un atelier qu\'il aura vraiment mérité. »']] },
+    { k: 'partager', rumeur: '« Un nouvel atelier a ouvert à côté de celui de Wen, pour l\'apprenti de Maître Mo. Le conseil ne se réunit plus. »', etiquette: 'atelier voisin ouvert, conseil calmé', txt: 'Négocier avec Mo un atelier voisin pour son apprenti, pour calmer le conseil sans l\'exposer', hint: 'Voie libre · partager', voie: 2, lines: [['citadelle_mo', '« Un atelier à lui, enfin. » Il hésite, puis range sa lettre. « Cela suffira, pour cette fois. »']] },
+    { k: 'reprendre', rumeur: '« L\'atelier de Wen a changé de mains. On dit qu\'un cultivateur a appuyé le vote de Maître Mo, et qu\'il en a touché sa part. »', etiquette: 'atelier repris, Wen chassé deux fois', txt: 'T\'associer à Mo pour que le conseil retire l\'atelier à Wen, contre une part de l\'atelier repris', hint: 'Voie démoniaque · reprendre', voie: -14, acte: 'voles', lines: [['citadelle_mo', 'Il te compte ta part sans un mot de trop. « Un conseil qui vote vite, voilà ce qu\'on obtient à deux. »']] },
+  ],
+  retour: {
+    defendre: '« Mo a dû lire sa propre lettre devant tous, {nom}. » Elle pose la main sur l\'établi de Wen. « Ta caution vaut encore quelque chose, dans cette guilde. »',
+    partager: '« Le nouvel atelier tient, et le conseil ne se réunit plus. » Elle hésite. « Ce n\'est pas la paix que j\'espérais, mais c\'en est une. »',
+    reprendre: '« Wen a quitté l\'atelier une seconde fois, {nom}. » Elle ne te regarde plus en face. « Ta caution n\'aura donc tenu qu\'une saison. »',
+  },
+  merci: { defendre: '« Wen grave encore sous ta caution, la tête haute. »', partager: '« Les deux ateliers tiennent, pour l\'instant. »', reprendre: '« … Ne reviens plus à la guilde, {nom}. »' },
 });
 
 // ───────────────────────── Récit-suite de la trame : la voix du clou (Claude) ─────────────────────────
