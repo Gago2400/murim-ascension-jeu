@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="45803ac00fd9">
+<meta name="murim-build" content="dd498c01e908">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="45803ac00fd9" aria-label="Identifiant de version">Version générée : 45803ac00fd9</div>
+      <div class="meta" id="t-build" data-build="dd498c01e908" aria-label="Identifiant de version">Version générée : dd498c01e908</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6769,6 +6769,48 @@ recitRegion('souffle_ermite', {
   apres: ['narr', 'Au Col, tu avais bu un homme pour ne plus être « sans talent ». La forêt t\'a montré le prix de ce qu\'on avale. À toi de savoir si tu l\'as payé, ou seulement reporté.'],
 });
 
+// ───────────────────────── Suite de la paix rendue à l'Ermite (chapitre IV) ─────────────────────────
+// Conséquence de ch4:ermite='liberer' : le souffle de l'Ermite protège, et la forêt te le rappelle.
+recitRegion('souffle_paix', {
+  name: 'Le souffle qu\'on a rendu', region: 'foret', quest: 16, key: 'souffle_paix', who: 'ling', label: 'Le souffle de l\'Ermite, rendu au Col',
+  si: { choix: { 'ch4:ermite': 'liberer' } }, suite: 'ch4:ermite', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    ling: { name: 'Chasseuse Ling', title: 'pisteuse de la Forêt', glyph: '猎', color: '#6a8a5a' },
+    fo_yuan: { name: 'Yuan le novice', title: 'échappé du Col', glyph: '元', color: '#c8d0b8' },
+  },
+  quand: 'Forêt des Murmures : Chasseuse Ling, au Camp des chasseurs (tu as rendu la paix à l\'Ermite)',
+  attente: '« Pas encore. Les murmures se taisent seulement à l\'aube. »',
+  rappel: 'Ling t\'attend encore sous les futaies, {nom}.',
+  steps: ['Écouter Ling, au Camp des chasseurs', 'Retrouver Yuan à la clairière', 'Suivre les murmures apaisés', 'Protéger la cachette au Village de la Futaie', 'Revenir auprès de Ling'],
+  labels: ['Suivre un murmure', 'Protéger la cachette'], objet: 'Plume de brume de l\'Ermite', slot: 'acc1',
+  intro: [['ling', '« Tu as brisé le clou de l\'Ermite. Depuis, la forêt murmure moins fort — et un novice du Col s\'est perdu ici en cherchant ta trace. »'],
+    ['ling', '« Yuan dit que ton souffle l\'a guidé. Des hommes en gris le cherchent. Aide-nous à le cacher, Juste — ou ce que tu es devenu. »']],
+  arrivee: [['narr', 'À la clairière, Yuan serre un chapelet. La brume autour de lui est tiède, presque familière.'],
+    ['fo_yuan', '« L\'Abbé Kong m\'a dit de te trouver. Les Masques veulent savoir comment tu as brisé le clou sans le boire. »']],
+  indices: ['Des empreintes grises autour de la clairière, trop propres pour des chasseurs.', 'Un pli de la Légion accroché à une branche, encore scellé.', 'Une plume de brume posée sur une souche — le même souffle qu\'au Col.'],
+  conclusion: 'Les Masques cherchent Yuan pour atteindre le secret de ta main. La forêt te demande de protéger ce que tu as déjà sauvé une fois.',
+  repaire: [['narr', 'Au Village de la Futaie, Ling tend un arc. Yuan se cache sous un appentis.'],
+    ['ling', '« Ils arrivent. Tu les détournes, tu les combats, ou tu leur livres le novice pour qu\'ils te laissent en paix. »']],
+  question: 'Un novice du Col, des capuches grises, et le souffle que tu as rendu à l\'Ermite.',
+  choix: [
+    { k: 'proteger', rumeur: '« Dans la Forêt, un Juste a caché un novice du Col. Les Masques sont repartis sans prise. »', etiquette: 'novice protégé, Masques repoussés', txt: 'Cacher Yuan et détourner les Masques hors de la futaie', hint: 'Voie orthodoxe · garder la paix rendue', voie: 11, acte: 'aides', rep: { alliance: 150, ordre: 100 }, lines: [['narr', 'Tu guides les capuches vers une fausse piste. Yuan reste. Ling te tend une plume de brume. « L\'Ermite aurait souri. »']] },
+    { k: 'fuite', rumeur: '« Un novice a quitté la Forêt seul. Personne ne sait qui lui a ouvert la route. »', etiquette: 'novice envoyé hors de la forêt', txt: 'Donner à Yuan une route secrète et refuser le combat', hint: 'Voie libre · sauver sans bannière', voie: 2, lines: [['ling', '« Pas de sang. Pas de gloire. » Elle hoche la tête. « Parfois c\'est assez. »']] },
+    { k: 'livrer', rumeur: '« Les Masques ont pris un novice dans la Forêt. On dit que celui qui a brisé le clou leur a montré le chemin. »', etiquette: 'novice livré aux Masques', txt: 'Indiquer la cachette aux Masques en échange de leur retrait', hint: 'Voie démoniaque · vendre la paix', voie: -13, acte: 'voles', rep: { legion: 200, ordre: -150 }, lines: [['narr', 'Tu montres l\'appentis. Yuan crie une fois. Ling ne te regarde plus. La plume de brume tombe dans la boue.']] },
+  ],
+  retour: {
+    proteger: '« Yuan est au monastère. » Ling te glisse la plume. « L\'Ermite t\'avait confié son souffle. Tu l\'as fait travailler. »',
+    fuite: '« Il a passé la lisière. » Elle te tend une bourse légère. « La forêt n\'oublie pas les routes ouvertes. »',
+    livrer: '« Tu as rendu la paix à l\'Ermite, puis tu l\'as revendue. » Elle crache. « Ne reviens pas sous ces arbres. »',
+  },
+  merci: {
+    proteger: '« Les murmures sont plus doux, ce soir. »',
+    fuite: '« Une route sans nom vaut parfois mieux qu\'une lame. »',
+    livrer: '« Les Masques sourient dans ton dos. »',
+  },
+  apres: ['narr', 'Au Col, tu as brisé un clou pour rendre une paix. Dans la Forêt, on t\'a demandé d\'en payer le prix — ou de le trahir.'],
+});
+
 // ───────────────────────── Suite du serment du Juste (chapitre III) : la route des faibles ─────────────────────────
 // Conséquence tardive du serment de bannière orthodoxe (ch3:banniere='serment'). Deux apports :
 //  1) un récit-suite « La route des faibles » au Col : l'Alliance appelle le Juste à protéger un convoi de réfugiés ;
@@ -6886,6 +6928,48 @@ if (typeof genRegion === 'function') {
     return sc;
   };
 }
+
+// ───────────────────────── Suite de l'insulte à Tang Rui (chapitre III) : la dette d'éventail ─────────────────────────
+// Conséquence tardive de ch3:tang='humilier'. Tang Rui devient rival juré et te rappelle la dette au Col.
+recitRegion('dette_eventail', {
+  name: 'La dette d\'éventail', region: 'col', quest: 15, key: 'dette_eventail', who: 'tang', label: 'L\'insulte que Tang Rui n\'oublie pas',
+  si: { choix: { 'ch3:tang': 'humilier' } }, suite: 'ch3:tang', art: 'masque',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    tang: { name: 'Tang Rui', title: 'prodige de l\'Académie', glyph: '唐', color: '#ffcf4a' },
+    col_yan: { name: 'Yan le second', title: 'lame du clan Tang', glyph: '焰', color: '#d87848' },
+  },
+  quand: 'Col de la Brume : Tang Rui, au Monastère isolé (tu l\'as humilié aux Ruines)',
+  attente: '« Pas encore. Mon second n\'est pas arrivé. »',
+  rappel: 'Tang Rui attend encore au Col, {nom}.',
+  steps: ['Affronter le regard de Tang Rui, au Monastère isolé', 'Suivre Yan à l\'Auberge de la Brume', 'Lire les défis laissés sur la route', 'Répondre au défi au Village des Bûcherons', 'Encaisser le verdict de Tang Rui'],
+  labels: ['Lire un défi', 'Répondre au défi'], objet: 'Éventail fendu du rival', slot: 'acc2',
+  intro: [['tang', '« Aux Ruines, tu m\'as traité de peureux. » L\'éventail claque. « Le clan Tang n\'oublie pas. Je t\'ai fait venir au Col pour que tu paies — ou que tu confirmes. »'],
+    ['tang', '« Yan t\'attend à l\'Auberge. Trois défis. Refuse, et ton nom devient une cible. Accepte, et on verra si tu vaux ton insolence. »']],
+  arrivee: [['narr', 'À l\'Auberge de la Brume, Yan le second pose trois tablettes sur la table. Chacune porte un sceau Tang et une heure.'],
+    ['col_yan', '« Le prodige veut ta réponse avant la brume du soir. Choisis comment tu tombes — ou comment tu te relèves. »']],
+  indices: ['Une tablette : « Duels à l\'aube, sans témoins de l\'Alliance. »', 'Une seconde : « Livrer un nom de l\'Alliance au Col. »', 'Une troisième : « S\'agenouiller et retirer l\'insulte devant le monastère. »'],
+  conclusion: 'Tang Rui veut laver l\'insulte des Ruines. Au Village des Bûcherons, Yan tient le terrain. Ce que tu choisis dira si le rival devient une dette, une trêve, ou une guerre.',
+  repaire: [['narr', 'Au Village des Bûcherons, Tang Rui attend sous les sapins, Yan à sa droite.'],
+    ['tang', '« Alors, campagnard. Tu t\'agenouilles, tu te bats, ou tu vends l\'Alliance pour mon silence ? »']],
+  question: 'Trois tablettes, un éventail fendu, et l\'insulte que tu as lancée aux Ruines.',
+  choix: [
+    { k: 'affronter', rumeur: '« Au Col, un cultivateur a tenu tête à Tang Rui sous la neige. On dit que l\'éventail du prodige s\'est fendu. »', etiquette: 'duel tenu, rivalité affirmée', txt: 'Accepter le duel à découvert et tenir jusqu\'à la trêve', hint: 'Voie orthodoxe · payer sans trahir', voie: 8, acte: 'aides', rep: { alliance: 50 }, lines: [['narr', 'Le duel dure trente échanges. Tang Rui recule d\'un pas. « Tu n\'es pas un lâche. Garde mon éventail fendu — et mon regard. »']] },
+    { k: 'treve', rumeur: '« Tang Rui et un campagnard ont parlé longtemps sous les sapins. Personne n\'a vu de sang. »', etiquette: 'insulte retirée sans génuflexion', txt: 'Retirer l\'insulte sans s\'agenouiller, et proposer une trêve', hint: 'Voie libre · calmer sans plier', voie: 1, lines: [['tang', '« Un mot. Pas un genou. » Il range l\'éventail. « Pour l\'instant, le clan Tang ferme les yeux. »']] },
+    { k: 'vendre', rumeur: '« Au Col, Tang Rui a reçu un nom de l\'Alliance. On dit que le campagnard qui l\'a insulté lui a vendu ses propres amis. »', etiquette: 'nom de l\'Alliance vendu au clan Tang', txt: 'Livrer un nom de l\'Alliance pour que Tang Rui oublie l\'insulte', hint: 'Voie démoniaque · trahir pour survivre', voie: -12, acte: 'voles', rep: { alliance: -200, legion: 100 }, lines: [['tang', '« Voilà qui est plus sage que ton insolence. » Il prend le nom. « L\'insulte est payée. Toi, tu es à moi. »']] },
+  ],
+  retour: {
+    affronter: '« Tu as tenu. » Il te jette l\'éventail fendu. « Le clan Tang te respectera — d\'assez loin pour que ça blesse encore. »',
+    'treve': '« Une trêve n\'est pas une amitié. » Il te tend une bourse. « Ne croise plus mon chemin ivre de gloire. »',
+    vendre: '« Le nom est déjà parti. » Il sourit sans joie. « Dors mal, {nom}. »',
+  },
+  merci: {
+    affronter: '« Un rival qui tient debout vaut mieux qu\'un ami qui s\'agenouille. »',
+    'treve': '« La brume oublie vite. Moi non. »',
+    vendre: '« Les Masques sourient. Moi aussi, cette fois. »',
+  },
+  apres: ['narr', 'Aux Ruines, tu as humilié un prodige. Au Col, il t\'a fait choisir le prix.'],
+});
 
 // ───────────────────────── Récits de la Vallée de l'Aurore : commerce et folklore du village (Grogrok) ─────────────────────────
 // Suite de 02_voie_regions.js : deux récits propres à la Vallée, sans lien avec le réseau de Cendre Grise.
