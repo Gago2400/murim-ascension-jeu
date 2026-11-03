@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="7a2ef2473a14">
+<meta name="murim-build" content="a35f9f16c32b">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="7a2ef2473a14" aria-label="Identifiant de version">Version générée : 7a2ef2473a14</div>
+      <div class="meta" id="t-build" data-build="a35f9f16c32b" aria-label="Identifiant de version">Version générée : a35f9f16c32b</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6767,6 +6767,55 @@ recitRegion('souffle_ermite', {
   retour: { rendre: '« Le souffle est rendu. Tu dors, maintenant, sans marcher. » Elle te glisse une amulette tressée de brume. « La forêt te laisse passer : elle se souvient de ceux qui rendent ce qu\'ils ont pris. »', contenir: '« Il est muet, sous tes côtes. Tiens-le ainsi, et il ne te mangera pas. » Elle te tend quelques herbes de sommeil. « Pour les nuits de colère. »', devorer: '« La forêt ne murmure plus. Elle a peur. » Elle recule, ses yeux blancs tournés vers toi. « Tu es plein de voix, à présent. Je n\'ose pas compter lesquelles. »' },
   merci: { rendre: '« Dors bien, enfant rendu à lui-même. »', contenir: '« Respire, surtout, {nom}. »', devorer: '« Ne t\'endors pas près de nos feux. »' },
   apres: ['narr', 'Au Col, tu avais bu un homme pour ne plus être « sans talent ». La forêt t\'a montré le prix de ce qu\'on avale. À toi de savoir si tu l\'as payé, ou seulement reporté.'],
+});
+
+// ───────────────────────── Suite du serment du Juste (chapitre III) : la route des faibles ─────────────────────────
+// Conséquence tardive du serment de bannière orthodoxe (ch3:banniere='serment'). Deux apports :
+//  1) un récit-suite « La route des faibles » au Col : l'Alliance appelle le Juste à protéger un convoi de réfugiés ;
+//  2) une courte réplique du maître du village de départ qui a entendu parler du serment (déjà couverte côté banniere
+//     pour les trois issues — ici on n'ajoute pas de doublon maître ; le récit suffit).
+// Même mécanique recitRegion. Aucun champ de sauvegarde nouveau.
+
+recitRegion('route_faibles', {
+  name: 'La route des faibles', region: 'col', quest: 15, key: 'route_faibles', who: 'kong', label: 'Le serment du Juste qu\'on te rappelle',
+  si: { choix: { 'ch3:banniere': 'serment' } }, suite: 'ch3:banniere', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    kong: { name: 'Abbé Kong', title: 'moine du Monastère isolé', glyph: '空', color: '#c8d0e0' },
+    all_mei: { name: 'Émissaire Mei', title: 'Alliance des Cinq Montagnes', glyph: '盟', color: '#6a9ad8' },
+  },
+  quand: 'Col de la Brume : Abbé Kong, au Monastère isolé (tu as prêté le serment du Juste)',
+  attente: '« Pas encore. Les réfugiés n\'arrivent qu\'après la brume de midi. »',
+  rappel: 'L\'Alliance attend encore ta main, {nom}.',
+  steps: ['Écouter l\'Abbé Kong, au Monastère isolé', 'Rejoindre l\'Émissaire Mei à l\'Auberge de la Brume', 'Suivre la piste des réfugiés dans la brume', 'Protéger le convoi au Village des Bûcherons', 'Rendre compte à l\'Abbé Kong'],
+  labels: ['Lire une trace', 'Défendre le convoi'], objet: 'Sceau de papier de l\'Alliance', slot: 'acc2',
+  intro: [['kong', '« Doyen Shen m\'a écrit : un Juste viendrait. » Il te regarde les bottes. « Un convoi de familles fuit la Légion. L\'Alliance n\'a plus assez d\'hommes au Col. »'],
+    ['kong', '« Ton serment n\'était pas un mot pour les archives. Va à l\'Auberge de la Brume : l\'Émissaire Mei t\'attend. Protège ceux qui n\'ont que la brume pour toit. »']],
+  arrivee: [['narr', 'À l\'Auberge de la Brume, Mei plie une carte. Trois croix rouges : embuscades de la Légion sur la seule route encore ouverte.'],
+    ['all_mei', '« Ils veulent les enfants pour la Cendre. Pas les parents. » Elle te tend un pli scellé d\'azur. « Marche devant. Si tu hésites, ils sauront que le Juste n\'était qu\'un titre. »']],
+  indices: ['Des empreintes de bottes lourdes, trop régulières pour des paysans : une patrouille de la Légion a déjà balisé le col.',
+    'Un berceau abandonné sous un pin, encore chaud. On a fui trop vite pour le reprendre.',
+    'Une flamme noire gravée dans l\'écorce : la marque de la Légion, fraîche comme un crachat.'],
+  conclusion: 'Le convoi des faibles est au Village des Bûcherons. La Légion ferme la route. Le serment que tu as prêté à l\'aube te demande une main, pas un discours.',
+  repaire: [['narr', 'Au Village des Bûcherons, vingt familles serrées sous les sapins. Mei tire son glaive. Au-dessus du sentier, des capuches grises.'],
+    ['all_mei', '« Voici l\'heure du serment, {nom}. Tu coupes la route aux Masques, tu négocies un passage, ou tu les laisses prendre ce qu\'ils sont venus chercher. »']],
+  question: 'Un convoi de faibles, des capuches grises sur la crête, et le serment du Juste brûlé dans ta mémoire.',
+  choix: [
+    { k: 'defendre', rumeur: '« Au Col, un Juste a tenu la route des Bûcherons contre la Légion. On dit que l\'Alliance lui a posé un sceau de papier sur la poitrine. »', etiquette: 'convoi défendu, Légion repoussée', txt: 'Tenir la route à découvert et forcer la Légion à battre en retraite', hint: 'Voie orthodoxe · tenir le serment', voie: 12, acte: 'aides', rep: { alliance: 250, legion: -200 }, lines: [['narr', 'Tu te places devant le convoi. Les capuches hésitent, puis reculent dans la brume. Mei pose le sceau de papier sur ta poitrine. « Voilà un Juste. »']] },
+    { k: 'detourner', rumeur: '« Un convoi a passé le Col par un sentier que personne n\'avait cartographié. Ni la Légion ni l\'Alliance ne savent qui l\'a ouvert. »', etiquette: 'convoi détourné en silence', txt: 'Ouvrir un sentier secondaire et faire passer le convoi sans combattre', hint: 'Voie libre · sauver sans bannière', voie: 2, lines: [['narr', 'Tu guides les familles par une combe oubliée. La Légion garde la mauvaise route toute la nuit. Mei ne dit rien — mais elle te doit une dette sans sceau.']] },
+    { k: 'livrer', rumeur: '« Au Col, un Juste a vendu un convoi à la Légion. L\'Alliance a brûlé son nom sur les portes de l\'Académie. »', etiquette: 'convoi livré à la Légion', txt: 'Indiquer le convoi à la Légion en échange d\'un sauf-conduit', hint: 'Voie démoniaque · trahir le serment', voie: -14, acte: 'voles', rep: { legion: 250, alliance: -300 }, lines: [['narr', 'Tu lèves la main vers la crête. Les capuches descendent. Mei te regarde une fois, puis plus. Le sceau de papier brûle dans la neige.']] },
+  ],
+  retour: {
+    defendre: '« Les familles sont au monastère. » Kong s\'incline. « Shen avait raison. Garde ce sceau : l\'Alliance sait lire ceux qui tiennent parole. »',
+    detourner: '« Ils sont passés. » Kong soupire. « Sans combat, sans gloire. Parfois le serment se tient dans l\'ombre. Tiens, pour la route. »',
+    livrer: '« Tu as prêté le serment du Juste. » Kong détourne les yeux. « Ne remonte plus au monastère en portant ce nom. »',
+  },
+  merci: {
+    defendre: '« La brume se souvient des Justes. Elle te reconnaîtra. »',
+    detourner: '« Un sentier sans nom vaut parfois mieux qu\'une bannière. »',
+    livrer: '« Les portes du monastère ne s\'ouvriront plus pour toi. »',
+  },
+  apres: ['narr', 'À l\'Académie, tu as brûlé un pli et prêté un serment. Au Col, on t\'a demandé de le payer en actes.'],
 });
 
 // ───────────────────────── Suite de la lettre partagée avec Tang Rui (chapitre III) ─────────────────────────
