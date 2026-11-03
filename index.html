@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="a8f6473809d8">
+<meta name="murim-build" content="b0eaba754693">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="a8f6473809d8" aria-label="Identifiant de version">Version générée : a8f6473809d8</div>
+      <div class="meta" id="t-build" data-build="b0eaba754693" aria-label="Identifiant de version">Version générée : b0eaba754693</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7017,6 +7017,46 @@ recitRegion('voix_clou', {
   retour: { briser: '« La voix s\'est tue, n\'est-ce pas ? Je le vois à tes yeux : ils ont repris leur couleur. » Elle te tend un petit éclat gris, froid et mort, scellé dans de la cire. « Garde-le. Pour te souvenir de ce que tu as failli devenir. »', sceller: '« Tu le portes encore, mais il ne commande plus. C\'est déjà une victoire, de celles qu\'on ne raconte pas. Prends ceci pour ta peine. »', nourrir: '« Sors de mon cabinet. » Elle recule contre le mur. « Tu sens la braise froide et la terre retournée. Je soigne les vivants, {nom}. Je ne sais pas encore ce que tu es. »' },
   merci: { briser: '« Tes yeux sont clairs, {nom}. Reviens quand tu veux. »', sceller: '« Si la voix revient, tu sais où me trouver. »', nourrir: '« Ne reviens pas. »' },
   apres: ['narr', 'Ce que tu as gardé un soir, à Qinghe, « pour écouter la cendre qui y dort », t\'a suivi jusqu\'ici. La cendre, elle, n\'a jamais dormi.'],
+});
+
+// ───────────────────────── Suite démoniaque : la fumée qui reste (Col, encens coupé revendu sous ton nom) ─────────────────────────
+// Conséquence tardive de recit:encens_col='monopole'. Une pèlerine qui a failli se perdre dans la brume en brûlant ton
+// encens remonte la piste jusqu'au Village des Bûcherons, où un marchand de Jade a déjà tout compris.
+recitRegion('fumee_vendue', {
+  name: 'La fumée qui reste', region: 'col', quest: 14, key: 'fumee_vendue', who: 'col_ai', label: 'La pèlerine qui a failli se perdre dans ta fumée',
+  si: { choix: { 'recit:encens_col': 'monopole' } }, suite: 'recit:encens_col', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    col_ai: { name: 'Pèlerine Ai', title: 'rescapée de la brume noire', glyph: '霭', color: '#b8c8d8' },
+    col_jin: { name: 'Marchand Jin', title: 'peddler de Jade qui sent l\'aubaine', glyph: '晋', color: '#c8a050' },
+  },
+  quand: 'Col de la Brume : Pèlerine Ai, au Monastère isolé (l\'encens que tu revends sous ton nom)',
+  attente: '« Je reprends mon souffle, {nom}. La brume ne se raconte pas vite. »',
+  rappel: 'Ai cherche encore qui vend l\'encens qui l\'a perdue, {nom}.',
+  steps: ['Écouter Pèlerine Ai, au Monastère isolé', 'Se rendre à l\'Auberge de la Brume, où Ai a acheté son dernier bâton', 'Examiner les bâtons vendus sous ton nom', 'Trouver qui te fournit encore, au Village des Bûcherons', 'Revenir auprès de Pèlerine Ai'],
+  labels: ['Examiner le bâton noirci', 'Entrer dans la remise'], objet: 'Lanterne de poche de Pèlerine Ai', slot: 'acc2',
+  intro: [['col_ai', '« Trois jours de brume, et le bâton que j\'avais acheté s\'est éteint à mi-chemin. J\'ai marché à l\'aveugle jusqu\'au ravin. Un berger m\'a trouvée à temps. »'],
+    ['col_ai', '« On m\'a dit que le monastère ne vend plus cet encens-là depuis l\'automne. Alors qui, sous quel nom, à l\'Auberge de la Brume ? Je veux voir ce bâton. »']],
+  arrivee: [['narr', 'À l\'auberge, l\'aubergiste se souvient bien du vendeur : pas un moine, pas un bûcheron. Un cultivateur de passage, qui vendait ses paquets à la criée, sans cachet ni carnet.'],
+    ['narr', 'Le nœud qui fermait les paquets est le même que celui des bûcherons. La sciure, la même. Seul le prix a changé : le double de l\'ancien tarif du monastère.']],
+  indices: ['Un bâton noirci, identique à ceux que les enfants du Village des Bûcherons roulaient autrefois pour le monastère.',
+    'Une pèlerine de plus qui raconte avoir payé « le prix du vrai » à un cultivateur sans nom, sur la route, en pleine brume.',
+    'Des traces fraîches entre l\'Auberge et le Village des Bûcherons : quelqu\'un continue d\'aller chercher les paquets, régulièrement.'],
+  conclusion: 'Tu achètes encore aux bûcherons, moins cher qu\'avant, et revends toujours plus cher aux pèlerins. Un marchand de Jade a remarqué le commerce avant Ai.',
+  repaire: [['narr', 'Au Village des Bûcherons, un marchand que tu ne connais pas t\'attend près de la remise, les bras croisés, un sourire déjà prêt.'],
+    ['col_jin', '« Un cultivateur qui vend de l\'encens coupé au prix du vrai, sans cachet, sans carnet. J\'ai suivi la fumée jusqu\'ici. Alors : je rentre dans l\'affaire, ou je la raconte à la pèlerine qui a failli mourir pour ton prix ? »']],
+  question: 'Jin qui a tout compris, Ai qui attend une réponse à l\'auberge, et les enfants qui roulent toujours le même encens.',
+  choix: [
+    { k: 'rendre', rumeur: '« Le cultivateur a rendu l\'or pris aux pèlerins et payé le vrai prix aux bûcherons. Mère Wu ne baisse plus les yeux en le voyant passer. »', etiquette: 'encens rendu, bûcherons payés', txt: 'Rendre leur or aux pèlerins trompés, payer enfin les bûcherons au juste prix et chasser Jin', hint: 'Voie orthodoxe · rendre ce qui a été pris', voie: 12, acte: 'aides', lines: [['col_jin', 'Il recule, les mains ouvertes. « Dommage. » Il s\'en va sans se presser, sachant qu\'il trouvera une autre fumée à suivre.']] },
+    { k: 'liquider', rumeur: '« L\'encens sans cachet a disparu de l\'Auberge de la Brume, mais quelqu\'un a vidé le dernier sac avant de partir. On ne sait pas qui vendait, ni qui a vendu la fin du stock. »', etiquette: 'stock liquidé, commerce arrêté', txt: 'Vendre le reste du stock à un inconnu de passage, empocher la différence, et arrêter discrètement', hint: 'Voie libre · liquider avant de partir', voie: 2, lines: [['col_jin', '« Toujours un peu d\'argent avant de tourner le dos. » Il compte les pièces avec toi, puis s\'en va, déjà tourné vers une autre route.']] },
+    { k: 'associer', rumeur: '« L\'encens sans cachet se vend maintenant jusqu\'à Jade, sous deux noms au lieu d\'un. Les pèlerins paient plus, et se perdent toujours autant. »', etiquette: 'réseau étendu jusqu\'à Jade', txt: 'S\'associer à Jin pour vendre l\'encens coupé jusqu\'à Jade, sous deux noms au lieu d\'un', hint: 'Voie démoniaque · étendre le commerce', voie: -14, acte: 'voles', lines: [['col_jin', '« Voilà un associé qui ne s\'embarrasse pas de cachet. » Il te tend la main. « La brume ne manquera jamais de pèlerins perdus. »']] },
+  ],
+  retour: {
+    rendre: '« L\'or est revenu à ceux qui l\'ont payé. » Ai respire mieux, enfin. « Je ne me perdrai plus pour un bâton qui fume noir, {nom}. » Elle te tend sa lanterne de poche.',
+    liquider: '« Le dernier sac a disparu de la route, et avec lui un peu d\'argent qui n\'était pas à toi. » Elle hésite. « Je ne sais toujours pas qui j\'ai failli remercier, ou maudire. »',
+    associer: '« L\'encens sans cachet se vend encore, {nom}, et jusqu\'à Jade maintenant. » Elle ne te regarde plus en face. « Une pèlerine de plus s\'est perdue la semaine dernière. »',
+  },
+  merci: { rendre: '« Marche droit dans la brume, {nom}. »', liquider: '« Je garde ma lanterne allumée, maintenant. »', associer: '« Ne m\'adresse plus la parole, {nom}. »' },
 });
 
 // ───────────────────────── Suite démoniaque : la soif qui reste (Désert, citerne vendue aux caravanes) ─────────────────────────
