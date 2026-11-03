@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="76a403385fa5">
+<meta name="murim-build" content="469ba125fc5b">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="76a403385fa5" aria-label="Identifiant de version">Version générée : 76a403385fa5</div>
+      <div class="meta" id="t-build" data-build="469ba125fc5b" aria-label="Identifiant de version">Version générée : 469ba125fc5b</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7242,6 +7242,47 @@ recitRegion('tablette_vendue', {
   },
   merci: { rendre: '« Les digues dorment. »', bruler: '« Un peu. »', encore: '« Va-t\'en. »' },
   apres: ['narr', 'Tu as vendu des noms. Qinghe a compté ce que tu as rendu — ou repris.'],
+});
+
+// ───────────────────────── Suite des peaux sans marque (Forêt des Murmures) : le courtier veut les derniers renards vivants ─────────────────────────
+// Conséquence tardive de recit:foret_renards='livrer'. Le courtier qui a acheté les vingt peaux revient
+// avec des cages à double fond : il ne veut plus de fourrure morte, il veut un couple vivant pour fonder un élevage.
+recitRegion('traque_renards', {
+  name: 'Les derniers renards blancs', region: 'foret', quest: 16, key: 'traque_renards', who: 'foret_gan', label: 'Le courtier revenu pour des bêtes vivantes',
+  si: { choix: { 'recit:foret_renards': 'livrer' } }, suite: 'recit:foret_renards', art: 'masque',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    foret_gan: { name: 'Vieux Gan', title: 'doyen des trappeurs', glyph: '甘', color: '#b89868' },
+    foret_mo: { name: 'Courtier Mo', title: 'acheteur vivant pour Jade', glyph: '買', color: '#8a6a52' },
+  },
+  quand: 'Forêt des Murmures : Vieux Gan, au Camp des chasseurs (tu as livré les peaux blanches à Jade)',
+  attente: '« Les pièges sont vides. Reviens quand la neige aura une histoire neuve à raconter. »',
+  rappel: 'Le courtier de Jade rôde encore dans la forêt, {nom}.',
+  steps: ['Écouter Vieux Gan, au Camp des chasseurs', 'Se rendre aux Cabanes des Trappeurs, où le courtier a laissé ses rabatteurs', 'Suivre les traces de cages jusqu\'au Sanctuaire', 'Trouver le camp du courtier Mo, près du Sanctuaire des Esprits', 'Revenir auprès de Vieux Gan'],
+  labels: ['Examiner la cage', 'Entrer dans le camp'], objet: 'Muselière d\'argent du courtier', slot: 'acc2',
+  intro: [['foret_gan', '« Les peaux que tu as vendues ont fait le tour de Jade. Le courtier qui les a achetées est revenu, avec des cages et deux rabatteurs. Il ne veut plus de fourrure morte : il veut un couple vivant, pour en faire naître d\'autres, à volonté. »'],
+    ['foret_gan', '« Le dernier couple de renards blancs se cache près du Sanctuaire des Esprits. S\'il le prend, la forêt n\'en reverra jamais plus. Va voir aux Cabanes des Trappeurs : ses rabatteurs y campent. »']],
+  arrivee: [['narr', 'Aux Cabanes, les rabatteurs du courtier examinent des cages trop grandes pour une seule peau.'],
+    ['narr', 'Un trappeur, honteux, montre une carte griffonnée : le sentier du Sanctuaire, marqué de croix rouges.']],
+  indices: ['Une cage à double fond, capitonnée : faite pour transporter des bêtes vivantes sans les blesser.',
+    'Des graines de valériane écrasées sur les rochers du sentier, pour endormir sans tuer.',
+    'Une lettre du courtier Mo : « Un couple vivant vaut plus que vingt peaux. Fais vite, avant que la neige ne les cache. »'],
+  conclusion: 'Le courtier Mo veut le dernier couple de renards blancs, vivant, pour fonder un élevage loin de la forêt. Il campe près du Sanctuaire des Esprits, ses rabatteurs déjà postés.',
+  repaire: [['narr', 'Près du Sanctuaire, le courtier Mo vérifie ses cages à double fond, un sourire poli aux lèvres.'],
+    ['foret_mo', '« Te revoilà. Jade se souvient de qui sait livrer sans poser de questions. Cette fois, je veux les bêtes qui respirent. »']],
+  question: 'Les cages sont prêtes, les rabatteurs postés, et le dernier couple de renards blancs dort encore près du Sanctuaire, sans savoir qu\'il est déjà vendu.',
+  choix: [
+    { k: 'liberer', rumeur: '« Le courtier de Jade est reparti de la Forêt les mains vides, poursuivi jusqu\'à la lisière. Les derniers renards blancs n\'ont pas quitté le Sanctuaire. »', etiquette: 'courtier chassé, derniers renards saufs', txt: 'Chasser le courtier Mo du Sanctuaire et briser les cages pour que les renards restent introuvables', hint: 'Voie orthodoxe · réparer', voie: 12, acte: 'aides', lines: [['foret_mo', 'Il recule devant ta lame, lâche la cage vide. « Jade trouvera un autre fournisseur. Pas sur ce sentier. »']] },
+    { k: 'detourner', rumeur: '« Le courtier de Jade est reparti satisfait, une bourse de {nom} dans la poche, convaincu que les derniers renards blancs sont morts dans la neige. »', etiquette: 'courtier payé pour mentir à Jade', txt: 'Payer Mo pour qu\'il reparte et dise à Jade que le couple est mort de froid', hint: 'Voie libre · acheter la paix', voie: 2, lines: [['foret_mo', '« Morts de froid, dis-tu ? » Il compte la bourse. « Voilà qui m\'évite une saison de traque. Jade s\'en remettra. »']] },
+    { k: 'livrer', rumeur: '« Le Sanctuaire des Esprits est silencieux, maintenant. Les derniers renards blancs de la Forêt sont partis pour Jade, en cage, et {nom} s\'est payé au passage. »', etiquette: 'dernier couple livré, prix partagé', txt: 'Aider Mo à endormir et cager le dernier couple, et partager avec lui le prix de Jade', hint: 'Voie démoniaque · finir ce que tu as commencé', voie: -14, acte: 'voles', lines: [['foret_mo', '« Voilà un associé qui connaît son sentier. » À deux, la valériane fait vite effet, et la cage se ferme sur le dernier couple.']] },
+  ],
+  retour: {
+    liberer: '« Le Sanctuaire respire encore. » Vieux Gan te tend la muselière d\'argent. « Tu as refermé ce que tu avais ouvert, {nom}. Pas tout le monde en est capable. »',
+    detourner: '« Le courtier est reparti. » Il hésite. « Je ne sais pas ce que tu lui as dit, ou donné. Les renards courent encore, c\'est le principal. »',
+    livrer: '« Le Sanctuaire ne garde plus rien. » Vieux Gan ne te regarde plus en face. « Il n\'y aura plus de renards blancs dans cette forêt, {nom}. Plus jamais. »',
+  },
+  merci: { liberer: '« La forêt se souvient de ceux qui réparent, {nom}. »', detourner: '« Que la neige garde ton secret. »', livrer: '« Ne reviens plus près du Sanctuaire. »' },
+  apres: ['narr', 'Au marché de Jade, le courtier Mo installe un nouvel enclos. Sur l\'écriteau : « Élevage de renards blancs — origine Forêt des Murmures. »'],
 });
 
 // ───────────────────────── Suite du serment du Juste (chapitre III) : la route des faibles ─────────────────────────
@@ -58493,11 +58534,36 @@ const CRIEUR_RUMEURS = {
     '« Le Khan des Cendres a été vu sous la Forge des Anciens. Vieux Tao ne veut pas en parler. »',
     '« Un Dard Écarlate a traversé le Souk de l\'Est sans piquer personne. Ça n\'annonce jamais rien de bon. »',
   ],
+  marecages: [
+    '« La criée a pesé deux fois moins de poisson, ce matin. Les pontons du nord restent vides depuis la pleine lune. »',
+    '« Un ballot de papier de roseau a quitté le hameau sans le filigrane de Coupeuse Ju. Personne ne dit qui l\'a coupé. »',
+    '« Un nom a été regravé sur le mur des noyés, cette nuit. On jure que la pierre était encore tiède au matin. »',
+    '« Les pilotis du troisième ponton penchent. Le charpentier dit que ce n\'est pas l\'eau qui les ronge. »',
+  ],
+  abysses: [
+    '« Un garde a rapporté un éclat noir du bord de la Fracture. Le Comptoir des masques l\'a payé sans poser de question. »',
+    '« La voix a encore chanté au Bord du chant, cette nuit. Deux sentinelles de plus ont quitté leur poste au matin. »',
+    '« Le registre de la Caserne du Front ne compte plus les mêmes morts que le Bastion de la Veille. »',
+    '« La Porte du Vide reste close depuis trois jours. Le Capitaine Rui n\'a donné aucune raison aux hommes de garde. »',
+  ],
+  citadelle: [
+    '« L\'Observatoire a éteint ses lanternes trois nuits de suite. Le Grand Archiviste dit que c\'est pour mieux voir. »',
+    '« Un automate-étoile a quitté sa ronde jusqu\'aux Greniers. On l\'a remis en place sans un mot. »',
+    '« Les Degrés des Maîtres comptent une marche de plus depuis la pleine lune. Personne n\'ose la nommer. »',
+    '« Un maître déchu a été vu sous la Résidence du Gouverneur. Les gardes jurent n\'avoir rien vu. »',
+  ],
+  montagnes: [
+    '« Gardien He compte les plumes tombées près du Temple ancien. Il n\'a pas dit pourquoi. »',
+    '« Un traqueur de Jade a été vu sur la falaise aux grues, avec une cage trop grande pour un œuf. »',
+    '« Sage Mu médite plus longtemps qu\'avant au Nexus Céleste. Le Gouffre du Dragon ne dort pas, dit-il. »',
+    '« Un gardien de pierre a bougé d\'un pas, cette nuit, près du Monastère des Grues. Personne ne l\'a vu faire. »',
+  ],
 };
 // [Claude] Placeable ≠ CRIEUR_RUMEURS : foret/col n'ont qu'un refuge (villeRefuge), pas de sc.bourg,
 // donc crieurPoser (qui lit sc.bourg.rect) reste no-op pour eux. Rumeurs gardées pour quand ils auront un bourg.
-// Désert : le Fort des Caravanes (43_cite_plan_desert.js) a un vrai sc.bourg → crieur posé.
-const CRIEUR_BERCEAUX = ['qinghe', 'longwan', 'meishan', 'plaines', 'vallee', 'desert'];
+// Désert/Marécages/Abysses : Fort des Caravanes, Village des Pilotis, Fort de la Trêve ont un vrai sc.bourg → crieur posé.
+// Montagnes : pas de bourg (Terre Préservée), mais un refuge (Temple ancien, sc.safe) → crieur posé dessus.
+const CRIEUR_BERCEAUX = ['qinghe', 'longwan', 'meishan', 'plaines', 'vallee', 'desert', 'marecages', 'abysses', 'citadelle', 'montagnes'];
 
 function crieurEnsure() {
   if (typeof ensureCommerces === 'function') ensureCommerces();
@@ -58540,9 +58606,11 @@ function crieurEcouter(n) {
 
 function crieurPoser(sc) {
   if (!sc || sc.type !== 'region' || !CRIEUR_RUMEURS[sc.id] || sc.crieurPose || typeof bourgPersonne !== 'function') return;
-  const B = sc.bourg; if (!B || !B.rect) return;
-  const R = B.rect;
-  const x = (R.x0 + R.x1) / 2, y = (R.y0 + R.y1) / 2 + 40;
+  const B = sc.bourg && sc.bourg.rect;
+  let x, y;
+  if (B) { x = (B.x0 + B.x1) / 2; y = (B.y0 + B.y1) / 2 + 40; }
+  else if (sc.safe) { x = sc.safe.x; y = sc.safe.y; }
+  else return;
   bourgPersonne(sc, 'passant', 901, x, y, 'place');
   const n = sc.npcs[sc.npcs.length - 1];
   n.name = 'Crieur de la place';
@@ -58595,6 +58663,10 @@ const HAB_LIGNES = {
   foret: ['« Les peaux blanches coûtent trop cher pour un verre. »', '« Xiaoshu a volé une galette. Je paie sa tournée. »'],
   col: ['« L\'encens des pèlerins sent le mensonge. Une bière, ça, c\'est vrai. »', '« Tang Rui doit encore une tournée. Et une dette. »'],
   desert: ['« Le puits baisse, mon verre aussi. Vieux Tao dit que c\'est la même soif. »', '« J\'ai vu le Khan des Cendres en rêve. En vrai, je préfère le vin de dattes. »'],
+  marecages: ['« Le poisson a un goût de cendre, ce mois-ci. Je bois pour l\'oublier. »', '« Un nom a disparu du mur des noyés. Je préfère ne pas savoir lequel. »'],
+  abysses: ['« La voix a chanté encore, au bord. Je bois pour ne pas compter les noms. »', '« Vieux Gou vend ses éclats moins cher, ce soir. Mauvais signe. »'],
+  citadelle: ['« Je compte les étoiles depuis l\'Ourse, pas les archives. »', '« Un automate m\'a regardé droit dans les yeux hier. Depuis, je bois plus fort. »'],
+  montagnes: ['« La grue crie encore au-dessus du Monastère. Je préfère ne pas savoir pourquoi. »', '« Sage Mu dit que la Fracture se soigne. Moi, je soigne ma gorge. »'],
 };
 function habituesEnsure() {
   if (typeof ensureCommerces === 'function') ensureCommerces();
@@ -58614,6 +58686,7 @@ function habituesPoser(sc) {
   let x, y;
   if (tav) { x = tav.x + 70; y = tav.y + 50; }
   else if (B) { x = (B.x0 + B.x1) / 2 + 80; y = (B.y0 + B.y1) / 2 + 60; }
+  else if (sc.safe) { x = sc.safe.x + 80; y = sc.safe.y + 60; }
   else return;
   const lignes = HAB_LIGNES[sc.id];
   for (let i = 0; i < 2; i++) {
