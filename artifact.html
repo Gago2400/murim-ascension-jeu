@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="b26bdb81d489" aria-label="Identifiant de version">Version générée : b26bdb81d489</div>
+      <div class="meta" id="t-build" data-build="2d4d8ddea115" aria-label="Identifiant de version">Version générée : 2d4d8ddea115</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7580,6 +7580,47 @@ recitRegion('dou_monnaye', {
     livrer: '« Le Bourg a repris Dou en plein jour. Sa femme ne pêche plus. » Elle ne te regarde plus en face. « Le mur porte son nom, maintenant. Pour de bon. »',
   },
   merci: { liberer: '« Le mur ne connaîtra jamais ton nom, {nom}. »', partager: '« Le marais garde les comptes, lui aussi. »', livrer: '« Ne reviens plus sous mon toit. »' },
+});
+
+// ───────────────────────── Suite orthodoxe : les cinq ans qu'on rallonge (Marécages, miroir de « dou monnayé ») ─────────────────────────
+// Conséquence tardive de recit:marecages_noms='revenir'. Dou travaille ses cinq ans au Bourg de Cendre, en plein jour ; mais le
+// bond qu'il a signé devant le prêteur a changé de mains, tenu désormais par un scribe qui en gonfle les lignes en secret.
+// Même mécanique recitRegion et RECITS (34_voie.js), aucun champ de sauvegarde nouveau. Miroir de 02_voie_regions_suites_marecages.js (greffé sur 'chantage').
+recitRegion('dou_rallonge', {
+  name: 'Les cinq ans qu\'on rallonge', region: 'marecages', quest: 24, key: 'dou_rallonge', who: 'marecages_ning2', label: 'Le scribe qui rallonge le bond de Dou',
+  si: { choix: { 'recit:marecages_noms': 'revenir' } }, suite: 'recit:marecages_noms', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    marecages_ning2: { name: 'Graveuse Ning', title: 'gardienne de la cabane des noms', glyph: '名', color: '#a8b8a0' },
+    marecages_kang: { name: 'Scribe Kang', title: 'teneur du bond de Dou, qui en rallonge les lignes', glyph: '契', color: '#8a6b50' },
+  },
+  quand: 'Marécages de l\'Oubli : Graveuse Ning, au Hameau sur pilotis (le bond de Dou gonflé d\'années en secret)',
+  attente: '« Le marais n\'a rien de neuf pour toi, aujourd\'hui. »',
+  rappel: 'Le bond de Dou s\'alourdit d\'années, {nom}.',
+  steps: ['Écouter Graveuse Ning, au Hameau sur pilotis', 'Se rendre au Bourg de Cendre, où le scribe Kang tient le bond de Dou', 'Suivre les ajouts suspects portés au registre du bond', 'Trouver le scribe Kang, près du Bourg de Cendre', 'Revenir auprès de Graveuse Ning'],
+  labels: ['Examiner le bond', 'Entrer chez le scribe'], objet: 'Bond de Dou, les ajouts raturés', slot: 'acc2',
+  intro: [['marecages_ning2', '« Dou travaille ses cinq ans au Bourg, la tête haute, et sa femme vend son poisson en plein jour. Mais le bond qu\'il a signé devant le prêteur a changé de main : c\'est un scribe qui le tient, maintenant. »'],
+    ['marecages_ning2', '« Un homme qui compte les années d\'un noyé revenu, ça ne me plaît pas, {nom}. Va voir au Bourg de Cendre, avant que ces cinq ans n\'en deviennent dix. »']],
+  arrivee: [['narr', 'Au Bourg de Cendre, le scribe Kang tient le bond de Dou ouvert sur son pupitre, une plume encore humide posée sur une ligne fraîchement ajoutée.'],
+    ['narr', 'Un apprenti chuchote : « Il dit que les intérêts courent plus vite qu\'un noyé ne peut ramer. »']],
+  indices: ['Le bond original, signé par le prêteur : cinq ans, pas un de plus, daté du jour où Dou est revenu en plein jour.',
+    'Une page ajoutée d\'une autre encre, plus récente, qui porte deux années de plus au compte de Dou, sans sa marque ni celle du prêteur.',
+    'Une note du scribe à lui-même : « Un noyé qui revit ne compte pas ses années. Personne ne vérifiera. »'],
+  conclusion: 'Le scribe Kang, au Bourg de Cendre, a gonflé en secret le bond de Dou de deux années, pariant qu\'un noyé revenu ne les compterait jamais.',
+  repaire: [['narr', 'Près des quais du Bourg de Cendre, le scribe Kang t\'attend, le bond ouvert sur ses genoux, une plume neuve déjà taillée.'],
+    ['marecages_kang', '« Cinq ans, sept ans, qui va s\'en soucier ? Un noyé qui revit n\'a pas de registre à son nom pour se plaindre. Alors : tu laisses courir les intérêts, ou tu veux ta part de l\'écart ? »']],
+  question: 'Le bond de Kang, les deux années volées à Dou, et un prêteur qui ne sait rien du tout.',
+  choix: [
+    { k: 'devoiler', rumeur: '« Le bond de Dou a repris sa vraie forme, devant le prêteur en personne. Cinq ans, pas un de plus. On dit que {nom} a arraché les pages en trop. »', etiquette: 'bond redressé, deux ans rendus', txt: 'Arracher les pages ajoutées et porter le bond redressé devant le prêteur, pour que Dou ne doive que ses cinq ans', hint: 'Voie orthodoxe · redresser', voie: 11, acte: 'aides', lines: [['marecages_kang', 'Il blêmit, la plume encore à la main. « Le prêteur n\'y verra qu\'une erreur d\'encre. » Le prêteur, lui, ne le croit pas une seconde.']] },
+    { k: 'negocier', rumeur: '« Le bond de Dou a perdu une année au Bourg, pas les deux. On ne sait pas ce qui a convaincu le scribe Kang. »', etiquette: 'un an rendu en silence', txt: 'Forcer Kang à rendre une des deux années en échange d\'une commission discrète, sans rien dire au prêteur', hint: 'Voie libre · arranger', voie: 3, lines: [['marecages_kang', 'Il grimace, mais raye une ligne de sa plus belle écriture. « Une année contre ton silence. Voilà qui est raisonnable. »']] },
+    { k: 'rallonger', rumeur: '« Le bond de Dou s\'alourdit encore, au Bourg. On dit qu\'un cultivateur touche sa part de chaque année ajoutée. »', etiquette: 'années rallongées, part touchée', txt: 'T\'associer à Kang pour ajouter encore des années au bond de Dou, contre une part de chaque année volée', hint: 'Voie démoniaque · rallonger la dette', voie: -13, acte: 'voles', lines: [['marecages_kang', 'Un sourire répond au tien. « Voilà un cultivateur qui compte comme moi. » Il ajoute une ligne de plus, et glisse ta part sans lever les yeux.']] },
+  ],
+  retour: {
+    devoiler: '« Dou ne doit plus que ses cinq ans, et le prêteur surveille Kang comme un faucon, désormais. » Elle pose son burin. « Tu as rendu à Dou ce qu\'on lui volait en silence. »',
+    negocier: '« Kang a rendu une année. » Elle hésite. « Et l\'autre, {nom} ? Tu l\'as laissée où ? »',
+    rallonger: '« Le bond de Dou s\'alourdit chaque lune, maintenant. » Elle ne te regarde plus en face. « J\'ai cru qu\'il était enfin libre, en revenant. »',
+  },
+  merci: { devoiler: '« Le mur ne connaîtra jamais ton nom, {nom}. »', negocier: '« Le marais garde les comptes, lui aussi. »', rallonger: '« Ne reviens plus sous mon toit. »' },
 });
 
 // ───────────────────────── Suite du prologue (masque de jade) : le prix du masque ─────────────────────────
