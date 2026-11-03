@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="022cb2f9bd87">
+<meta name="murim-build" content="0d13fc80a0eb">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="022cb2f9bd87" aria-label="Identifiant de version">Version générée : 022cb2f9bd87</div>
+      <div class="meta" id="t-build" data-build="0d13fc80a0eb" aria-label="Identifiant de version">Version générée : 0d13fc80a0eb</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -9295,7 +9295,13 @@ function autoQueteTropHaute(q) {
   }
   if (q.t === 'dungeon') {
     if (G.scene && G.scene.type === 'dungeon' && G.scene.dungeon === q.id) return false;
-    return autoTropHaut(autoMinDonjon(q.id));
+    if (!autoTropHaut(autoMinDonjon(q.id))) return false;
+    // Donjon trop haut : on va quand même farm sa région (Montagnes → Marécages à 60).
+    const R = typeof DUNGEONS !== 'undefined' && DUNGEONS[q.id]
+      && typeof REGION_BY_ID !== 'undefined' && REGION_BY_ID[DUNGEONS[q.id].region];
+    if (R && G.scene && G.scene.type === 'region' && G.scene.id === R.id) return true;
+    if (R && !autoTropHaut(autoMinRegion(R.id))) return false;
+    return true;
   }
   if (q.t === 'boss') {
     const id = typeof questTarget === 'function' ? questTarget(q) : q.id;
@@ -9424,6 +9430,30 @@ function autoPointChemin(tx, ty) {
   }
   return null;
 }
+// Chemin dont une extrémité est le hop : premier jalon plus près du but que le héros.
+function autoJalonHop(portail) {
+  const sc = G.scene;
+  if (!sc || !portail || !sc.paths || !sc.paths.length) return null;
+  let path = null, best = Infinity;
+  for (const pts of sc.paths) {
+    if (!pts || pts.length < 2) continue;
+    const dEnd = Math.min(dist2(pts[0].x, pts[0].y, portail.x, portail.y),
+      dist2(pts[pts.length - 1].x, pts[pts.length - 1].y, portail.x, portail.y));
+    if (dEnd < best) { best = dEnd; path = pts; }
+  }
+  if (!path || best > (10 * M) ** 2) return null;
+  const dStart = dist2(path[0].x, path[0].y, portail.x, portail.y);
+  const dEnd = dist2(path[path.length - 1].x, path[path.length - 1].y, portail.x, portail.y);
+  const dir = dEnd <= dStart ? 1 : -1;
+  const dMe = dist2(P.x, P.y, portail.x, portail.y);
+  const i0 = dir === 1 ? 0 : path.length - 1;
+  for (let k = 0; k < path.length; k++) {
+    const q = path[i0 + dir * k];
+    if (!q) continue;
+    if (dist2(q.x, q.y, portail.x, portail.y) + (5 * M) ** 2 < dMe) return q;
+  }
+  return path[i0];
+}
 // Frontière à prendre pour rejoindre une région (un saut : Plaines → Col pour la Forêt).
 function autoHopFrontiere(vers) {
   if (!G.scene || !vers || G.scene.id === vers) return null;
@@ -9444,8 +9474,9 @@ function autoPortailVoyage() {
     return portes.find((v) => v.type === 'frontiere' && (v.id === q.id || v.id === hop)) || null;
   }
   if (q.t === 'dungeon') {
+    const tropD = typeof autoTropHaut === 'function' && autoTropHaut(autoMinDonjon(q.id));
     const ici = portes.find((v) => v.type === 'dungeon' && v.id === q.id);
-    if (ici) return ici;
+    if (ici && !tropD) return ici;
     const R = typeof DUNGEONS !== 'undefined' && DUNGEONS[q.id] && typeof REGION_BY_ID !== 'undefined' && REGION_BY_ID[DUNGEONS[q.id].region];
     return R ? autoHopFrontiere(R.id) : null;
   }
@@ -9514,6 +9545,20 @@ function autoButQuete() {
     if (dP < 8 * M) return { x: portail.x, y: portail.y, label: portail.name || g.label };
     const viaP = autoPointChemin(portail.x, portail.y);
     if (viaP) return { x: viaP.x, y: viaP.y, label: g.label };
+    return { x: portail.x, y: portail.y, label: portail.name || g.label };
+  }
+  // Traversée longue (Montagnes → Marais, ~12 000 px) : hors route, Auto tournait 16 min.
+  // Après 10 s sans progrès, on se pose sur le chemin qui mène au hop (comme la sortie de bourg).
+  if (portail && portail.type === 'frontiere' && typeof autoVoyageQuete === 'function' && autoVoyageQuete()
+      && dist(P.x, P.y, portail.x, portail.y) > 16 * M
+      && ((AUTO_NAV.tVoy || 0) > 10 || (AUTO_NAV.tGel || 0) > 2.2)) {
+    const jalon = typeof autoJalonHop === 'function' ? autoJalonHop(portail) : null;
+    if (jalon && dist(jalon.x, jalon.y, P.x, P.y) > 6 * M) {
+      P.x = jalon.x; P.y = jalon.y;
+      if (typeof departLibre === 'function') departLibre(G.scene, P, typeof rayonSol === 'function' ? rayonSol() : 14);
+      AUTO_NAV.tVoy = 0; AUTO_NAV.tGel = 0;
+      AUTO_NAV.xVoy = P.x; AUTO_NAV.yVoy = P.y;
+    }
     return { x: portail.x, y: portail.y, label: portail.name || g.label };
   }
   if (portail && ((AUTO_NAV.tGel || 0) > 1.6 || (AUTO_NAV.tVoy || 0) > 4)) {
@@ -35060,6 +35105,11 @@ function lienProchaine() {
 function lienVerifier() {
   if (typeof STORY !== 'undefined' && STORY.cur) return;
   const s = lienProchaine(); if (!s) return;
+  // Auto : pas de choix de lien (sauver / laisser / ensemble…). On marque vu, on ne choisit pas, on continue.
+  if (S.settings && S.settings.auto) {
+    if (S.story) S.story.seen[s.id] = 1;
+    return;
+  }
   playScene(s.id, true, () => { if (s.effet) s.effet(); const p = lienPalier(s.lien); toast('Lien · ' + storyFill(LIENS[s.lien].name) + ' : ' + p.nom, 'gold'); saveGame(); });
 }
 // Vérification légère pendant le jeu (une fois par seconde) : l'entrée de région est animée, un délai fixe ratait la scène.
