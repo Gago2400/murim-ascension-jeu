@@ -2271,7 +2271,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="ab062b152479" aria-label="Identifiant de version">Version générée : ab062b152479</div>
+      <div class="meta" id="t-build" data-build="9855b80bae2c" aria-label="Identifiant de version">Version générée : 9855b80bae2c</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -59197,6 +59197,104 @@ function ruesNettes(sc) {
 if (typeof genRegion === 'function') {
   const genRegionAvantRuesNettes = genRegion;
   genRegion = function (R) { return ruesNettes(genRegionAvantRuesNettes(R)); };
+}
+
+// ───────────────────────── Secrets d'exploration : Col, Forêt, Désert ─────────────────────────
+// Un secret caché par région, posé près d'un lieu du plan (46_plans_regions.js) : grotte, ruines ou
+// stèle. Interaction une fois : toast FR + or léger + herbe régionale, aucun bonus de combat.
+// État : S.exploration.secrets[regionId] = 1 (via explEnsure, 98_zz_z_landmarks_offre.js).
+// Les trois honorés débloquent un titre cosmétique « Marcheur des Trois Ombres » (pas de stats).
+
+const EXPL_SECRETS = {
+  col: { lieuK: 'taniere', label: 'Secret de la Grotte de l\'Ermite' },
+  foret: { lieuK: 'ruines_pavillon', label: 'Secret du Temple Englouti' },
+  desert: { lieuK: 'stele_sept', label: 'Secret de l\'Obélisque des Cendres' },
+};
+const EXPL_SECRET_IDS = Object.keys(EXPL_SECRETS);
+const EXPL_SECRET_R = 90;
+
+if (typeof explEnsure === 'function') {
+  const explEnsureAvantSecrets = explEnsure;
+  explEnsure = function () {
+    const e = explEnsureAvantSecrets();
+    if (!e.secrets || typeof e.secrets !== 'object') e.secrets = {};
+    return e;
+  };
+}
+
+function explSecretSpot(sc) {
+  const spec = sc && EXPL_SECRETS[sc.id]; if (!spec) return null;
+  const l = (sc.planLieux || []).find((p) => p.k === spec.lieuK);
+  if (!l) return null;
+  return { x: l.x, y: l.y, spec };
+}
+
+function explSecretFait(id) {
+  return !!(explEnsure().secrets[id]);
+}
+
+function explSecretBundleFait() {
+  return EXPL_SECRET_IDS.every((id) => explSecretFait(id));
+}
+
+function explSecretVerifierBundle() {
+  const e = explEnsure();
+  if (e.secretsBundle) return;
+  if (!explSecretBundleFait()) return;
+  e.secretsBundle = 1;
+  if (typeof grantTitle === 'function') grantTitle('marcheur_trois_ombres', 'Marcheur des Trois Ombres');
+  else {
+    if (!Array.isArray(S.titles)) S.titles = [];
+    if (!S.titles.some((t) => t.id === 'marcheur_trois_ombres')) S.titles.push({ id: 'marcheur_trois_ombres', name: 'Marcheur des Trois Ombres' });
+    if (!S.title) S.title = 'marcheur_trois_ombres';
+  }
+  if (typeof toast === 'function') toast('Les trois ombres se taisent enfin. Titre « Marcheur des Trois Ombres ».', 'gold');
+  if (typeof saveGame === 'function') saveGame();
+}
+
+function explSecretTrouver() {
+  const sc = G.scene; if (!sc) return false;
+  const spot = explSecretSpot(sc); if (!spot) return false;
+  const id = sc.id;
+  if (explSecretFait(id)) { toast('Tu as déjà découvert ce secret.', 'info'); return false; }
+  if (P.combatT < 4) { toast('Pas pendant le combat', 'warn'); return false; }
+  explEnsure().secrets[id] = 1;
+  const or = 20 + Math.min(35, (S.level || 1) * 2);
+  S.gold = (S.gold || 0) + or;
+  const herbe = (sc.region && sc.region.type === 'corrompue') ? 'sang' : (sc.region && sc.region.type === 'grise') ? 'givre' : 'brume';
+  const alch = typeof alchEnsure === 'function' ? alchEnsure() : (S.alch || (S.alch = { herbes: { brume: 0, givre: 0, sang: 0 } }));
+  if (!alch.herbes) alch.herbes = { brume: 0, givre: 0, sang: 0 };
+  alch.herbes[herbe] = (alch.herbes[herbe] || 0) + 1;
+  const H = typeof HERBES !== 'undefined' ? HERBES[herbe] : null;
+  toast(spot.spec.label + ' découvert. +' + or + ' or' + (H ? ', +1 ' + H.nom : '') + '.', 'gold');
+  if (typeof sfx === 'function') sfx('quest');
+  explSecretVerifierBundle();
+  if (typeof saveGame === 'function') saveGame();
+  return true;
+}
+
+if (typeof findInteract === 'function') {
+  const findInteractAvantSecrets = findInteract;
+  findInteract = function () {
+    const it = findInteractAvantSecrets();
+    const sc = G.scene; if (!sc || !P) return it;
+    const spot = explSecretSpot(sc); if (!spot) return it;
+    const d = dist2(P.x, P.y, spot.x, spot.y);
+    const ray = EXPL_SECRET_R + 50;
+    if (d < ray * ray) {
+      const fait = explSecretFait(sc.id);
+      const label = fait ? ('Secret trouvé · ' + spot.spec.label) : ('Fouiller · ' + spot.spec.label);
+      if (!it || d < 130 * 130) return { kind: 'secret', ref: spot, label };
+    }
+    return it;
+  };
+}
+if (typeof doInteract === 'function') {
+  const doInteractAvantSecrets = doInteract;
+  doInteract = function (it) {
+    if (it && it.kind === 'secret') { explSecretTrouver(); return; }
+    return doInteractAvantSecrets(it);
+  };
 }
 
 // ───────────────────────── Voyageurs qui s'arrêtent aux bornes de halte ─────────────────────────
