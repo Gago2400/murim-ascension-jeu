@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="4ad87eb98e58" aria-label="Identifiant de version">Version générée : 4ad87eb98e58</div>
+      <div class="meta" id="t-build" data-build="4c02d6e4ff9e" aria-label="Identifiant de version">Version générée : 4c02d6e4ff9e</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7097,6 +7097,45 @@ recitRegion('citerne_vendue', {
     monopole: '« L\'eau se vend au poids de l\'or, maintenant, et les chameliers rognent sur leurs outres pour payer. » Elle ne te regarde plus en face. « Le conseil cherche un nom. Le tien vient en tête. »',
   },
   merci: { rendre: '« Bois à notre eau quand tu veux, {nom}. »', partager: '« Le désert garde les comptes, lui aussi. »', monopole: '« Ne reviens plus boire ici. »' },
+});
+
+// ───────────────────────── Suite démoniaque : le troisième groupe (Domaine, raccourci de Kang repris) ─────────────────────────
+// Conséquence tardive de recit:domaine_guide='reprendre'. Le frère d'un pèlerin du troisième groupe, jamais redescendu
+// du « raccourci béni » de Kang, a remonté les cordes et les parts jusqu'à celui qui en profite depuis le début.
+recitRegion('troisieme_groupe', {
+  name: 'Le troisième groupe', region: 'domaine', quest: 28, key: 'troisieme_groupe', who: 'domaine_ping2', label: 'Le frère qui compte les cordes et les parts',
+  si: { choix: { 'recit:domaine_guide': 'reprendre' } }, suite: 'recit:domaine_guide', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    domaine_ping2: { name: 'Guide Ping', title: 'meneuse des nuées, qui a fini par comprendre qui finançait quoi', glyph: '云', color: '#cfe0f0' },
+    domaine_rong: { name: 'Portefaix Rong', title: 'frère d\'un pèlerin du troisième groupe, jamais redescendu', glyph: '兄', color: '#8a9bc0' },
+  },
+  quand: 'Domaine Céleste : Guide Ping, à la Terrasse des Pèlerins (le raccourci de Kang profite encore à {nom})',
+  attente: '« Les nuées n\'ont rien de neuf pour toi, aujourd\'hui. »',
+  rappel: 'Portefaix Rong cherche toujours son frère, {nom}.',
+  steps: ['Écouter Guide Ping, à la Terrasse des Pèlerins', 'Retourner interroger les porteurs de la Terrasse', 'Suivre les traces de Portefaix Rong dans les nuées', 'Trouver Portefaix Rong, au bord du sentier interdit', 'Revenir auprès de Guide Ping'],
+  labels: ['Examiner la corde effilochée', 'Entrer dans le repaire'], objet: 'Corde effilochée du troisième groupe', slot: 'acc1',
+  intro: [['domaine_ping2', '« Le frère d\'un pèlerin du troisième groupe est arrivé à la Terrasse. Celui qui n\'est jamais redescendu, {nom}. Il pose des questions sur le raccourci de Kang, et sur qui en profite encore. »'],
+    ['domaine_ping2', '« Il compte les cordes, les parts, les noms. Avant qu\'il ne trouve le tien, trouve-le toi-même. »']],
+  arrivee: [['narr', 'À la Terrasse des Pèlerins, les porteurs évitent le regard d\'un homme qui montre une corde effilochée à qui veut bien l\'écouter. « Mon frère a pris ce raccourci. On m\'a rendu sa corde. Pas lui. »']],
+  indices: ['Une corde effilochée, retrouvée près d\'un nid : la même tresse que celle que Kang utilisait pour redescendre seul.',
+    'Un carnet de parts, tenu par Rong lui-même, où les chiffres de Kang et les tiens se recoupent trop bien pour un hasard.',
+    'Une lettre adressée aux Anciens du Domaine, déjà scellée, qui nomme Kang — et un second nom, encore à l\'encre fraîche.'],
+  conclusion: 'Rong a remonté la piste des cordes et des parts jusqu\'à toi : il sait que tu partages le profit de Kang depuis le début, et il tient une lettre prête pour les Anciens.',
+  repaire: [['narr', 'Au bord du sentier interdit, Portefaix Rong tient une lettre scellée dans une main, la corde effilochée de son frère dans l\'autre.'],
+    ['domaine_rong', '« Mon frère a payé ce raccourci de sa vie. Toi, tu en as fait un commerce. J\'ai écrit aux Anciens. Il ne me reste qu\'à décider si je l\'envoie. »']],
+  question: 'La lettre scellée dans la main de Rong, la corde de son frère dans l\'autre, et un commerce qui tient à un seul silence.',
+  choix: [
+    { k: 'avouer', rumeur: '« {nom} s\'est présenté seul devant les Anciens du Domaine. Le raccourci de Kang est fermé pour de bon. »', etiquette: 'raccourci dénoncé, partage rompu', txt: 'Avouer toi-même aux Anciens, rompre avec Kang et dédommager Rong pour son frère', hint: 'Voie orthodoxe · tout avouer', voie: 11, acte: 'aides', lines: [['domaine_rong', 'Il range la lettre sans la décacheter. « Les Anciens apprendront ce que tu viens de me dire, pas ce que j\'ai écrit. Ça ne rend pas mon frère. Mais ça arrête le reste. »']] },
+    { k: 'racheter', rumeur: '« Portefaix Rong a cessé de poser des questions, à la Terrasse. On dit que {nom} paie désormais pour son silence. »', etiquette: 'silence de Rong acheté', txt: 'Racheter le silence de Rong et cesser de partager la part de Kang', hint: 'Voie libre · acheter la paix', voie: 2, lines: [['domaine_rong', 'Il empoche sans sourire. « Ça ne ramène pas mon frère. Mais ça arrête Kang. Pour l\'instant, ça me suffit. »']] },
+    { k: 'associer', rumeur: '« Portefaix Rong guide maintenant les groupes vers le raccourci de Kang lui-même. Le troisième nom sur la lettre, c\'est le sien, à présent. »', etiquette: 'Rong associé au raccourci', txt: 'Offrir à Rong une part du raccourci : il se taira, et guidera lui-même les prochains groupes', hint: 'Voie démoniaque · élargir le partage', voie: -15, acte: 'voles', lines: [['domaine_rong', 'Il regarde longtemps la corde de son frère, puis la range. « Une part, dis-tu. » Il scelle la lettre pour de bon, dans sa poche.']] },
+  ],
+  retour: {
+    avouer: '« Les Anciens ont fermé le raccourci. Kang répond pour ce qu\'il a fait, et toi pour ce que tu as pris. » Elle te tend sa propre corde. « Peu reviennent avouer ce que personne ne leur demandait. »',
+    racheter: '« Rong ne pose plus de questions. Le raccourci… reste fermé, au moins. » Elle hésite. « Combien t\'a coûté ce silence, {nom} ? »',
+    associer: '« Trois noms partagent maintenant le raccourci de Kang. » Elle ne te regarde plus en face. « Le frère de Rong est mort pour ça. Son frère vivant en vit, maintenant. »',
+  },
+  merci: { avouer: '« Les nuées se souviennent de qui répond de ses actes. »', racheter: '« Le raccourci reste fermé. J\'ignore à quel prix. »', associer: '« … Ne reviens plus par ici. »' },
 });
 
 // ───────────────────────── Suite du sort de l'Ermite (chapitre IV) : le souffle qu'on a bu (Claude) ─────────────────────────
