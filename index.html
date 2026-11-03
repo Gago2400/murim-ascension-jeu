@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="02d835cec3e7">
+<meta name="murim-build" content="ccc061073131">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="02d835cec3e7" aria-label="Identifiant de version">Version générée : 02d835cec3e7</div>
+      <div class="meta" id="t-build" data-build="ccc061073131" aria-label="Identifiant de version">Version générée : ccc061073131</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -57453,6 +57453,154 @@ if (typeof crowdTick === 'function') {
   const crowdTickAvantVoyageurs = crowdTick;
   crowdTick = function (dt) { voyageursTick(dt); crowdTickAvantVoyageurs(dt); };
 }
+
+// ───────────────────────── Marchands ambulants (L4) ─────────────────────────
+// Un marchand par berceau (Qinghe, Longwan, Meishan) marche sur la route entre le bourg et
+// la frontière la plus longue. Stock régional quotidien (herbes d'alchimie + minerai),
+// prix lisibles, aucune puissance payante (pas de buff, pas d'équipement, pas de pierre de réinit).
+// État dans S.commerces.ambulants. Original — pas de doublon avec les caravanes décoratives (#247).
+
+const AMB_BERCEAUX = new Set(['qinghe', 'longwan', 'meishan']);
+const AMB_NOMS = {
+  qinghe: { name: 'Colporteur Han', lignes: ['Je fais la route du bourg au poste. Stock du jour, prix du jour.', 'Pas de pilule, pas de lame : des herbes et du minerai, c\'est tout.'] },
+  longwan: { name: 'Colporteuse Rui', lignes: ['Du quai au poste, j\'apporte ce que le port n\'a plus.', 'Herbes de brume et minerai : rien qui te rende plus fort pour de l\'or.'] },
+  meishan: { name: 'Colporteur Shan', lignes: ['Des cimes au poste, le panier est léger et le prix clair.', 'Je ne vends pas de puissance. Seulement de quoi cuisiner et forger.'] },
+};
+const AMB_STOCK = {
+  qinghe: [{ k: 'brume', n: 5, prix: (lvl) => shopPrixBrume(lvl) }, { k: 'minerai', n: 3, prix: (lvl) => shopPrixMinerai(lvl) }],
+  longwan: [{ k: 'brume', n: 4, prix: (lvl) => shopPrixBrume(lvl) }, { k: 'givre', n: 2, prix: (lvl) => Math.round(shopPrixBrume(lvl) * 1.4) }, { k: 'minerai', n: 3, prix: (lvl) => shopPrixMinerai(lvl) }],
+  meishan: [{ k: 'givre', n: 4, prix: (lvl) => Math.round(shopPrixBrume(lvl) * 1.2) }, { k: 'minerai', n: 3, prix: (lvl) => shopPrixMinerai(lvl) }],
+};
+
+function ambEnsure() {
+  if (typeof ensureCommerces === 'function') ensureCommerces();
+  if (!S.commerces || typeof S.commerces !== 'object') S.commerces = {};
+  if (!S.commerces.ambulants || typeof S.commerces.ambulants !== 'object') S.commerces.ambulants = {};
+  const day = typeof todayKey === 'function' ? todayKey() : '';
+  for (const id of AMB_BERCEAUX) {
+    let a = S.commerces.ambulants[id];
+    const renew = !a || (typeof jourDoitRenouveler === 'function' ? jourDoitRenouveler(a.day) : a.day !== day);
+    if (renew) {
+      const stock = {};
+      for (const it of AMB_STOCK[id] || []) stock[it.k] = it.n;
+      S.commerces.ambulants[id] = { day, stock };
+    }
+  }
+  return S.commerces.ambulants;
+}
+
+function ambPresBourg(sc, x, y) {
+  const B = sc.bourg && sc.bourg.rect; if (!B) return false;
+  // près d'une porte du bourg, ou dans un anneau autour du rempart (le centre du rectangle est souvent hors chaussée)
+  if (sc.bourg.portes) for (const g of sc.bourg.portes) if (dist2(x, y, g.ox || g.x, g.oy || g.y) < 350 * 350) return true;
+  const m = 280;
+  return x > B.x0 - m && x < B.x1 + m && y > B.y0 - m && y < B.y1 + m;
+}
+function ambDistBourg(sc, pts) {
+  let best = Infinity;
+  for (const p of pts) {
+    if (ambPresBourg(sc, p.x, p.y)) return 0;
+    const B = sc.bourg.rect;
+    const cx = Math.max(B.x0, Math.min(B.x1, p.x)), cy = Math.max(B.y0, Math.min(B.y1, p.y));
+    best = Math.min(best, Math.hypot(p.x - cx, p.y - cy));
+  }
+  return best;
+}
+function ambRoute(sc) {
+  const B = sc.bourg && sc.bourg.rect, fronts = sc.frontieres || [];
+  if (!B || !fronts.length || !sc.paths || !sc.paths.length) return null;
+  let best = null;
+  for (const f of fronts) {
+    const tx = f.porte ? f.porte.x : f.x, ty = f.porte ? f.porte.y : f.y;
+    for (const pts of sc.paths) {
+      if (!pts || pts.length < 3) continue;
+      const q1 = typeof qrProche === 'function' ? qrProche(pts, tx, ty) : null;
+      if (!q1 || q1.d > 800) continue;
+      const dB = ambDistBourg(sc, pts);
+      if (dB > 420) continue; // la route doit toucher le bourg (porte ou anneau)
+      let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+      if (L < 1800) continue;
+      if (!best || L > best.L) best = { pts, L, f: f.id };
+    }
+  }
+  return best;
+}
+
+function ambulantsPoser(sc) {
+  if (!sc || sc.type !== 'region' || !AMB_BERCEAUX.has(sc.id) || sc.ambulant || typeof bourgPersonne !== 'function') return;
+  const route = ambRoute(sc); if (!route) return;
+  const cum = [0]; for (let k = 1; k < route.pts.length; k++) cum.push(cum[k - 1] + Math.hypot(route.pts[k].x - route.pts[k - 1].x, route.pts[k].y - route.pts[k - 1].y));
+  const s0 = route.L * 0.35;
+  const q = typeof vyPointArc === 'function' ? vyPointArc(route.pts, cum, s0) : route.pts[Math.floor(route.pts.length / 2)];
+  const meta = AMB_NOMS[sc.id];
+  bourgPersonne(sc, 'marchand', 77, q.x, q.y);
+  const n = sc.npcs[sc.npcs.length - 1];
+  n.name = meta.name;
+  n.ambulant = true;
+  n.bourg = false; n.poste = null; n.crowd = true;
+  n.lignes = meta.lignes.slice();
+  n.voyageur = { pts: route.pts, cum, L: route.L, s: s0, dir: 1, k: 0, pause: 0, nom: 'route ambulant', ambulant: true };
+  n.look = n.look || {}; n.look.glyph = '貨';
+  sc.ambulant = { name: n.name, L: Math.round(route.L), frontiere: route.f };
+  ambEnsure();
+}
+
+function npcAmbulant(b, n) {
+  const sc = G.scene; if (!sc || !n.ambulant) return npcVoix(b, n);
+  const stock = ambEnsure()[sc.id];
+  if (!stock) { b.append(el('p', null, 'Rien à vendre aujourd\'hui.')); return; }
+  const pm = typeof priceMul === 'function' ? priceMul() : 1;
+  const lvl = (S && S.level) || 1;
+  b.append(el('p', null, 'Colporteur de ' + ((sc.region && sc.region.name) || sc.id) + '. Stock du jour, prix affichés. Pas de puissance à vendre.'));
+  b.append(el('p', null, 'Or : ', el('b', null, fmt(S.gold))));
+  const shop = el('div', { class: 'shop' });
+  const catalogue = AMB_STOCK[sc.id] || [];
+  for (const it of catalogue) {
+    const rest = stock.stock[it.k] | 0;
+    const p = Math.round(it.prix(lvl) * pm);
+    let nom, desc, buy;
+    if (it.k === 'minerai') {
+      nom = MATERIALS.minerai.name; desc = MATERIALS.minerai.desc;
+      buy = () => { S.mats.minerai = (S.mats.minerai || 0) + 1; };
+    } else {
+      const H = HERBES[it.k]; if (!H) continue;
+      nom = H.nom; desc = H.desc;
+      buy = () => { const a = typeof alchEnsure === 'function' ? alchEnsure() : (S.alch || (S.alch = { herbes: { brume: 0, givre: 0, sang: 0 } })); a.herbes[it.k] = (a.herbes[it.k] || 0) + 1; };
+    }
+    shop.append(el('div', { class: 'q compact' },
+      el('div', { class: 'q-ligne' }, el('div', null, el('b', null, nom), el('small', null, desc + ' · reste ' + rest))),
+      el('button', { class: 'btn sm', disabled: rest <= 0 || S.gold < p, onclick: () => {
+        if (rest <= 0 || S.gold < p) return;
+        S.gold -= p; stock.stock[it.k]--; buy();
+        toast(nom + ' acheté (' + stock.stock[it.k] + ' restants)', 'gold');
+        sfx('coin'); saveGame(); renderNpc();
+      } }, fmt(p) + ' or')));
+  }
+  b.append(el('h3', null, 'Acheter'), shop);
+}
+
+// Fiche PNJ : le marchand ambulant a sa propre boutique (pas le stock du village).
+if (typeof renderNpc === 'function') {
+  const renderNpcAvantAmbulant = renderNpc;
+  renderNpc = function () {
+    const n = UI.npc;
+    if (n && n.ambulant) {
+      const b = $('#npc-body'); const scrl = b.scrollTop; b.innerHTML = '';
+      npcAmbulant(b, n);
+      b.scrollTop = scrl;
+      if (typeof voixPanneau === 'function') voixPanneau();
+      return;
+    }
+    return renderNpcAvantAmbulant();
+  };
+}
+
+const genRegionAvantAmbulants = genRegion;
+genRegion = function (R) {
+  const sc = genRegionAvantAmbulants(R);
+  if (sc && sc.type === 'region') ambulantsPoser(sc);
+  return sc;
+};
 
 'use strict';
 // [Grok] Dernière passe : spawn, téléports / retours et PNJ (quête, commerce, voix, relais) hors des toits.
