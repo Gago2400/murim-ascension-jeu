@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="b0eaba754693">
+<meta name="murim-build" content="4ad87eb98e58">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="b0eaba754693" aria-label="Identifiant de version">Version générée : b0eaba754693</div>
+      <div class="meta" id="t-build" data-build="4ad87eb98e58" aria-label="Identifiant de version">Version générée : 4ad87eb98e58</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7699,6 +7699,46 @@ recitRegion('dette_eventail', {
     vendre: '« Les Masques sourient. Moi aussi, cette fois. »',
   },
   apres: ['narr', 'Aux Ruines, tu as humilié un prodige. Au Col, il t\'a fait choisir le prix.'],
+});
+
+// ───────────────────────── Suite démoniaque : la part qui revient (Vallée, lanternes vendues deux fois) ─────────────────────────
+// Conséquence tardive de recit:lanternes_vallee='associer'. Biao a prospéré avec l'argent partagé, et Gardienne Ren
+// a fini par reconnaître le même sceau de lotus menteur sur un nouveau lot, juste avant une nouvelle aube des morts.
+recitRegion('biao_agrandi', {
+  name: 'La part qui revient', region: 'vallee', quest: 9, key: 'biao_agrandi', who: 'vallee_ren2', label: 'La veuve qui reconnaît le sceau menteur',
+  si: { choix: { 'recit:lanternes_vallee': 'associer' } }, suite: 'recit:lanternes_vallee', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    vallee_ren2: { name: 'Gardienne Ren', title: 'qui a reconnu le sceau menteur', glyph: '灯', color: '#e8c8d8' },
+    vallee_biao2: { name: 'Biao le camelot', title: 'marchand prospère, qui ne compte plus seul', glyph: '货', color: '#c8a868' },
+  },
+  quand: 'Vallée de l\'Aurore : Gardienne Ren, au Village de l\'Aurore (Biao vend encore sous ta coupe)',
+  attente: '« Le rite approche encore, {nom}. Reviens quand tu sauras ce que Biao a fait de ta part. »',
+  rappel: 'Le camelot vend plus de lanternes que jamais, {nom}.',
+  steps: ['Écouter Gardienne Ren, au Village de l\'Aurore', 'Se rendre au Hameau des Cerisiers, où un nouveau lot vient d\'arriver', 'Examiner les lanternes du nouveau lot', 'Trouver Biao, près du Relais des Pèlerins', 'Revenir auprès de Gardienne Ren'],
+  labels: ['Examiner le nouveau lot', 'Entrer au Relais'], objet: 'Lanterne de cire scellée du conseil', slot: 'acc2',
+  intro: [['vallee_ren2', '« Une nouvelle aube des morts approche, {nom}, et le sceau de lotus menteur est revenu, plus répandu qu\'avant. Biao a fait des petits, on dirait. »'],
+    ['vallee_ren2', '« J\'ai cru qu\'il avait quitté la vallée depuis la dernière fois. Il n\'est jamais parti bien loin. Va voir au Hameau des Cerisiers, un chariot vient d\'y livrer un lot entier. »']],
+  arrivee: [['narr', 'Au Hameau des Cerisiers, un chariot déborde de lanternes neuves, toutes marquées du même lotus grossier. Un enfant en tend une à sa mère, qui hésite avant de payer.'],
+    ['narr', 'Sous la bâche du chariot, des sacs de pièces déjà comptés, prêts à partir vers deux mains différentes.']],
+  indices: ['Le même sceau de lotus, repeint à la hâte, mais la même main que la dernière fois : Biao n\'a jamais cessé.',
+    'Un registre de livraison qui double les quantités d\'il y a un an, avec une colonne « part convenue » qui ne varie jamais.',
+    'Une lettre pliée dans le chariot, adressée à nul autre que toi : « Le double, comme convenu. Viens compter au Relais. »'],
+  conclusion: 'Biao n\'a jamais arrêté de vendre ses fausses lanternes : il a doublé la production, toujours avec ta part convenue qui l\'attend.',
+  repaire: [['narr', 'Au Relais des Pèlerins, Biao compte des piles de pièces sur une table couverte de cire froide, sans se presser à ton arrivée.'],
+    ['vallee_biao2', '« Te voilà. Le premier lot t\'a plu, alors j\'ai agrandi l\'affaire. Deux chariots, cette année, et ta part a doublé avec. Les familles en deuil paient toujours sans compter. »']],
+  question: 'Les piles de pièces sur la table, le chariot plein dehors, et une nouvelle aube des morts dans deux jours.',
+  choix: [
+    { k: 'demanteler', rumeur: '« Biao a rendu tout l\'argent des deux chariots, devant le conseil du village. On dit que {nom} a aussi rendu une part qu\'on ne savait pas qu\'il avait prise. »', etiquette: 'racine démantelée, argent rendu deux fois', txt: 'Démanteler toute l\'affaire devant le conseil et faire rendre l\'argent des deux lots, y compris ta propre part passée', hint: 'Voie orthodoxe · payer pour de vrai', voie: 12, acte: 'aides', lines: [['vallee_biao2', 'Il blêmit en te voyant vider les sacs devant le conseil du village. « Toi aussi, alors… » Il ne finit pas sa phrase.']] },
+    { k: 'racheter', rumeur: '« Les deux chariots de Biao ont été rachetés d\'un coup. Il a quitté la vallée pour de bon, cette fois, sans se retourner. »', etiquette: 'affaire rachetée, camelot parti', txt: 'Racheter les deux chariots de ta propre bourse et pousser Biao à quitter la vallée pour de bon', hint: 'Voie libre · solder l\'affaire', voie: 3, lines: [['vallee_biao2', '« Tu rachètes tout ? » Il compte une dernière fois, puis attelle ses deux chariots loin de la vallée, sans se retourner.']] },
+    { k: 'agrandir', rumeur: '« Biao vend maintenant trois chariots de lanternes par an, dans toute la vallée. On dit que {nom} en reçoit toujours la moitié, et ne compte plus. »', etiquette: 'affaire agrandie, moitié toujours prise', txt: 'Financer un troisième chariot pour agrandir encore l\'affaire, contre une part toujours égale', hint: 'Voie démoniaque · agrandir la part', voie: -15, acte: 'voles', lines: [['vallee_biao2', 'Un sourire répond au tien. « Un troisième chariot, alors. » Il te tend la moitié des pièces des deux premiers, sans même les compter.']] },
+  ],
+  retour: {
+    demanteler: '« Le conseil a rendu chaque pièce aux familles, des deux chariots. » Elle te regarde longtemps. « Tu aurais pu garder le silence sur ta propre part. Tu ne l\'as pas fait. »',
+    racheter: '« Biao est parti pour de bon, cette fois. Les deux chariots ont disparu avec lui. » Elle hésite. « Combien t\'a coûté ce deuxième silence, {nom} ? »',
+    agrandir: '« Un troisième chariot est arrivé ce matin, plein de lanternes au même sceau. » Elle ne te regarde plus en face. « La vallée entière paie, maintenant. Sur combien d\'autres choses je préfère ne pas savoir. »',
+  },
+  merci: { demanteler: '« Chaque lanterne qui brûle jusqu\'au bout de la rivière porte un peu de toi, {nom}, deux fois plus qu\'avant. »', racheter: '« Le rite reste ce qu\'il a toujours été, enfin. Merci. »', agrandir: '« … Ne reviens plus au village. »' },
 });
 
 // ───────────────────────── Récits de la Vallée de l'Aurore : commerce et folklore du village (Grogrok) ─────────────────────────
