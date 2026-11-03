@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="f938017b8e58" aria-label="Identifiant de version">Version générée : f938017b8e58</div>
+      <div class="meta" id="t-build" data-build="21b5d02741cb" aria-label="Identifiant de version">Version générée : 21b5d02741cb</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7894,6 +7894,47 @@ recitRegion('biao_agrandi', {
     agrandir: '« Un troisième chariot est arrivé ce matin, plein de lanternes au même sceau. » Elle ne te regarde plus en face. « La vallée entière paie, maintenant. Sur combien d\'autres choses je préfère ne pas savoir. »',
   },
   merci: { demanteler: '« Chaque lanterne qui brûle jusqu\'au bout de la rivière porte un peu de toi, {nom}, deux fois plus qu\'avant. »', racheter: '« Le rite reste ce qu\'il a toujours été, enfin. Merci. »', agrandir: '« … Ne reviens plus au village. »' },
+});
+
+// ───────────────────────── Suite orthodoxe : la cire qui manque (Vallée, miroir de « la part qui revient ») ─────────────────────────
+// Miroir de la suite démoniaque « La part qui revient » (02_voie_regions_suites_vallee.js), greffée cette fois sur
+// recit:lanternes_vallee='devoiler'. Biao chassé, le seul cirier restant profite du scandale pour doubler son prix en
+// coupant la cire de suif. Même mécanique recitRegion et RECITS (34_voie.js), aucun champ de sauvegarde nouveau.
+recitRegion('cire_manque', {
+  name: 'La cire qui manque', region: 'vallee', quest: 9, key: 'cire_manque', who: 'vallee_ren3', label: 'Le cirier qui profite de la pénurie',
+  si: { choix: { 'recit:lanternes_vallee': 'devoiler' } }, suite: 'recit:lanternes_vallee', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    vallee_ren3: { name: 'Gardienne Ren', title: 'qui veille sur le rite retrouvé', glyph: '灯', color: '#e8c8d8' },
+    vallee_hao: { name: 'Cirier Hao', title: 'le seul fournisseur de cire véritable', glyph: '蠟', color: '#c8a868' },
+  },
+  quand: 'Vallée de l\'Aurore : Gardienne Ren, au Village de l\'Aurore (la cire véritable se fait rare)',
+  attente: '« Le rite approche encore, {nom}. Reviens quand tu sauras pourquoi la cire manque. »',
+  rappel: 'La cire véritable se vend de plus en plus cher, {nom}.',
+  steps: ['Écouter Gardienne Ren, au Village de l\'Aurore', 'Se rendre au Hameau des Cerisiers, où les familles attendent leur lanterne', 'Examiner les lanternes de cire vendues ce mois-ci', 'Trouver Cirier Hao, près du Relais des Pèlerins', 'Revenir auprès de Gardienne Ren'],
+  labels: ['Examiner les lanternes', 'Entrer au Relais'], objet: 'Lanterne de cire pure du conseil', slot: 'acc2',
+  intro: [['vallee_ren3', '« Depuis que Biao est parti, chaque famille veut une vraie lanterne de cire pour l\'aube des morts qui vient. Mais le prix a doublé en une semaine, sans raison. »'],
+    ['vallee_ren3', '« Cirier Hao est notre seul fournisseur, maintenant. Il dit que la cire se fait rare. Va voir au Hameau des Cerisiers, les familles s\'y plaignent déjà. »']],
+  arrivee: [['narr', 'Au Hameau des Cerisiers, une mère compte ses pièces deux fois avant de les tendre pour une lanterne qu\'elle achetait pour moitié prix l\'an dernier.'],
+    ['narr', 'Sur l\'étal, les lanternes neuves sont plus légères qu\'elles ne devraient, comme si la cire manquait sous le papier.']],
+  indices: ['Une lanterne fendue en deux : la cire ne remplit que la moitié du moule, le reste est du suif bon marché.',
+    'Un registre caché sous l\'étal du Relais : la même quantité de cire achetée que l\'an dernier, mais vendue deux fois plus cher.',
+    'Une lettre adressée à Hao : « Le camelot est parti, le prix peut monter. Personne ne comparera plus. »'],
+  conclusion: 'Cirier Hao n\'a pas perdu de cire : il profite du scandale de Biao pour vendre, au double du prix, des lanternes à moitié pleines de suif.',
+  repaire: [['narr', 'Au Relais des Pèlerins, Cirier Hao pèse des blocs de cire sur une balance qu\'il ajuste discrètement à ton approche.'],
+    ['vallee_hao', '« Le camelot est parti, {nom}, et plus personne ne compare les prix. Les familles paient ce qu\'on leur demande. C\'est le marché, pas un vol. »']],
+  question: 'La balance truquée de Hao, les familles qui paient double, et la même aube des morts qui approche.',
+  choix: [
+    { k: 'devoiler', rumeur: '« Cirier Hao a rendu le trop-perçu à chaque famille, devant Gardienne Ren. Les lanternes coûtent de nouveau leur juste prix. »', etiquette: 'prix dévoilé, trop-perçu rendu', txt: 'Dévoiler la balance truquée devant le village et faire rendre le trop-perçu à chaque famille', hint: 'Voie orthodoxe · vérité, encore', voie: 11, acte: 'aides', lines: [['vallee_hao', 'Il blêmit, la balance encore faussée entre les mains. « Je... » Les familles sont déjà là, à l\'entrée du Relais.']] },
+    { k: 'negocier', rumeur: '« Le prix de la cire a baissé au Relais, d\'un coup. On ne sait pas ce qui a convaincu Hao. »', etiquette: 'prix renégocié en silence', txt: 'Forcer Hao à baisser son prix sans scandale, en échange d\'une commission discrète', hint: 'Voie libre · arranger', voie: 3, lines: [['vallee_hao', 'Il grommelle, mais range sa balance truquée. « D\'accord. Personne n\'a besoin de savoir qui a négocié. »']] },
+    { k: 'profiter', rumeur: '« La cire manque toujours, au Relais. On dit que {nom} touche sa part chaque fois que la balance penche du mauvais côté. »', etiquette: 'balance truquée partagée', txt: 'Laisser Hao continuer et prendre une part de chaque lanterne vendue trop cher', hint: 'Voie démoniaque · profiter de la pénurie', voie: -13, acte: 'voles', lines: [['vallee_hao', 'Un sourire répond au tien. « Voilà qui comprend le marché. » Il te glisse une part des pièces, encore tiède de la dernière vente.']] },
+  ],
+  retour: {
+    devoiler: '« Chaque famille a retrouvé son dû, et la cire coûte son juste prix. » Elle te regarde longtemps. « Tu as dévoilé Biao, puis Hao. On dira que tu ne laisses rien passer, {nom}. »',
+    negocier: '« Le prix a baissé, Hao ne dit pas pourquoi. » Elle hésite. « Je préfère ne pas savoir ce que ça t\'a coûté, {nom}. »',
+    profiter: '« La cire manque encore, au Relais. » Elle ne te regarde plus en face. « J\'ai cru que dévoiler Biao t\'avait appris quelque chose. »',
+  },
+  merci: { devoiler: '« Chaque lanterne qui brûle jusqu\'au bout de la rivière porte un peu de toi, {nom}, deux fois maintenant. »', negocier: '« Le rite reste ce qu\'il a toujours été, à peu près. Merci. »', profiter: '« … Ne reviens plus au village. »' },
 });
 
 // ───────────────────────── Récits de la Vallée de l'Aurore : commerce et folklore du village (Grogrok) ─────────────────────────
