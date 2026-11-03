@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="d5c883f60a90">
+<meta name="murim-build" content="d5ca1e5bc73d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="d5c883f60a90" aria-label="Identifiant de version">Version générée : d5c883f60a90</div>
+      <div class="meta" id="t-build" data-build="d5ca1e5bc73d" aria-label="Identifiant de version">Version générée : d5ca1e5bc73d</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -26895,7 +26895,8 @@ function R3init(T) {
     }
     if (sc && (sc.bourg || sc.planLabels)) for (const lb of (sc.bourg ? sc.bourg.labels : sc.planLabels)) { // noms des boutiques et des portes (lieux du plan hors bourg), de près seulement
       const a = plateFade(lb.x, lb.y, 4, 7); if (!(a > 0.04)) continue;
-      const p = project(lb.x, 0.2, lb.y); if (p.vis) labelPlate(lb.nom, p.x, p.y + 14, 11, 'rgba(255,232,170,0.95)', a);
+      // *0.85 : plaque de lieu moins opaque sur le paysage (shots Marécages/Longwan)
+      const p = project(lb.x, 0.2, lb.y); if (p.vis) labelPlate(lb.nom, p.x, p.y + 14, 11, 'rgba(255,232,170,0.95)', a * 0.85);
     }
     // PNJ et portails
     for (const o of R3.statics) {
@@ -26909,7 +26910,8 @@ function R3init(T) {
         }
         const below = p.y < VH * 0.36;
         const na = plateFade(n.x, n.y, 3.2, 6.2);
-        if (na > 0.04) labelPlate(n.name, p.x, below ? p.y + 18 : p.y - 17, 11, 'rgba(241,233,214,0.95)', na);
+        // *0.85 : plaque de nom PNJ moins opaque sur le paysage (shots Marécages/Longwan)
+        if (na > 0.04) labelPlate(n.name, p.x, below ? p.y + 18 : p.y - 17, 11, 'rgba(241,233,214,0.95)', na * 0.85);
         if (n.role === 'master' && !n.innkeeper && currentQuest() && currentQuest().t === 'talk') { const b = Math.sin(G.t * 5) * 3; ctx.fillStyle = '#ffd56a'; ctx.font = '700 20px ' + DISPLAY_FONT; ctx.fillText('!', p.x, (below ? p.y + 36 : p.y - 30) + b); }
       } else if (o.p) {
         const pp = o.p; const p = project(pp.x, o.top + 0.4, pp.y); if (!p.vis) continue;
