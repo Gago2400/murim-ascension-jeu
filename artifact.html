@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="562959d36282" aria-label="Identifiant de version">Version générée : 562959d36282</div>
+      <div class="meta" id="t-build" data-build="d76f3f978de4" aria-label="Identifiant de version">Version générée : d76f3f978de4</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6881,6 +6881,48 @@ recitRegion('liste_revendue', {
     associer: '« Les recruteurs passent plus souvent. » Elle ne te regarde plus. « Le bord est silencieux pour de bon. »',
   },
   merci: { avouer: '« Une voix, même brisée, vaut mieux que ton or. »', detourner: '« Le silence a un prix, ici aussi. »', associer: '« Ne repasse plus au bord. »' },
+});
+
+// ───────────────────────── Suite orthodoxe : le chant qu'on imprime (Abysses, miroir de « liste revendue ») ─────────────────────────
+// Conséquence tardive de recit:abysses_chant='publier'. Le chant de Ying, lu devant tout le camp par le Capitaine Rui,
+// circule désormais plus loin que le Bord : un scribe du commandement en a tiré des feuillets de recrutement, vendant
+// la mémoire des morts aux vivants qu'il veut enrôler. Même mécanique recitRegion et RECITS (34_voie.js), aucun champ
+// de sauvegarde nouveau. Miroir de 02_voie_regions_suites_abysses.js (greffé sur 'vendre').
+recitRegion('chant_imprime', {
+  name: 'Le chant qu\'on imprime', region: 'abysses', quest: 26, key: 'chant_imprime', who: 'abysses_ying3', label: 'Le scribe qui vend le chant publié',
+  si: { choix: { 'recit:abysses_chant': 'publier' } }, suite: 'recit:abysses_chant', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    abysses_ying3: { name: 'Chanteuse Ying', title: 'voix reconnue du front, depuis la lecture', glyph: '鶯', color: '#d8c0d8' },
+    abysses_wen: { name: 'Scribe Wen', title: 'propagandiste du commandement, qui imprime le chant', glyph: '文', color: '#8a94ac' },
+  },
+  quand: 'Abysses de la Fracture : Chanteuse Ying, au Bord du chant (le chant publié attire le commandement)',
+  attente: '« Le bord n\'a rien de neuf pour toi, aujourd\'hui. »',
+  rappel: 'Un scribe du commandement vend ton chant, {nom}.',
+  steps: ['Écouter Chanteuse Ying, au Bord du chant', 'Se rendre au camp bas, où le scribe recrute avec le chant publié', 'Suivre la trace du scribe Wen parmi les tentes', 'Trouver le Scribe Wen, près du dépôt d\'armes', 'Revenir auprès de Chanteuse Ying'],
+  labels: ['Lire le feuillet', 'Entrer au dépôt'], objet: 'Feuillet du chant imprimé par Wen', slot: 'acc2',
+  intro: [['abysses_ying3', '« Depuis que Rui a lu les noms devant le camp, mon chant voyage plus loin que le Bord, {nom}. Un scribe du commandement en a fait des feuillets. »'],
+    ['abysses_ying3', '« Wen dit que ça sert à recruter. Moi je dis qu\'il vend nos morts une deuxième fois, juste avec de meilleures manières. Va voir ce qu\'il en fait, au camp bas. »']],
+  arrivee: [['narr', 'Au camp bas, des recruteurs du commandement distribuent des feuillets tout frais : le chant de Ying, couché en vers, promettant la gloire à qui prendra un poste vacant.'],
+    ['narr', 'Un jeune relit le sien trois fois, les yeux brillants, avant de signer son nom sur le rôle des volontaires.']],
+  indices: ['Un feuillet imprimé où chaque nom chanté par Ying devient un argument de recrutement, sans un mot sur comment ces hommes sont morts.',
+    'Une caisse de feuillets neufs, destinés à d\'autres camps, avec une facture : tant de pièces par millier, payées par le commandement.',
+    'Une note du scribe Wen : « Le chant touche plus que les tambours. On en imprime autant que le front en a besoin. »'],
+  conclusion: 'Le scribe Wen a transformé le chant de Ying en feuillet de recrutement : il vend la mémoire des morts au commandement, pour attirer de nouveaux vivants au front.',
+  repaire: [['narr', 'Près du dépôt d\'armes, le scribe Wen range une caisse de feuillets encore humides d\'encre.'],
+    ['abysses_wen', '« Le chant de Ying remplit les rangs mieux qu\'un ordre. Toi qui l\'as fait publier, {nom} : tu veux que j\'arrête d\'imprimer, ou tu veux ta part de ce que ça rapporte au commandement ? »']],
+  question: 'Les feuillets du scribe Wen, le chant de Ying devenu réclame, et des recrues qui signent sans savoir ce qu\'elles chantent.',
+  choix: [
+    { k: 'retirer', rumeur: '« Les feuillets du scribe Wen ont été retirés de tous les camps, sur ordre du Capitaine Rui. Le chant de Ying redevient un hommage, pas une réclame. »', etiquette: 'feuillets retirés, mémoire rendue', txt: 'Faire retirer les feuillets du commandement et exiger que le chant de Ying reste un hommage, pas une réclame', hint: 'Voie orthodoxe · rendre la mémoire', voie: 11, acte: 'aides', lines: [['abysses_wen', 'Il blêmit, la caisse encore ouverte entre ses mains. « Les recruteurs ne vont pas aimer ça. » Il n\'insiste pas davantage.']] },
+    { k: 'encadrer', rumeur: '« Les feuillets du scribe Wen circulent encore, mais chaque vente verse une part aux familles des noms chantés. »', etiquette: 'impression encadrée, part aux familles', txt: 'Laisser Wen imprimer, mais seulement si chaque feuillet vendu verse une part aux familles des morts chantés', hint: 'Voie libre · encadrer', voie: 3, lines: [['abysses_wen', '« Une part aux familles ? » Il hésite, puis range sa caisse. « Soit. Le commandement n\'y verra pas de différence. »']] },
+    { k: 'imprimer', rumeur: '« Le chant de Ying s\'imprime maintenant dans tous les camps du front. On dit que {nom} touche sa part de chaque feuillet vendu. »', etiquette: 'chant imprimé partout, part touchée', txt: 'S\'associer à Wen pour étendre l\'impression du chant à tous les camps, contre une part de chaque feuillet vendu', hint: 'Voie démoniaque · vendre la mémoire', voie: -13, acte: 'voles', lines: [['abysses_wen', 'Un sourire répond au tien. « Voilà un cultivateur qui comprend le commandement. » Il te glisse une part des pièces, encore tiède de la dernière caisse vendue.']] },
+  ],
+  retour: {
+    retirer: '« Les feuillets ont disparu des camps. » Elle pose la feuille de registre contre sa poitrine. « Mon chant reste mien, {nom}. Merci de l\'avoir rendu. »',
+    encadrer: '« Les feuillets circulent encore, mais les familles touchent leur part, maintenant. » Elle hésite. « Ce n\'est pas rien, {nom}. Ce n\'est pas tout non plus. »',
+    imprimer: '« Le chant s\'imprime dans tous les camps, maintenant. » Elle ne te regarde plus en face. « J\'ai cru que le faire publier suffirait à le garder mien. »',
+  },
+  merci: { retirer: '« Reviens écouter le chant, {nom}, quand tu veux. »', encadrer: '« Le bord se souvient, à sa façon. »', imprimer: '« Ne reviens plus au bord. »' },
 });
 
 // ───────────────────────── Suite du serment de bannière (chapitre III) : le premier rapport (Claude) ─────────────────────────
