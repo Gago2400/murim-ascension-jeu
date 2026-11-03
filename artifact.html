@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="0d13fc80a0eb" aria-label="Identifiant de version">Version générée : 0d13fc80a0eb</div>
+      <div class="meta" id="t-build" data-build="4ac2bf656e0f" aria-label="Identifiant de version">Version générée : 4ac2bf656e0f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -18483,6 +18483,26 @@ function R3init(T) {
         // Plus d'objet neige sur l'herbe (les plaques lisaient en meules). Voile : voileNeigeRoche, Col seulement.
       } else if (d.type === 'bones') {
         // Pas de crâne/os dans les packs. On retire le rendu 3D (reste dans R3_FLAT3D pour ne pas repeindre le sol).
+      } else if (d.type === 'toxic') {
+        // [Grok] QA fin : mares acides en 3D. Cuite dans le sol, la tache verte disparaissait
+        // dans l'herbe des Marécages (1588 flats). Deux dômes bas lime/olive, contraste fort
+        // (leçon dunes #705 : un hémisphère pâle se lit comme une tache). Seau hemi déjà
+        // présent via les champignons : pas d'appel de dessin en plus, pas de géo nouvelle.
+        paint = '';
+        const ta = (d.v || 0) * 6.2832;
+        put('hemi', 't', '#2e4a08', 0, 0.0, 0, 1.02, 0.07, 0.74, 0, ta, 0, false);
+        put('hemi', 't', '#b8ec28', 0, 0.02, 0, 0.80, 0.16, 0.56, 0, ta + 0.35, 0, false);
+        put('hemi', 't', '#e6ff58', Math.cos(ta) * 0.18, 0.05, Math.sin(ta) * 0.12, 0.40, 0.10, 0.28, 0, ta + 1.05, 0, false);
+        put('sph', 'b', '#f2ff88', Math.sin(ta) * 0.10, 0.18, Math.cos(ta) * 0.08, 0.055, 0.05, 0.055, 0, 0, 0, false);
+      } else if (d.type === 'cloud') {
+        // [Grok] QA fin : vapeur du Domaine. 3262 flats `cloud` étaient un blob blanc cuit
+        // dans la dalle pâle — invisibles. Trois dômes soulevés, teinte bleutée (pas blanc
+        // pur : même échec que les dunes pâles). Seau hemi déjà là (champignons). ≤ 1,1 m.
+        paint = '';
+        const ca = (d.v || 0) * 6.2832;
+        put('hemi', 't', '#c5d2e4', 0, 0.14, 0, 0.68, 0.20, 0.46, 0, ca, 0, false);
+        put('hemi', 't', '#d8e2ee', Math.cos(ca) * 0.26, 0.20, Math.sin(ca) * 0.16, 0.40, 0.15, 0.30, 0, ca + 0.9, 0, false);
+        put('hemi', 't', '#b8c6d8', -Math.sin(ca) * 0.20, 0.10, Math.cos(ca) * 0.14, 0.34, 0.13, 0.26, 0, ca + 2.2, 0, false);
       } else if (d.type === 'floatrock') {
         // Dode + bande MeshBasic : bloc noir non éclairé. Pas de rocher volant dans le pack. On retire.
       }
@@ -26746,7 +26766,7 @@ function R3init(T) {
 }
 // types de « flats » rendus en relief plutôt que peints au sol
 const BOURG3D = new Set(['bassin_koi', 'koi', 'cerf', 'table_the', 'bambou', 'rocher_mousse', 'falaise', 'mannequin', 'pont', 'gue', 'statue_dragon', 'lingots', 'oeuf_dragon', 'paifang', 'portique', 'cloture', 'tas_bois', 'tonneau', 'panier', 'chariot_rue', 'cloche', 'demeure', 'lanterne_pierre', 'kiosque', 'borne', 'rempart', 'muret', 'tourguet', 'porte', 'boutique', 'taverne', 'temple', 'ecurie', 'grenier', 'entrepot', 'etal', 'puits', 'charrette', 'meule', 'linge', 'potager', 'champ', 'banc', 'claie']);
-const R3_FLAT3D = new Set(['grass', 'tallgrass', 'mushroom', 'floatrock', 'flower', 'shell', 'snow', 'bones']);
+const R3_FLAT3D = new Set(['grass', 'tallgrass', 'mushroom', 'floatrock', 'flower', 'shell', 'snow', 'bones', 'toxic', 'cloud']);
 
 // ── lieux remarquables (#66) : silhouettes dédiées, lues dans sc.landmark (logique et collisions dans 26_lieux.js) ──
 // Mètres autour du centre ; +z vers le sud (côté caméra). Emprise ≈ rayon de collision (70 px ≈ 3,2 m).
