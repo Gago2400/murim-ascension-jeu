@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="ccc061073131">
+<meta name="murim-build" content="7a2ef2473a14">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="ccc061073131" aria-label="Identifiant de version">Version générée : ccc061073131</div>
+      <div class="meta" id="t-build" data-build="7a2ef2473a14" aria-label="Identifiant de version">Version générée : 7a2ef2473a14</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -41420,6 +41420,145 @@ update = function (dt) {
   updateAvantCh1(dt);
   CH1_ETAT.t -= dt; if (CH1_ETAT.t <= 0) { CH1_ETAT.t = 0.25; ch1Tick(); }
 };
+
+// ───────────────────────── L6 : pêche et cueillette hors les murs ─────────────────────────
+// Longwan : pêche au Chantier naval des Trois Vagues. Meishan : cueillette sur les Terrasses du Thé.
+// Qinghe : cueillette d'herbes au bord des Saules (anneau du bourg), pour rester cohérent par berceau.
+// Action courte, gains modestes (or + herbe d'alchimie), limite quotidienne, aucun bonus de stats.
+// État dans S.commerces.activites. Réutilise les sites hors-murs (42_hors_murs.js) quand ils existent.
+
+const ACT_LIMITE = 3; // prises / cueillettes par région et par jour
+const ACT_DEF = {
+  longwan: { k: 'peche', verbe: 'Pêcher', label: 'Pêcher au chantier naval', or: 18, herbe: 'brume', txt: 'Tu ramènes un muge. Les écailles séchées valent une pincée de Brume.' },
+  meishan: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir le thé des terrasses', or: 16, herbe: 'givre', txt: 'Deux feuilles et un bourgeon. Le Givre de racine se forme en séchant.' },
+  qinghe: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir les herbes des Saules', or: 14, herbe: 'brume', txt: 'Tu coupes une touffe claire au bord des rizières. Brume des sous-bois.' },
+};
+
+function actEnsure() {
+  if (typeof ensureCommerces === 'function') ensureCommerces();
+  if (!S.commerces || typeof S.commerces !== 'object') S.commerces = {};
+  if (!S.commerces.activites || typeof S.commerces.activites !== 'object') S.commerces.activites = { day: '' };
+  const a = S.commerces.activites;
+  const day = typeof todayKey === 'function' ? todayKey() : '';
+  const renew = typeof jourDoitRenouveler === 'function' ? jourDoitRenouveler(a.day) : a.day !== day;
+  if (renew) {
+    a.day = day;
+    for (const id of Object.keys(ACT_DEF)) a[id] = { n: 0 };
+  }
+  for (const id of Object.keys(ACT_DEF)) if (!a[id] || typeof a[id].n !== 'number') a[id] = { n: 0 };
+  return a;
+}
+
+function actRestant(id) {
+  const a = actEnsure();
+  return Math.max(0, ACT_LIMITE - ((a[id] && a[id].n) || 0));
+}
+
+function actSpotQinghe(sc) {
+  // un point calme à l'ouest du bourg, hors rempart, près de l'eau / des Saules
+  const B = sc.bourg && sc.bourg.rect, s = sc.safe;
+  if (!B || !s) return null;
+  return { x: B.x0 - 180, y: (B.y0 + B.y1) / 2, r: 90 };
+}
+
+function actPoser(sc) {
+  if (!sc || sc.type !== 'region' || !ACT_DEF[sc.id] || sc.activiteSpot) return;
+  const def = ACT_DEF[sc.id];
+  let spot = null;
+  if (sc.id === 'qinghe') spot = actSpotQinghe(sc);
+  else if (sc.horsMurs) spot = { x: sc.horsMurs.x, y: sc.horsMurs.y, r: 140 };
+  else if (typeof HORS_MURS !== 'undefined' && HORS_MURS[sc.id]) {
+    const h = HORS_MURS[sc.id]; spot = { x: h.x, y: h.y, r: 140 };
+  }
+  if (!spot) return;
+  sc.activiteSpot = { id: sc.id, k: def.k, x: spot.x, y: spot.y, r: spot.r || 120, label: def.label };
+}
+
+function actFaire(id) {
+  const def = ACT_DEF[id]; if (!def) return false;
+  if (P.combatT < 4) { toast('Pas pendant le combat', 'warn'); return false; }
+  const rest = actRestant(id);
+  if (rest <= 0) { toast('Plus rien à ' + (def.k === 'peche' ? 'pêcher' : 'cueillir') + ' ici aujourd\'hui', 'info'); return false; }
+  const a = actEnsure();
+  a[id].n = (a[id].n || 0) + 1;
+  S.gold = (S.gold || 0) + def.or;
+  const alch = typeof alchEnsure === 'function' ? alchEnsure() : (S.alch || (S.alch = { herbes: { brume: 0, givre: 0, sang: 0 } }));
+  if (!alch.herbes) alch.herbes = { brume: 0, givre: 0, sang: 0 };
+  alch.herbes[def.herbe] = (alch.herbes[def.herbe] || 0) + 1;
+  const H = typeof HERBES !== 'undefined' ? HERBES[def.herbe] : null;
+  toast(def.txt + ' +' + def.or + ' or' + (H ? ', +1 ' + H.nom : '') + ' · ' + (ACT_LIMITE - a[id].n) + ' restante' + (ACT_LIMITE - a[id].n > 1 ? 's' : ''), 'gold');
+  if (typeof sfx === 'function') sfx('coin');
+  if (typeof saveGame === 'function') saveGame();
+  return true;
+}
+
+// Marqueur d'interaction près du spot (chantier / terrasses / Saules)
+if (typeof findInteract === 'function') {
+  const findInteractAvantAct = findInteract;
+  findInteract = function () {
+    const it = findInteractAvantAct();
+    const sc = G.scene, spot = sc && sc.activiteSpot;
+    if (!spot || !P) return it;
+    const d = dist2(P.x, P.y, spot.x, spot.y);
+    if (d < spot.r * spot.r) {
+      const rest = actRestant(spot.id);
+      const def = ACT_DEF[spot.id];
+      const label = rest > 0 ? (def.verbe + ' · ' + rest + '/' + ACT_LIMITE + ' aujourd\'hui') : (def.verbe + ' · demain');
+      if (!it || d < 110 * 110) return { kind: 'activite', ref: spot, label };
+    }
+    return it;
+  };
+}
+if (typeof doInteract === 'function') {
+  const doInteractAvantAct = doInteract;
+  doInteract = function (it) {
+    if (it && it.kind === 'activite') {
+      actFaire(it.ref.id);
+      if (typeof renderNpc === 'function' && UI && UI.npcOuvert) renderNpc();
+      return;
+    }
+    return doInteractAvantAct(it);
+  };
+}
+
+// Fiche des PNJ hors-murs : bouton d'activité en plus des répliques
+if (typeof renderNpc === 'function') {
+  const renderNpcAvantAct = renderNpc;
+  renderNpc = function () {
+    const n = UI.npc;
+    renderNpcAvantAct();
+    if (!n || !n.horsMurs || !G.scene || !ACT_DEF[G.scene.id]) return;
+    const b = $('#npc-body'); if (!b) return;
+    const def = ACT_DEF[G.scene.id];
+    const rest = actRestant(G.scene.id);
+    b.append(el('h3', null, def.label));
+    b.append(el('p', null, 'Action courte. Gains modestes, vendables (or + herbe d\'alchimie). Aucun bonus de combat. ' + rest + ' / ' + ACT_LIMITE + ' aujourd\'hui.'));
+    b.append(el('button', {
+      class: 'btn sm', disabled: rest <= 0 || (P && P.combatT < 4),
+      onclick: () => { if (actFaire(G.scene.id)) renderNpc(); },
+    }, rest > 0 ? (def.verbe + ' · +' + def.or + ' or') : 'Reviens demain'));
+  };
+}
+
+// Pose le spot après hors-murs (setScene) et après genRegion
+if (typeof setScene === 'function') {
+  const setSceneAvantAct = setScene;
+  setScene = function (sc) {
+    const out = setSceneAvantAct(sc);
+    if (G.scene) actPoser(G.scene);
+    return out;
+  };
+}
+if (typeof genRegion === 'function') {
+  const genRegionAvantAct = genRegion;
+  genRegion = function (R) {
+    const sc = genRegionAvantAct(R);
+    // hors-murs s'installe au setScene ; pour les tests qui n'appellent que genRegion, on pose quand même
+    if (sc && !sc.horsMurs && typeof hmInstaller === 'function') hmInstaller(sc);
+    actPoser(sc);
+    return sc;
+  };
+}
 
 // [Grogrok] Panneaux d'avis des haltes : chaque panneau propose, une fois par jour, une petite quête facultative.
 //  · Prime : chasser quelques bêtes ou bandits de la région, puis la récompense tombe aussitôt.
