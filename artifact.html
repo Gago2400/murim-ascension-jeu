@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="89bcd693513d" aria-label="Identifiant de version">Version générée : 89bcd693513d</div>
+      <div class="meta" id="t-build" data-build="2289a9bf937f" aria-label="Identifiant de version">Version générée : 2289a9bf937f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6177,6 +6177,41 @@ recitRegion('heros_longwan', {
   retour: { retablir: '« La plaque est refondue : De et Pan, côte à côte. La Veuve Shun a allumé une lanterne pour son frère, la première depuis trente ans. Tiens — la rame votive de De. Elle te revient. »', taire: '« Le nom de De est dans la chapelle, et la fête n\'a blessé personne. » Elle noue un filet. « Certaines vérités, on les garde au fond, comme les ancres. Prends ça pour ta peine. »', chanter: '« Vieux Pan ne vient plus à la criée. On dit qu\'il a payé une dette qu\'il n\'avait pas. » Elle te tend une bourse sans te regarder. « On dit aussi à qui. »' },
   merci: { retablir: '« La criée se souvient des deux noms, maintenant. »', taire: '« Que la mer te soit douce, {nom}. »', chanter: '« Ne t\'assieds pas sur le banc de Shun. »' },
   apres: ['narr', 'La mer garde ses morts et le port garde ses histoires. De temps en temps, un filet remonte, et il faut choisir laquelle des deux on croit.'],
+});
+
+// ───────────────────────── Exploration Longwan : les trois lanternes ─────────────────────────
+// Quête locale hors trame : allumer trois lanternes de crique (pêcheurs → halte → chapelle).
+// recitRegion classique, aucun champ de sauvegarde nouveau.
+recitRegion('trois_lanternes', {
+  name: 'Les trois lanternes', region: 'longwan', quest: 5, key: 'trois_lanternes', who: 'lw_meche', label: 'Trois mèches à porter avant la marée',
+  art: 'lanternes',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    lw_meche: { name: 'Mèche Yan', title: 'allumeuse de crique', glyph: '燭', color: '#e0c890' },
+    lw_bo: { name: 'Bo le calfateur', title: 'Village des Pêcheurs', glyph: '補', color: '#9bb0b8' },
+  },
+  quand: 'Longwan : Mèche Yan, au Port (trois lanternes avant la marée)',
+  attente: '« L\'huile n\'est pas prête. Reviens à marée basse. »',
+  rappel: 'Les trois lanternes attendent encore, {nom}.',
+  steps: ['Prendre les mèches auprès de Yan, au Port', 'Allumer au Village des Pêcheurs', 'Lire les marques sur la route', 'Allumer à la chapelle des noyés', 'Revenir auprès de Yan'],
+  labels: ['Lire une marque', 'Allumer la lanterne'], objet: 'Mèche de jonc de Yan', slot: 'acc2',
+  intro: [['lw_meche', '« Trois mèches. Trois feux. » Elle te tend un paquet d\'huile. « Pêcheurs, borne de halte, chapelle. Tu allumes — ou tu vends les nuits noires. »'],
+    ['lw_meche', '« Bo t\'attend au village. Ne souffle pas la première : elle est pour les morts. »']],
+  arrivee: [['narr', 'Au Village des Pêcheurs, Bo pose une jarre. L\'air sent le goudron et le sel.'],
+    ['lw_bo', '« Les bornes de halte portent des croix grises. Quelqu\'un compte quelles nuits restent noires. »']],
+  indices: ['Une borne : « Nuit sans feu — noms. »', 'Une seconde marque, plus fraîche, vers la chapelle.', 'Une jarre déjà ouverte : on a pris la liste, pas l\'huile.'],
+  conclusion: 'Les mèches de Yan portent aussi des noms. À la chapelle des noyés, tu choisis.',
+  repaire: [['narr', 'À la chapelle des noyés, la dernière lanterne est froide. Une tablette glisse sous la jarre.'],
+    ['lw_meche', '« Allume. Éteins sans vendre. Ou vends les nuits. »']],
+  question: 'Trois lanternes, une tablette, et la marée qui monte.',
+  choix: [
+    { k: 'allumer', rumeur: '« Trois feux ont repris sur la crique. On dit qu\'un campagnard n\'a pas lu les noms. »', etiquette: 'lanternes allumées sans ouvrir', txt: 'Allumer les trois feux et laisser la tablette fermée', hint: 'Voie orthodoxe · éclairer sans lire', voie: 6, acte: 'aides', lines: [['lw_meche', '« Rare. » Elle te rend une mèche nouée d\'un jeton. « Garde-la. »']] },
+    { k: 'eteindre', rumeur: '« Une fumée courte près de la chapelle. Des noms, dit-on. Les feux, eux, brûlent. »', etiquette: 'tablette brûlée, feux tenus', txt: 'Brûler la tablette et allumer quand même', hint: 'Voie libre · casser le courrier', voie: 1, lines: [['lw_meche', '« Le feu coûte. Les barques restent. Tiens. »']] },
+    { k: 'vendre', rumeur: '« Une liste de nuits noires a changé de mains à Longwan. »', etiquette: 'nuits vendues aux pilleurs', txt: 'Vendre la tablette aux pilleurs et garder l\'huile', hint: 'Voie démoniaque · les nuits valent plus que l\'huile', voie: -10, acte: 'voles', rep: { legion: 70, alliance: -70 }, lines: [['lw_meche', 'Elle détourne les yeux. « Ne remonte plus à ma lanterne. »']] },
+  ],
+  retour: { allumer: '« La mèche est à toi. »', eteindre: '« Bois sans lire. »', vendre: '« … »' },
+  merci: { allumer: '« La crique te voit. »', eteindre: '« L\'odeur partira. »', vendre: '« … »' },
+  apres: ['narr', 'Trois lanternes. Longwan se souvient de la façon dont tu les as portées.'],
 });
 
 // ───────────────────────── Récits des Marécages de l'Oubli : la cabane des noms et le papier de roseau (Grogrok) ─────────────────────────
