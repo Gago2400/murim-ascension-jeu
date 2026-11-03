@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="5277d973b567" aria-label="Identifiant de version">Version générée : 5277d973b567</div>
+      <div class="meta" id="t-build" data-build="022cb2f9bd87" aria-label="Identifiant de version">Version générée : 022cb2f9bd87</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -15664,6 +15664,8 @@ function R3init(T) {
   const ROUTE_UV = 1.72; // le maillage dépasse le cœur : le fondu tient dehors, la largeur du cœur ne bouge pas
   function roadRibbons(sc) {
     if (sc.type === 'interior' || sc.type === 'dungeon' || !sc.paths || !sc.paths.length) return null;
+    // Abysses : pal.path #5a1a2a, trop sombre, est renormalisé en bande orange plate non éclairée. On retire.
+    if (sc.id === 'abysses') return null;
     const B = sc.bourg && sc.bourg.rect;
     const dedans = (x, y) => B && x > B.x0 && x < B.x1 && y > B.y0 && y < B.y1;
     const pos = [], uv = [], idx = [];
@@ -17265,11 +17267,7 @@ function R3init(T) {
           break;
         }
         case 'lierre': {
-          base.compose(V1.set(X, hSol(d.x, d.y), Z), Q1.identity(), S1.set(1, 1, 1));
-          paint = 'leaf';
-          put('sph', 't', '#3f6a32', 0, 0.35, 0, 0.35, 0.28, 0.3);
-          put('sph', 't', '#5a8a40', 0.2, 0.7, 0.05, 0.22, 0.2, 0.18);
-          put('sph', 't', '#6a9a48', -0.12, 1.05, 0.08, 0.16, 0.14, 0.14);
+          // Pas de lierre GLB. Trois sphères vertes lisaient en boules plates. On retire.
           break;
         }
         case 'talisman': {
