@@ -2270,7 +2270,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="953e380b5fc1" aria-label="Identifiant de version">Version générée : 953e380b5fc1</div>
+      <div class="meta" id="t-build" data-build="b8d5039fe68d" aria-label="Identifiant de version">Version générée : b8d5039fe68d</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -35438,8 +35438,17 @@ genRegion = function (R) {
     // [Grok] Marécages / Abysses n'ont pas de refuge : le donneur se tenait sur sc.safe et n'apparaissait jamais.
     const s = sc.safe || sc.spawn || (sc.hamlets && sc.hamlets[0]);
     if (!s) continue;
+    // [Grok] Trop de donneurs sur une même place (Col : encens + cloche + Tang…) sortaient hors sc.safe.
     let x = s.x + 120, y = s.y + 230;
-    for (let t = 0; t < 20 && sc.npcs.some((n) => dist2(n.x, n.y, x, y) < 60 * 60); t++) { x += 40; y -= 20; }
+    const lim = (s.r || 500) * 0.9;
+    for (let t = 0; t < 40 && sc.npcs.some((n) => dist2(n.x, n.y, x, y) < 60 * 60); t++) {
+      const a = t * 0.85, rad = Math.min(90 + t * 28, lim);
+      x = s.x + Math.cos(a) * rad; y = s.y + Math.sin(a) * rad;
+    }
+    if (s.r) {
+      const d = Math.hypot(x - s.x, y - s.y);
+      if (d >= s.r) { const k = (s.r - 24) / (d || 1); x = s.x + (x - s.x) * k; y = s.y + (y - s.y) * k; }
+    }
     sc.npcs.push(Object.assign(npc(Rc.giver.role, Rc.giver.name, x, y), { recit: id }));
   }
   return sc;
@@ -58438,7 +58447,9 @@ const CRIEUR_RUMEURS = {
     '« L\'Ermite a tenu le troisième sceau trois cents hivers. On dit que le compte a repris. »',
   ],
 };
-const CRIEUR_BERCEAUX = Object.keys(CRIEUR_RUMEURS);
+// [Claude] Placeable ≠ CRIEUR_RUMEURS : foret/col n'ont qu'un refuge (villeRefuge), pas de sc.bourg,
+// donc crieurPoser (qui lit sc.bourg.rect) reste no-op pour eux. Rumeurs gardées pour quand ils auront un bourg.
+const CRIEUR_BERCEAUX = ['qinghe', 'longwan', 'meishan', 'plaines', 'vallee'];
 
 function crieurEnsure() {
   if (typeof ensureCommerces === 'function') ensureCommerces();
@@ -58505,7 +58516,8 @@ if (typeof findInteract === 'function') {
       const d = dist2(P.x, P.y, n.x, n.y);
       if (d < 70 * 70 && d < bd) { bd = d; best = n; }
     }
-    if (best && (!it || bd < 55 * 55)) return { kind: 'crieur', ref: best, label: 'Écouter le crieur' };
+    // [Grok] Ne vole pas l'entrée d'un bâtiment (emprise_passages : seuil forge Qinghe).
+    if (best && (!it || (it.kind !== 'portal' && bd < 55 * 55))) return { kind: 'crieur', ref: best, label: 'Écouter le crieur' };
     return it;
   };
 }
