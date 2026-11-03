@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="a3f6bc832bcd">
+<meta name="murim-build" content="45803ac00fd9">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2282,7 +2282,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="a3f6bc832bcd" aria-label="Identifiant de version">Version générée : a3f6bc832bcd</div>
+      <div class="meta" id="t-build" data-build="45803ac00fd9" aria-label="Identifiant de version">Version générée : 45803ac00fd9</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -41478,9 +41478,21 @@ update = function (dt) {
 
 const ACT_LIMITE = 3; // prises / cueillettes par région et par jour
 const ACT_DEF = {
+  // Berceaux
   longwan: { k: 'peche', verbe: 'Pêcher', label: 'Pêcher au chantier naval', or: 18, herbe: 'brume', txt: 'Tu ramènes un muge. Les écailles séchées valent une pincée de Brume.' },
   meishan: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir le thé des terrasses', or: 16, herbe: 'givre', txt: 'Deux feuilles et un bourgeon. Le Givre de racine se forme en séchant.' },
   qinghe: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir les herbes des Saules', or: 14, herbe: 'brume', txt: 'Tu coupes une touffe claire au bord des rizières. Brume des sous-bois.' },
+  // Régions : activité cohérente avec le biome
+  vallee: { k: 'peche', verbe: 'Pêcher', label: 'Pêcher à la rivière de l\'Aurore', or: 15, herbe: 'brume', txt: 'Un vairon d\'eau claire. Ses écailles sèchent en Brume.' },
+  plaines: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir l\'herbe des digues', or: 15, herbe: 'brume', txt: 'Tu coupes l\'herbe grasse entre les diguettes. Brume des sous-bois.' },
+  col: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir le givre des combes', or: 17, herbe: 'givre', txt: 'Sous la brume, une racine froide. Givre de racine.' },
+  foret: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir sous les futaies', or: 17, herbe: 'brume', txt: 'Mousses et feuilles à l\'ombre. Une pincée de Brume.' },
+  desert: { k: 'cueillette', verbe: 'Ramasser', label: 'Ramasser les herbes de cendre', or: 19, herbe: 'sang', txt: 'Une touffe grise au bord de l\'oasis. Sang-d\'herbe.' },
+  montagnes: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir le thé des cimes', or: 20, herbe: 'givre', txt: 'Feuilles courtes, goût de neige. Givre de racine.' },
+  marecages: { k: 'peche', verbe: 'Pêcher', label: 'Pêcher dans les eaux troubles', or: 20, herbe: 'sang', txt: 'Un poisson noirâtre. Ses arêtes sèchent en Sang-d\'herbe.' },
+  citadelle: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir les herbes des remparts', or: 22, herbe: 'givre', txt: 'Entre deux dalles, une touffe claire. Givre de racine.' },
+  abysses: { k: 'cueillette', verbe: 'Ramasser', label: 'Ramasser les mousses de Fracture', or: 24, herbe: 'sang', txt: 'Une mousse qui ne devrait pas pousser. Sang-d\'herbe.' },
+  domaine: { k: 'cueillette', verbe: 'Cueillir', label: 'Cueillir la rosée céleste', or: 28, herbe: 'givre', txt: 'Une goutte figée sur une feuille. Givre de racine.' },
 };
 
 function actEnsure() {
@@ -41503,22 +41515,52 @@ function actRestant(id) {
   return Math.max(0, ACT_LIMITE - ((a[id] && a[id].n) || 0));
 }
 
-function actSpotQinghe(sc) {
-  // un point calme à l'ouest du bourg, hors rempart, près de l'eau / des Saules
-  const B = sc.bourg && sc.bourg.rect, s = sc.safe;
-  if (!B || !s) return null;
-  return { x: B.x0 - 180, y: (B.y0 + B.y1) / 2, r: 90 };
+function actSpotPresEau(sc) {
+  // point d'eau le plus proche du refuge (rivière, canal, oasis) pour la pêche
+  const s = sc.safe; if (!s || typeof eauProche !== 'function') return null;
+  let best = null;
+  for (let a = 0; a < 16; a++) {
+    const ang = (a / 16) * Math.PI * 2, x = s.x + Math.cos(ang) * 420, y = s.y + Math.sin(ang) * 420;
+    if (eauProche(sc, x, y, 80)) { const d = dist2(x, y, s.x, s.y); if (!best || d < best.d) best = { x, y, d }; }
+  }
+  // balayage plus large si besoin
+  if (!best) {
+    for (let r = 200; r <= 900; r += 140) for (let a = 0; a < 12; a++) {
+      const ang = (a / 12) * Math.PI * 2, x = s.x + Math.cos(ang) * r, y = s.y + Math.sin(ang) * r;
+      if (x < 80 || y < 80 || x > sc.w - 80 || y > sc.h - 80) continue;
+      if (eauProche(sc, x, y, 90)) { const d = dist2(x, y, s.x, s.y); if (!best || d < best.d) best = { x, y, d }; }
+    }
+  }
+  return best ? { x: best.x, y: best.y, r: 110 } : null;
 }
-
+function actSpotPresBourg(sc, cote) {
+  const B = sc.bourg && sc.bourg.rect; if (!B) return null;
+  if (cote === 'ouest') return { x: B.x0 - 180, y: (B.y0 + B.y1) / 2, r: 90 };
+  if (cote === 'nord') return { x: (B.x0 + B.x1) / 2, y: B.y0 - 180, r: 90 };
+  if (cote === 'sud') return { x: (B.x0 + B.x1) / 2, y: B.y1 + 180, r: 90 };
+  return { x: B.x1 + 180, y: (B.y0 + B.y1) / 2, r: 90 };
+}
+function actSpotRefuge(sc) {
+  const s = sc.safe; if (!s) return null;
+  return { x: s.x + 220, y: s.y - 160, r: 100 };
+}
+function actSpotCarte(sc) {
+  // régions sans refuge (marécages, abysses) : près du landmark ou au cœur de la carte
+  if (sc.landmark) return { x: sc.landmark.x + 100, y: sc.landmark.y + 80, r: 110 };
+  const x = Math.round((sc.w || 8000) * 0.45), y = Math.round((sc.h || 8000) * 0.4);
+  return { x, y, r: 120 };
+}
 function actPoser(sc) {
   if (!sc || sc.type !== 'region' || !ACT_DEF[sc.id] || sc.activiteSpot) return;
   const def = ACT_DEF[sc.id];
   let spot = null;
-  if (sc.id === 'qinghe') spot = actSpotQinghe(sc);
-  else if (sc.horsMurs) spot = { x: sc.horsMurs.x, y: sc.horsMurs.y, r: 140 };
+  if (sc.horsMurs) spot = { x: sc.horsMurs.x, y: sc.horsMurs.y, r: 140 };
   else if (typeof HORS_MURS !== 'undefined' && HORS_MURS[sc.id]) {
     const h = HORS_MURS[sc.id]; spot = { x: h.x, y: h.y, r: 140 };
-  }
+  } else if (sc.id === 'qinghe') spot = actSpotPresBourg(sc, 'ouest');
+  else if (def.k === 'peche') spot = actSpotPresEau(sc) || actSpotRefuge(sc) || actSpotCarte(sc);
+  else spot = (sc.landmark ? { x: sc.landmark.x + 90, y: sc.landmark.y + 70, r: 100 } : null)
+    || actSpotPresBourg(sc, 'nord') || actSpotRefuge(sc) || actSpotCarte(sc);
   if (!spot) return;
   sc.activiteSpot = { id: sc.id, k: def.k, x: spot.x, y: spot.y, r: spot.r || 120, label: def.label };
 }
