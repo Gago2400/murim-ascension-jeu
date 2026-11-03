@@ -2270,7 +2270,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="8e7a7109d08f" aria-label="Identifiant de version">Version générée : 8e7a7109d08f</div>
+      <div class="meta" id="t-build" data-build="44651233e8bc" aria-label="Identifiant de version">Version générée : 44651233e8bc</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -5924,6 +5924,49 @@ recitRegion('cloche_col', {
     { k: 'fondre', rumeur: '« La cloche des voyageurs n\'a plus de battant. On se perd plus souvent dans la brume, depuis. L\'argent, lui, est quelque part à Jade. »', etiquette: 'bronze vendu au fondeur', txt: 'Décrocher le battant d\'argent et le vendre au fondeur de Jade : plus de cloche, plus de querelle', hint: 'Voie démoniaque · profiter', voie: -12, acte: 'voles', lines: [['col_hua', 'Elle sourit pour la première fois, d\'un sourire qui fait froid. « Enfin quelqu\'un qui m\'écoute. » Tu ne lui dis pas combien l\'argent t\'a rapporté.']] }],
   retour: { apaiser: '« La cloche sonne, et le versant nord est fermé les jours blancs. Hua est venue m\'apporter du thé. Garde ce battant de rechange : il chante plus clair que l\'autre. »', heures: '« Elle ne sonne plus qu\'à la brume épaisse. C\'est moins qu\'avant, plus que rien. » Il frotte ses mains gelées.', fondre: '« On a volé le battant. » Il regarde la brume. « Deux voyageurs ne sont pas arrivés cette semaine. »' },
   merci: { apaiser: '« Quand tu entendras la cloche, {nom}, pense que c\'est toi qui sonnes. »', heures: '« Le col te remercie, à moitié. »', fondre: '« … Il n\'y a plus rien à sonner. »' },
+});
+
+// ───────────────────────── Exploration multi-étapes Col de la Brume : les trois encens ─────────────────────────
+// Quête locale hors trame : le novice Shen demande de porter trois bâtons d'encens aux stèles du col avant la brume
+// (Monastère isolé → Auberge de la Brume → Village des Bûcherons). recitRegion classique, aucun champ de sauvegarde nouveau.
+recitRegion('trois_encens', {
+  name: 'Les trois encens', region: 'col', quest: 14, key: 'trois_encens', who: 'col_shen', label: 'Les trois encens à porter avant la brume',
+  art: 'lanternes',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    col_shen: { name: 'Novice Shen', title: 'porteur d\'encens du Monastère', glyph: '焚', color: '#d8c8a0' },
+    col_rong: { name: 'Rong le portefaix', title: 'relais de l\'Auberge de la Brume', glyph: '遞', color: '#a89070' },
+  },
+  quand: 'Col de la Brume : Novice Shen, au Monastère isolé (trois encens à porter avant la brume)',
+  attente: '« L\'encens n\'est pas encore béni. Reviens à l\'heure des cloches. »',
+  rappel: 'Les trois encens attendent encore, {nom}.',
+  steps: ['Prendre les encens auprès de Shen, au Monastère isolé', 'Porter le premier à l\'Auberge de la Brume', 'Lire les marques sur la route', 'Porter le dernier au Village des Bûcherons', 'Revenir auprès de Shen'],
+  labels: ['Lire une marque', 'Porter l\'encens'], objet: 'Boîte à encens du Monastère', slot: 'acc2',
+  intro: [['col_shen', '« Trois bâtons. Trois stèles. » Il te tend une boîte scellée de cire. « Auberge, route, Bûcherons. Tu es payé à la dernière stèle — ou tu gardes ce que tu trouves. »'],
+    ['col_shen', '« Le premier est pour Rong, à l\'auberge. Ne brise pas la cire : le dernier bâton n\'est pas pour les vivants. »']],
+  arrivee: [['narr', 'À l\'Auberge de la Brume, Rong essuie ses mains calleuses. Le premier bâton sent la résine, et autre chose, plus âcre.'],
+    ['col_rong', '« Shen t\'envoie ? Pose-le sur la stèle. Sur la route, regarde les marques : quelqu\'un grave les encens pour les Masques. »']],
+  indices: ['Une stèle de halte : une marque grise gravée sous la base.', 'Une seconde marque, plus fraîche, vers les Bûcherons.', 'Un bâton déjà brisé, vidé de sa cendre : on a pris ce qu\'il cachait, pas l\'encens.'],
+  conclusion: 'Les encens de Shen servent aussi de messages. Au Village des Bûcherons, tu choisis si tu les portes, si tu les brûles, ou si tu vends ce qu\'ils cachent.',
+  repaire: [['narr', 'Au Village des Bûcherons, le dernier bâton d\'encens est lourd d\'une liste roulée dans la cire.'],
+    ['col_shen', 'Shen n\'est pas là. À sa place, la liste. « Porte. Brûle. Ou vends. »']],
+  question: 'Trois encens, une liste de noms, et la cire encore collée à tes doigts.',
+  choix: [
+    { k: 'porter', rumeur: '« Un pèlerin anonyme a fini la tournée de Shen. Les Bûcherons ont eu leur encens intact. »', etiquette: 'encens portés sans ouvrir', txt: 'Porter le bâton fermé jusqu\'à la stèle et rapporter la boîte à Shen', hint: 'Voie orthodoxe · ne pas lire la liste', voie: 6, acte: 'aides', lines: [['narr', 'Tu poses le bâton sur la stèle. La liste reste dans la cire. Shen, plus tard, te rend la boîte nouée d\'un ruban. « Rare, quelqu\'un qui ne lit pas. »']] },
+    { k: 'bruler', rumeur: '« On a vu de la fumée près des Bûcherons. Une liste, dit-on. L\'encens, lui, brûle droit. »', etiquette: 'liste brûlée', txt: 'Brûler la liste cachée et porter l\'encens seul jusqu\'à la stèle', hint: 'Voie libre · casser le courrier sans le vendre', voie: 1, lines: [['narr', 'La liste noircit dans la flamme. L\'encens brûle droit sur la stèle. Shen hausse les épaules. « Tu as coûté cher à quelqu\'un. Tiens, pour le feu. »']] },
+    { k: 'vendre', rumeur: '« Une liste de noms a changé de mains au Col de la Brume. Le novice Shen ne parle plus. »', etiquette: 'noms vendus', txt: 'Vendre la liste aux Masques et garder l\'or des encens', hint: 'Voie démoniaque · les noms valent plus que la résine', voie: -10, acte: 'voles', rep: { legion: 80, alliance: -80 }, lines: [['narr', 'Un homme au masque compte les pièces. Shen, à distance, détourne les yeux. « Tu as appris le métier plus vite que moi. »']] },
+  ],
+  retour: {
+    porter: '« Boîte et ruban. » Il sourit peu. « Reviens si tu veux porter sans lire. »',
+    bruler: '« Le feu coûte. » Il te tend une bourse légère. « Mais il nettoie. »',
+    vendre: '« Garde l\'or. » Sa voix est plate. « Ne me redemande plus d\'encens. »',
+  },
+  merci: {
+    porter: '« Les stèles te saluent. »',
+    bruler: '« L\'odeur partira. »',
+    vendre: '« … »',
+  },
+  apres: ['narr', 'Trois encens. Une boîte. Le Col de la Brume se souvient de la façon dont tu les as portés.'],
 });
 
 // ───────────────────────── Récits du Désert de Cendres : l'eau de l'oasis et les cloches des caravanes (Grogrok) ─────────────────────────
@@ -58380,6 +58423,18 @@ const CRIEUR_RUMEURS = {
     '« Un masque de jade a été vu au Relais. Personne n\'a demandé le prix. »',
     '« Tan vole encore un cheveu de grain. La moitié ne lui reste pas. »',
     '« Les lanternes de Biao brûlent jusqu\'à l\'aube des morts. Compte tes pièces. »',
+  ],
+  foret: [
+    '« La Chasseuse Ling a traqué quelque chose jusqu\'à la Cascade des Neuf Dragons. Elle n\'a pas ramené de gibier. »',
+    '« Les arbres du Sanctuaire des Esprits ont encore changé de place. Bo dit de ne pas compter les troncs. »',
+    '« La Mère des toiles a tissé plus bas que l\'an dernier. Les trappeurs restent au camp. »',
+    '« Un message gravé à la hâte a été retrouvé près de la Tour. Personne n\'a voulu lire le nom. »',
+  ],
+  col: [
+    '« L\'Abbé Kong n\'a pas sonné la cloche ce matin. La brume, elle, a répondu pour lui. »',
+    '« Un Hurleur a été vu près de la Pagode des Mille Vents, sans sa meute. »',
+    '« Frère Shou doit encore trois tournées à l\'Auberge de la Brume. Personne ne les réclame. »',
+    '« L\'Ermite a tenu le troisième sceau trois cents hivers. On dit que le compte a repris. »',
   ],
 };
 const CRIEUR_BERCEAUX = Object.keys(CRIEUR_RUMEURS);
