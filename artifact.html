@@ -2271,7 +2271,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="e7a6ec4fdc70" aria-label="Identifiant de version">Version générée : e7a6ec4fdc70</div>
+      <div class="meta" id="t-build" data-build="30fd617e4537" aria-label="Identifiant de version">Version générée : 30fd617e4537</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6962,6 +6962,46 @@ recitRegion('voix_clou', {
   retour: { briser: '« La voix s\'est tue, n\'est-ce pas ? Je le vois à tes yeux : ils ont repris leur couleur. » Elle te tend un petit éclat gris, froid et mort, scellé dans de la cire. « Garde-le. Pour te souvenir de ce que tu as failli devenir. »', sceller: '« Tu le portes encore, mais il ne commande plus. C\'est déjà une victoire, de celles qu\'on ne raconte pas. Prends ceci pour ta peine. »', nourrir: '« Sors de mon cabinet. » Elle recule contre le mur. « Tu sens la braise froide et la terre retournée. Je soigne les vivants, {nom}. Je ne sais pas encore ce que tu es. »' },
   merci: { briser: '« Tes yeux sont clairs, {nom}. Reviens quand tu veux. »', sceller: '« Si la voix revient, tu sais où me trouver. »', nourrir: '« Ne reviens pas. »' },
   apres: ['narr', 'Ce que tu as gardé un soir, à Qinghe, « pour écouter la cendre qui y dort », t\'a suivi jusqu\'ici. La cendre, elle, n\'a jamais dormi.'],
+});
+
+// ───────────────────────── Suite démoniaque : la soif qui reste (Désert, citerne vendue aux caravanes) ─────────────────────────
+// Conséquence tardive de recit:desert_puits='vendre'. Un marchand de l'Oasis, qui note chaque gourde vendue,
+// a fini par remonter la piste des ventes jusqu'à celui qui tient la citerne cachée.
+recitRegion('citerne_vendue', {
+  name: 'La soif qui reste', region: 'desert', quest: 19, key: 'citerne_vendue', who: 'desert_sha2', label: 'La doyenne qui compte les morts de soif',
+  si: { choix: { 'recit:desert_puits': 'vendre' } }, suite: 'recit:desert_puits', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    desert_sha2: { name: 'Caravanière Sha', title: 'doyenne qui compte les morts de soif', glyph: '沙', color: '#e0c890' },
+    desert_hou: { name: 'Marchand Hou', title: 'intendant des caravanes qui flaire un monopole', glyph: '壟', color: '#c09850' },
+  },
+  quand: 'Désert de Cendres : Caravanière Sha, au Refuge souterrain (l\'eau de la citerne vendue aux caravanes)',
+  attente: '« Le désert n\'a rien de neuf pour toi, aujourd\'hui. »',
+  rappel: 'Les caravanes paient encore ton eau, {nom}.',
+  steps: ['Écouter Caravanière Sha, au Refuge souterrain', 'Se rendre à l\'Oasis des Caravanes, où l\'on compte les morts de soif', 'Suivre les traces d\'un marchand qui a remonté ta piste', 'Trouver le marchand Hou, près de l\'Oasis des Caravanes', 'Revenir auprès de Caravanière Sha'],
+  labels: ['Examiner les gourdes vides', 'Entrer chez le marchand'], objet: 'Gourde scellée de la citerne', slot: 'acc2',
+  intro: [['desert_sha2', '« Trois gourdes vides, retrouvées sur la piste de l\'Oasis. Leurs porteurs n\'avaient pas assez d\'or pour boire, cette semaine. »'],
+    ['desert_sha2', '« L\'eau de la citerne cachée a un prix, maintenant, et il grimpe. Quelqu\'un en profite plus que toi, {nom}. Va voir à l\'Oasis. »']],
+  arrivee: [['narr', 'À l\'Oasis des Caravanes, les chameliers comptent leurs pièces avant de boire. Un marchand note chaque vente dans un carnet de cuir, sans lever les yeux sur les gourdes vides.'],
+    ['narr', 'Le carnet porte une colonne à part : « part du cultivateur », avec un chiffre qui ne cesse de grossir.']],
+  indices: ['Un carnet de ventes où chaque gourde payée à la citerne porte une marque discrète, toujours la même main.',
+    'Des traces de pas qui reviennent nuit après nuit vers le camp caché de la citerne, trop régulières pour un hasard.',
+    'Une lettre inachevée du marchand Hou : « Trouver qui vend la citerne avant que le conseil n\'y pense. »'],
+  conclusion: 'Le marchand Hou a remonté la piste des ventes jusqu\'à toi : il sait que tu tiens la citerne, et il veut sa part avant le conseil.',
+  repaire: [['narr', 'Près de l\'Oasis, le marchand Hou t\'attend derrière une tente vide, son carnet de ventes sous le bras, pas surpris de te voir.'],
+    ['desert_hou', '« Une citerne qui n\'existe pas, vendue par un cultivateur qui n\'en a pas besoin. J\'ai compté tes ventes depuis trois semaines. Alors : on partage, ou je porte ce carnet au conseil de l\'Oasis ? »']],
+  question: 'Le carnet de Hou, la citerne de Kuo entre tes mains, et des caravanes qui paient toujours plus cher pour boire.',
+  choix: [
+    { k: 'rendre', rumeur: '« La citerne cachée appartient au conseil de l\'Oasis, maintenant. Le marchand Hou ne compte plus les gourdes de personne. »', etiquette: 'citerne rendue, Hou démasqué', txt: 'Rendre la citerne au conseil de l\'Oasis et dénoncer le carnet de Hou devant tous', hint: 'Voie orthodoxe · rendre l\'eau', voie: 12, acte: 'aides', lines: [['desert_hou', 'Il blêmit, le carnet arraché des mains par un garde du conseil. « Tu... » Il n\'a pas le temps de finir.']] },
+    { k: 'partager', rumeur: '« Le marchand Hou a cessé de noter les ventes de la citerne, à l\'Oasis. On dit qu\'il a trouvé un associé plus généreux que son carnet. »', etiquette: 'second silence acheté', txt: 'Céder une part des ventes à Hou pour qu\'il se taise, et garder la citerne pour toi', hint: 'Voie libre · acheter un second silence', voie: 2, lines: [['desert_hou', '« Voilà qui est raisonnable. » Il referme son carnet. « Une citerne qui n\'existe pas rapporte mieux à deux qu\'à un. »']] },
+    { k: 'monopole', rumeur: '« L\'eau de l\'Oasis se vend maintenant au poids de l\'or. On dit que {nom} et le marchand Hou se partagent chaque gourde vendue. »', etiquette: 'monopole de la soif scellé', txt: 'S\'associer à Hou pour imposer un monopole sur l\'eau de la citerne et faire grimper le prix à chaque caravane', hint: 'Voie démoniaque · monopole de la soif', voie: -14, acte: 'voles', lines: [['desert_hou', '« Voilà un associé qui comprend le désert. » Il scelle son carnet d\'un sceau neuf. « La soif ne négocie jamais, cultivateur. »']] },
+  ],
+  retour: {
+    rendre: '« La citerne appartient au conseil, maintenant. Les gourdes vides se font rares, à l\'Oasis. » Elle pose sa main sur ton épaule. « Tu as rendu ce que tu avais commencé à voler. »',
+    partager: '« Le marchand Hou ne note plus rien. » Elle hésite. « Combien te reste-t-il, après ce partage, {nom} ? »',
+    monopole: '« L\'eau se vend au poids de l\'or, maintenant, et les chameliers rognent sur leurs outres pour payer. » Elle ne te regarde plus en face. « Le conseil cherche un nom. Le tien vient en tête. »',
+  },
+  merci: { rendre: '« Bois à notre eau quand tu veux, {nom}. »', partager: '« Le désert garde les comptes, lui aussi. »', monopole: '« Ne reviens plus boire ici. »' },
 });
 
 // ───────────────────────── Suite du sort de l'Ermite (chapitre IV) : le souffle qu'on a bu (Claude) ─────────────────────────
