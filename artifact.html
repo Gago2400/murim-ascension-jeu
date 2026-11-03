@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="d702c79cc24a" aria-label="Identifiant de version">Version générée : d702c79cc24a</div>
+      <div class="meta" id="t-build" data-build="eaabefd33bbd" aria-label="Identifiant de version">Version générée : eaabefd33bbd</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -15796,11 +15796,12 @@ function R3init(T) {
         + ' float a = abs(vRU.y);\n'
         + ' float orn = smoothstep(0.09, 0.0, abs(a - 0.4)) * (0.75 + 0.25 * sin(vRU.x * 1.7));\n' // deux ornières de roues
         + ' d *= (1.0 - orn * 0.18) * (1.0 + smoothstep(0.3, 0.0, a) * 0.1);\n'
-        + ' float bn = rBv(vRW * 0.37) * 0.65 + rBv(vRW * 0.14 + 3.7) * 0.35;\n'
-        + ' float bord = 1.0 + bn * 0.26;\n'
-        + ' gl_FragColor = vec4(d, 1.0 - smoothstep(bord, bord + 0.38, a)); }');
+        // [Grok] largeur constante : le bruit élargissait la route et la faisait mordre façades et troncs.
+        // Un accotement un peu plus sombre, puis un bord net (quelques centimètres), pas un fondu d'un mètre.
+        + ' d *= mix(1.0, 0.88, smoothstep(0.78, 0.98, a));\n'
+        + ' gl_FragColor = vec4(d, 1.0 - smoothstep(0.98, 1.12, a)); }');
     };
-    mat.customProgramCacheKey = () => 'route-lisiere1';
+    mat.customProgramCacheKey = () => 'route-lisiere2';
     const m = new T.Mesh(geo, mat);
     m.position.y = 0.03; m.receiveShadow = true; m.renderOrder = -1;
     m.userData.ownGeo = true; m.userData.ownMat = true;
@@ -17066,11 +17067,11 @@ function R3init(T) {
       }
       if (id === 'qinghe' && d.type === 'kiosque') { qingheKiosque(d); continue; }
       if (d.type === 'paifang' && qinghePaifang(d)) continue;
-      if (AM && d.type === 'muret' && ASIE.parts.muret_a) { // muret de cour : modules du pack bout à bout (3 m chacun à l'échelle 1)
-        const L = W(d.len), n = Math.max(1, Math.round(L / 1.9)), sx = L / (n * 3.0);
+      if (AM && d.type === 'muret' && ASIE.parts.muret_a) { // modules à l'échelle uniforme 0,55 (3 m → 1,65 m), sans étirer la longueur
+        const L = W(d.len), pas = 1.65, n = Math.max(1, Math.round(L / pas)), sca = 0.55;
         for (let k = 0; k < n; k++) {
-          const t = -L / 2 + (k + 0.5) * L / n, c = Math.cos(d.rot || 0), sn = Math.sin(d.rot || 0);
-          const mx = new T.Matrix4().compose(V1.set(W(d.x) + c * t, 0, W(d.y) + sn * t), Q1.setFromEuler(E1.set(0, -(d.rot || 0), 0)), S1.set(sx, 0.55, 0.55));
+          const t = -((n - 1) * pas) / 2 + k * pas, c = Math.cos(d.rot || 0), sn = Math.sin(d.rot || 0);
+          const mx = new T.Matrix4().compose(V1.set(W(d.x) + c * t, 0, W(d.y) + sn * t), Q1.setFromEuler(E1.set(0, -(d.rot || 0), 0)), S1.set(sca, sca, sca));
           const nom = (k + Math.floor(d.v * 7)) % 3 === 0 ? 'muret_b' : 'muret_a';
           if (!asieInst.has(nom)) asieInst.set(nom, []); asieInst.get(nom).push({ mx });
         }
@@ -19580,10 +19581,11 @@ function R3init(T) {
       const uR = { value: new T.Vector4((x0 + x1) / 2, (z0 + z1) / 2, ca, sa) }, uH = { value: new T.Vector2((x1 - x0) / 2, (z1 - z0) / 2) };
       const voie = knd === 'rue' || knd === 'terre' || knd === 'pierre';
       const doux = !voie && (knd === 'jardin' || knd === 'sable');
-      // Voie : le rectangle d'origine reste opaque. Le fondu est dehors (e < 0), irrégulier, sans trait sombre.
-      // Jardin et sable gardent la lisière de main. Le bruit en cases (floor) dentelait les obliques : on ne l'y remet pas.
+      // Jardin et sable gardent la lisière douce de main. Le bruit en cases (floor) dentelait les obliques : on ne l'y remet pas.
+      // [Grok] chaussée à largeur constante : le bruit élargissait la rue sous les façades.
+      // Le pavé de ville (rue) a un joint un peu plus sombre sur 14 cm. La terre battue s'arrête net, sans liseré.
       const bord = voie
-        ? ' float bn = sBv(vRW * 0.38) * 0.65 + sBv(vRW * 0.15 + 3.1) * 0.35;\n float lim = -0.04 - bn * 0.48;\n diffuseColor.a = smoothstep(lim - 0.40, lim, e);\n'
+        ? ' diffuseColor.a = smoothstep(-0.05, 0.03, e);\n' + (knd === 'rue' ? ' diffuseColor.rgb *= mix(0.82, 1.0, smoothstep(0.0, 0.14, e));\n' : '')
         : doux
           ? ' diffuseColor.a = smoothstep(0.0, 0.5, e);\n'
           : ' diffuseColor.a = smoothstep(0.0, 0.5, e);\n';
@@ -19614,7 +19616,7 @@ function R3init(T) {
           + (r.k === 'eau' ? 'uniform vec2 uPiles[8];\nfloat vBord; vec2 vW;\n' : '')
           + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n' + corps);
       };
-      mat.customProgramCacheKey = () => 'rue-sol5' + knd + (sableForet ? '-sable' : '') + (longwanRue ? '-lw' : '') + (longwanCour ? '-lwc' : '');
+      mat.customProgramCacheKey = () => 'rue-sol6' + knd + (sableForet ? '-sable' : '') + (longwanRue ? '-lw' : '') + (longwanCour ? '-lwc' : '');
       const marge = (knd === 'rue' || knd === 'terre' || knd === 'pierre') ? 0.95 : 0;
       const plate = new T.Mesh(new T.PlaneGeometry(Math.max(0.2, x1 - x0 + marge * 2), Math.max(0.2, z1 - z0 + marge * 2)).rotateX(-Math.PI / 2), mat);
       plate.position.set((x0 + x1) / 2, sol[3] + (r.h || 0), (z0 + z1) / 2); if (rot) plate.rotation.y = -r.ang; plate.receiveShadow = true; plate.renderOrder = { cour: -4, terre: -3, sable: -3, neige: -3, jardin: -2, pierre: -1, eau: -1, the: -1, bois: -0.5 }[r.k] || 0; // cour < terre < jardin < pierre, bois < rues
@@ -57117,6 +57119,143 @@ const genRegionAvantHorsToits = genRegion;
 genRegion = function (R) {
   return horsToitsCorriger(genRegionAvantHorsToits(R));
 };
+
+'use strict';
+// [Grok] Rues nettes, toutes les régions. Les cours elliptiques ne recouvrent plus la chaussée
+// (le cœur de la route reste libre, largeur constante). Les maisons de hameau qui tournaient
+// le dos à la rue se retournent, sans bouger : la boîte de collision suit d.rot. Puits, bancs
+// et charrettes qui occupaient une ruelle étroite passent sur le côté, hors des façades.
+// Les bornes des bourgs, les étals des places et le décor de bord de route (55 à 170 px) ne
+// bougent pas. Ni l'eau, ni le feuillage, ni le ciel.
+const RUE_BORD = 46; // le bord de la cour s'arrête avant le cœur de la route (~29 px)
+const RUE_ETROITE = 90; // une rue plus étroite que ça n'est pas une place : on n'y laisse pas un puits
+
+function rueEcart(sc, x, y) {
+  let b = 1e9;
+  const paths = sc.paths || [];
+  for (let i = 0; i < paths.length; i++) {
+    if (typeof pathGap !== 'function') break;
+    const g = pathGap(x, y, paths[i]);
+    if (g < b) b = g;
+  }
+  return b;
+}
+function rueAxe(sc, x, y) {
+  let best = null;
+  const paths = sc.paths || [];
+  for (let p = 0; p < paths.length; p++) {
+    const pts = paths[p];
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy || 1;
+      let t = ((x - a.x) * dx + (y - a.y) * dy) / l2;
+      if (t < 0) t = 0; else if (t > 1) t = 1;
+      const px = a.x + dx * t, py = a.y + dy * t, d = Math.hypot(x - px, y - py);
+      if (!best || d < best.d) {
+        const l = Math.sqrt(l2);
+        best = { d, px, py, ux: dx / l, uy: dy / l };
+      }
+    }
+  }
+  return best;
+}
+function rueDansBourg(sc, x, y) {
+  const B = sc.bourg && sc.bourg.rect;
+  return !!(B && x > B.x0 && x < B.x1 && y > B.y0 && y < B.y1);
+}
+// La cour est une ellipse alignée. On réduit le rayon dont le bord tombe sur la chaussée.
+// Les cours des cités (déjà dallées par les rues) ne sont pas rognées.
+function rueDegagerCours(sc) {
+  const yards = sc.yards || [];
+  for (let i = 0; i < yards.length; i++) {
+    const y = yards[i];
+    if (rueDansBourg(sc, y.x, y.y)) continue;
+    for (let k = 0; k < 12; k++) {
+      const coins = [[y.rx, 0], [-y.rx, 0], [0, y.ry], [0, -y.ry],
+        [y.rx * 0.7, y.ry * 0.7], [y.rx * 0.7, -y.ry * 0.7], [-y.rx * 0.7, y.ry * 0.7], [-y.rx * 0.7, -y.ry * 0.7]];
+      let mx = 1e9, my = 1e9;
+      for (let c = 0; c < coins.length; c++) {
+        const g = rueEcart(sc, y.x + coins[c][0], y.y + coins[c][1]);
+        if (Math.abs(coins[c][0]) >= Math.abs(coins[c][1])) mx = Math.min(mx, g);
+        else my = Math.min(my, g);
+      }
+      let ch = false;
+      if (mx < RUE_BORD && y.rx > 52) { y.rx = Math.max(52, y.rx - 14); ch = true; }
+      if (my < RUE_BORD && y.ry > 52) { y.ry = Math.max(52, y.ry - 14); ch = true; }
+      if (!ch) break;
+    }
+  }
+}
+// Façade vers +y du monde quand rot vaut 0. On ne déplace pas la maison.
+function rueFacettes(sc) {
+  const decor = sc.decor || [];
+  for (let i = 0; i < decor.length; i++) {
+    const d = decor[i];
+    if (d.type !== 'house' || d.bourg || d.cite || !(d.x10 || d.village || d.qingheVillage)) continue;
+    const rt = rueAxe(sc, d.x, d.y);
+    if (!rt || rt.d < 24 || rt.d > 420) continue;
+    const fx = -Math.sin(d.rot || 0), fy = Math.cos(d.rot || 0);
+    const vx = rt.px - d.x, vy = rt.py - d.y, l = Math.hypot(vx, vy) || 1;
+    if ((fx * vx + fy * vy) / l > 0.35) continue;
+    d.rot = Math.atan2(-vx / l, vy / l);
+  }
+}
+function rueOccupe(sc, x, y, sauf) {
+  const decor = sc.decor || [];
+  for (let i = 0; i < decor.length; i++) {
+    const d = decor[i];
+    if (d === sauf) continue;
+    if (d.type !== 'house' && d.type !== 'boutique' && d.type !== 'temple' && d.type !== 'taverne' && d.type !== 'entrepot' && d.type !== 'demeure') continue;
+    const hw = (d.w || 130) / 2 + 10, hh = (d.h || 84) / 2 + 10;
+    if (Math.abs(x - d.x) < hw && Math.abs(y - d.y) < hh) return true;
+  }
+  const npcs = sc.npcs || [];
+  for (let i = 0; i < npcs.length; i++) if (Math.hypot(x - npcs[i].x, y - npcs[i].y) < 36) return true;
+  return false;
+}
+// Puits, banc, charrette au milieu d'une ruelle étroite : on les pose au coin, hors de la chaussée et des façades.
+function rueDegagerPassage(sc) {
+  const rues = (sc.rues || []).filter((r) => r.x1 != null && (r.k === 'rue' || r.k === 'terre' || !r.k));
+  const types = { puits: 1, banc: 1, charrette: 1 };
+  let n = 0;
+  const decor = sc.decor || [];
+  for (let i = 0; i < decor.length; i++) {
+    const d = decor[i];
+    if (!types[d.type] || d.route || d.lm) continue;
+    const rad = Math.max(d.r || 0, 14);
+    for (let j = 0; j < rues.length; j++) {
+      const r = rues[j], w = r.x1 - r.x0, h = r.y1 - r.y0;
+      if (Math.min(w, h) > RUE_ETROITE) continue;
+      if (d.x <= r.x0 + 6 || d.x >= r.x1 - 6 || d.y <= r.y0 + 6 || d.y >= r.y1 - 6) continue;
+      const ox = d.x, oy = d.y;
+      const essais = h <= w
+        ? [[ox, r.y0 - rad - 8], [ox, r.y1 + rad + 8], [r.x0 - rad - 8, oy], [r.x1 + rad + 8, oy]]
+        : [[r.x0 - rad - 8, oy], [r.x1 + rad + 8, oy], [ox, r.y0 - rad - 8], [ox, r.y1 + rad + 8]];
+      let ok = null;
+      for (let e = 0; e < essais.length; e++) {
+        const x = essais[e][0], y = essais[e][1];
+        if (rueOccupe(sc, x, y, d)) continue;
+        if (typeof rvEau === 'function' && rvEau(sc, x, y, 24)) continue;
+        ok = essais[e]; break;
+      }
+      if (ok) { d.x = ok[0]; d.y = ok[1]; n++; }
+      break;
+    }
+  }
+  return n;
+}
+function ruesNettes(sc) {
+  if (!sc || sc.type !== 'region' || !sc.paths || !sc.paths.length) return sc;
+  rueDegagerCours(sc);
+  rueFacettes(sc);
+  const n = rueDegagerPassage(sc);
+  if (n && typeof buildGrid === 'function') buildGrid(sc);
+  sc.ruesNettes = 1;
+  return sc;
+}
+if (typeof genRegion === 'function') {
+  const genRegionAvantRuesNettes = genRegion;
+  genRegion = function (R) { return ruesNettes(genRegionAvantRuesNettes(R)); };
+}
 
 // ───────────────────────── Boucle principale & démarrage ─────────────────────────
 function saveState() { if (!S || !P.st) return; S.qi = P.qi; saveGame(); }
