@@ -4,7 +4,8 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700;800&family=Cinzel:wght@500;700;900&family=Ma+Shan+Zheng&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700;800&family=Cinzel:wght@500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap&text=%E6%AD%A6%E6%9E%97%E6%94%BB%E9%97%AA%E8%A7%89%E8%A1%80%E6%B0%94%E5%89%91%E6%8B%B3%E5%BD%B1%E6%8A%A4%E5%B8%88%E5%95%86%E9%93%81%E9%9D%99%E9%A9%BF%E7%9B%9F%E5%9B%8A%E6%8A%80%E4%BF%AE%E5%9B%BE%E4%BA%BA%E4%BB%BB%E8%AE%BE%E9%94%81%E7%A9%BA%E5%86%A0%E6%89%8B%E9%9D%B4%E5%B8%A6%E6%88%92%E7%AC%A6%E7%94%B2%E8%8F%9C%E9%85%92%E8%8D%AF%E8%8C%B6%E7%B1%B3%E5%B8%86%E7%9F%B3%E7%AC%A6%E5%B8%83%E7%BB%B3%E8%B4%9D">
 <style>
 /* Mise en page : canvas plein écran ; HUD tactile (pouce gauche = joystick, pouce droit = actions) ; panneaux laqués noir et or */
 :root {
@@ -26,7 +27,7 @@
   --r0: #a3a7ab; --r1: #63c05c; --r2: #4b92e6; --r3: #a865e6; --r4: #e9b53c; --r5: #e5484d; --r6: #f5f0ff;
   --f-display: "Cinzel", "Trajan Pro", Georgia, serif;
   --f-body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
-  --f-han: "Ma Shan Zheng", "STKaiti", "KaiTi", "Kaiti SC", serif;
+  --f-han: "Ma Shan Zheng", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", "Hiragino Sans GB", "STKaiti", "KaiTi", "Kaiti SC", "Songti SC", sans-serif;
   --u: clamp(44px, 10.5vmin, 66px);
   --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px);
   --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
@@ -92,7 +93,7 @@ html[data-cb="tritan"] #cv, html[data-cb="tritan"] #cv3, html[data-cb="tritan"] 
 #fps { position: absolute; left: calc(var(--sal, 0px) + 8px); bottom: calc(var(--sab) + 24px); z-index: 5; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,.55); color: #e8f0d0; font: 600 11px/1.4 var(--f-body); font-variant-numeric: tabular-nums; pointer-events: none; white-space: nowrap; }
 #minimap { width: clamp(110px, 18vw, 150px); height: auto; aspect-ratio: 150 / 104; border-radius: 8px; background: rgba(0,0,0,.5); box-shadow: 0 0 0 1px var(--line), 0 4px 14px rgba(0,0,0,.5); }
 #h-menu { display: flex; gap: 5px; flex-wrap: nowrap; justify-content: flex-end; }
-#h-menu button { width: 38px; height: 38px; border-radius: 9px; background: var(--lacquer); box-shadow: 0 0 0 1px var(--line); display: grid; place-items: center; position: relative; font-family: var(--f-han); font-size: 19px; line-height: 1; }
+#h-menu button { width: 38px; height: 38px; border-radius: 9px; background: var(--lacquer); box-shadow: 0 0 0 1px var(--line); display: grid; place-items: center; position: relative; font-family: var(--f-han); font-size: 19px; line-height: 1.2; overflow: visible; }
 #h-menu button span { position: absolute; bottom: -1px; font-family: var(--f-body); font-size: 7.5px; letter-spacing: .04em; color: var(--muted); }
 #h-menu button.flag::after { content: ""; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--cinnabar); box-shadow: 0 0 6px var(--cinnabar); }
 #b-auto { position: absolute; top: calc(var(--sat) + 10px); right: calc(var(--sar) + clamp(124px, 18vw + 16px, 168px)); font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 99px; background: var(--lacquer); box-shadow: 0 0 0 1px var(--line); color: var(--muted); z-index: 4; white-space: nowrap; min-height: 44px; min-width: 64px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
@@ -672,6 +673,9 @@ html { overscroll-behavior: none; overflow: hidden; touch-action: manipulation; 
 /* Portrait étroit : les sept boutons du menu masquaient le haut de l'écran (audit vidéo du 13 oct.).
    Un seul bouton « Menu » les déplie sur deux rangées ; ils se replient après un choix. Les techniques encore verrouillées ne s'affichent plus. */
 #m-toggle { display: none; }
+/* glyphe Menu : calligraphie Ma Shan ne doit pas être écrasée */
+#m-toggle, #h-menu > button { line-height: 1.2; overflow: visible; }
+#m-toggle { font-family: var(--f-han); color: #f6edd8; }
 .act.locked { visibility: hidden; }
 .act.sk.vide { opacity: .22; transform: scale(.72); box-shadow: none; } /* emplacement de technique libre : presque effacé */
 /* Paysage court : zone tactile ≥ 44 px via ::before, disque visuel inchangé. */
@@ -2266,7 +2270,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="883dc4e5808b" aria-label="Identifiant de version">Version générée : 883dc4e5808b</div>
+      <div class="meta" id="t-build" data-build="5b0c1cb7e21c" aria-label="Identifiant de version">Version générée : 5b0c1cb7e21c</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -37669,7 +37673,7 @@ for (const p of BOURGS.qinghe.passants) {
 for (const a of BOURGS.qinghe.arbres) if (a[0] === -100 && a[1] === -380) { a[0] = -220; a[1] = -500; } // hors du paifang nord
 BOURGS.longwan.etals = [200, 330, 460, 590, 720, 850, 980, 1110].map((x) => [x, 572]); // marché du port : sur le quai, devant les entrepôts
 const BOURG_NATURE = new Set(['tree', 'pine', 'bush', 'rock', 'boulder', 'deadtree', 'bigtree']);
-const BOURG_FLATS = new Set(['flower', 'grass', 'tallgrass', 'patch', 'mushroom']);
+const BOURG_FLATS = new Set(['flower', 'grass', 'tallgrass', 'patch', 'mushroom', 'shell', 'bones', 'snow', 'crack']);
 const BOURG_ROLES = { boutique: 'etal', taverne: 'etal' };
 
 function bourgInRect(x, y, r, m = 0) { return x > r.x0 - m && x < r.x1 + m && y > r.y0 - m && y < r.y1 + m; }
@@ -48977,6 +48981,34 @@ function longwanPort(sc) {
       sc.decor.push({ type: 'borne', x, y, s: 1, v: 0, r: 16, bourg: true });
     }
   }
+  // coquillages / os de prairie : hors dalle et hors rues (BOURG_FLATS les retire aussi à la construction)
+  if (sc.flats && sc.bourg && sc.bourg.rect) {
+    const R = sc.bourg.rect;
+    const surRue = (x, y) => (sc.rues || []).some((r) => !r.k || r.k === 'bois' || r.quai
+      ? (x > r.x0 - 6 && x < r.x1 + 6 && y > r.y0 - 6 && y < r.y1 + 6) : false);
+    sc.flats = sc.flats.filter((f) => {
+      if (f.type !== 'shell' && f.type !== 'bones' && f.type !== 'crack') return true;
+      if (f.x > R.x0 && f.x < R.x1 && f.y > R.y0 && f.y < R.y1) return false;
+      if (surRue(f.x, f.y)) return false;
+      return true;
+    });
+  }
+  // pièce / parchemin / minerai du Drive : collés à une façade, sinon retirés (lisent comme du butin au sol)
+  const murs = sc.decor.filter((d) => d.bourg && (d.type === 'boutique' || d.type === 'house' || d.type === 'taverne' || d.type === 'temple'));
+  sc.decor = sc.decor.filter((d) => {
+    if (!d.bourg || (d.type !== 'piece' && d.type !== 'parchemin' && d.type !== 'minerai')) return true;
+    if (murs.some((m) => Math.hypot(m.x - d.x, m.y - d.y) < 70)) return true;
+    let best = null, bd = 1e9;
+    for (const m of murs) {
+      const dd = Math.hypot(m.x - d.x, m.y - d.y);
+      if (dd < bd) { bd = dd; best = m; }
+    }
+    if (!best || bd > 420) return false;
+    const ang = Math.atan2(d.y - best.y, d.x - best.x) || 0;
+    d.x = best.x + Math.cos(ang) * 48;
+    d.y = best.y + Math.sin(ang) * 48;
+    return murs.some((m) => Math.hypot(m.x - d.x, m.y - d.y) < 70);
+  });
   if (typeof koiEcarteCoques === 'function') koiEcarteCoques(sc);
   if (typeof decorHorsEau === 'function') decorHorsEau(sc);
   if (typeof buildGrid === 'function') buildGrid(sc);
@@ -59002,7 +59034,7 @@ function boot(data) {
   window.addEventListener('resize', resizeCanvas);
   window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
   if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(resizeCanvas, 80));
-  try { document.fonts.load('20px "Ma Shan Zheng"', '武林攻闪觉血气剑拳影护师商铁静驿盟囊技修图人任设锁空冠手靴带戒符甲').then(() => { if (!$('#create-screen').hidden) drawPreview(); }); } catch (e) { }
+  try { document.fonts.load('20px "Ma Shan Zheng"', '武林攻闪觉血气剑拳影护师商铁静驿盟囊技修图人任设锁空冠手靴带戒符甲菜酒药茶米帆石符布绳贝').then(() => { if (!$('#create-screen').hidden) drawPreview(); }); } catch (e) { }
   const saved = loadGame();
   const status = saveBootStatus(saved);
   if (status.ok) {
