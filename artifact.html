@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="432a0557f8f8" aria-label="Identifiant de version">Version générée : 432a0557f8f8</div>
+      <div class="meta" id="t-build" data-build="e9a94b5d055f" aria-label="Identifiant de version">Version générée : e9a94b5d055f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -6484,6 +6484,49 @@ recitRegion('dettes_saules', {
   apres: ['narr', 'À Qinghe, on protège la lumière en la cachant. Les dettes, elles, finissent toujours par se dire tout haut.'],
 });
 
+// ───────────────────────── Exploration multi-étapes Qinghe : les trois paniers ─────────────────────────
+// Quête locale hors trame : le crieur / un porteur demande d'apporter trois paniers (moulin → halte de route → pagode).
+// recitRegion classique, aucun champ de sauvegarde nouveau.
+recitRegion('trois_paniers', {
+  name: 'Les trois paniers', region: 'qinghe', quest: 3, key: 'trois_paniers', who: 'qh_porteur', label: 'Les paniers du marché à livrer',
+  art: 'lanternes',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    qh_porteur: { name: 'Porteur Han', title: 'bras du marché', glyph: '擔', color: '#c4a574' },
+    qh_mei: { name: 'Mei des digues', title: 'jardinière', glyph: '梅', color: '#8fbc8f' },
+  },
+  quand: 'Qinghe : Porteur Han, au refuge (trois paniers à livrer avant la tombée)',
+  attente: '« Les paniers ne sont pas encore prêts. Reviens. »',
+  rappel: 'Les trois paniers attendent encore, {nom}.',
+  steps: ['Prendre les paniers auprès de Han, au refuge', 'Livrer le premier au Moulin de la Rivière', 'Lire les marques sur la route', 'Remettre le dernier au Hameau des Saules', 'Revenir auprès de Han'],
+  labels: ['Lire une marque', 'Remettre le panier'], objet: 'Corde de porteur', slot: 'acc2',
+  intro: [['qh_porteur', '« Trois paniers. Trois portes. » Il te tend une corde. « Moulin, route, Saules. Tu es payé à la dernière livraison — ou tu gardes ce que tu trouves. »'],
+    ['qh_porteur', '« Le premier est pour Mei au moulin. Ne mange pas les pêches. »']],
+  arrivee: [['narr', 'Au Moulin de la Rivière, Mei essuie ses mains. Un panier sent les herbes de digue.'],
+    ['qh_mei', '« Han t\'envoie ? Pose-le. Sur la route, regarde les bornes : quelqu\'un marque les paniers pour les Masques. »']],
+  indices: ['Une borne de halte : une marque grise sous la pierre.', 'Une seconde marque, plus fraîche, vers les Saules.', 'Un panier vide déjà ouvert — on a pris les noms, pas les fruits.'],
+  conclusion: 'Les paniers de Han servent aussi de boîtes aux lettres. Au Hameau des Saules, tu choisis si tu livres, si tu brûles, ou si tu vends les marques.',
+  repaire: [['narr', 'Au Hameau des Saules, le dernier panier est lourd d\'une tablette de noms.'],
+    ['qh_porteur', 'Han n\'est pas là. À sa place, la tablette. « Livre. Brûle. Ou vends. »']],
+  question: 'Trois paniers, une tablette de noms, et la corde encore dans ta main.',
+  choix: [
+    { k: 'livrer', rumeur: '« Un campagnard a fini la tournée de Han. Les Saules ont eu leurs paniers intacts. »', etiquette: 'paniers livrés sans ouvrir', txt: 'Livrer le panier fermé et rapporter la corde à Han', hint: 'Voie orthodoxe · ne pas lire les noms', voie: 6, acte: 'aides', lines: [['narr', 'Tu poses le panier. La tablette reste dedans. Han, plus tard, te rend la corde nouée d\'un jeton. « Rare, quelqu\'un qui ne lit pas. »']] },
+    { k: 'bruler', rumeur: '« On a vu de la fumée près des Saules. Des paniers, dit-on. »', etiquette: 'tablette brûlée', txt: 'Brûler la tablette de noms et livrer les fruits seuls', hint: 'Voie libre · casser le courrier sans le vendre', voie: 1, lines: [['narr', 'La tablette noircit. Les fruits restent. Han hausse les épaules. « Tu as coûté cher à quelqu\'un. Tiens, pour le feu. »']] },
+    { k: 'vendre', rumeur: '« Une tablette de noms a changé de mains à Qinghe. Le porteur Han ne parle plus. »', etiquette: 'noms vendus', txt: 'Vendre la tablette aux Masques et garder l\'or des paniers', hint: 'Voie démoniaque · les noms valent plus que les pêches', voie: -10, acte: 'voles', rep: { legion: 80, alliance: -80 }, lines: [['narr', 'Un homme au masque compte les pièces. Han détourne les yeux. « Tu as appris le métier plus vite que moi. »']] },
+  ],
+  retour: {
+    livrer: '« Corde et jeton. » Il sourit peu. « Reviens si tu veux porter sans lire. »',
+    bruler: '« Le feu coûte. » Il te tend une bourse légère. « Mais il nettoie. »',
+    vendre: '« Garde l\'or. » Sa voix est plate. « Ne me redemande plus de paniers. »',
+  },
+  merci: {
+    livrer: '« Les digues te saluent. »',
+    bruler: '« L\'odeur partira. »',
+    vendre: '« … »',
+  },
+  apres: ['narr', 'Trois paniers. Une corde. Qinghe se souvient de la façon dont tu les as portés.'],
+});
+
 // ───────────────────────── Récits-suites : un choix passé ouvre une affaire nouvelle ─────────────────────────
 // Même mécanique recitRegion. Champ si : le récit n'existe (donneur, journal, suivi) que si le choix passé
 // correspond. Aucun champ de sauvegarde nouveau : les choix vivent dans S.voie.choix comme les autres.
@@ -6852,6 +6895,48 @@ recitRegion('prix_masque', {
     livrer: '« Les Masques te doivent un sourire. »',
   },
   apres: ['narr', 'Aux bambous, tu as marchandé. Dans la Vallée, tu as payé — ou vendu — le prix.'],
+});
+
+// ───────────────────────── Suite démoniaque de la meule (Qinghe) : la faim des collines ─────────────────────────
+// Conséquence de recit:qinghe_moulin='denoncer'. Les gens des collines te retrouvent aux Plaines.
+recitRegion('faim_collines', {
+  name: 'La faim des collines', region: 'plaines', quest: 12, key: 'faim_collines', who: 'pl_hong', label: 'Ceux que tu as affamés à Qinghe',
+  si: { choix: { 'recit:qinghe_moulin': 'denoncer' } }, suite: 'recit:qinghe_moulin', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    pl_hong: { name: 'Hong des collines', title: 'porte-sac de riz rouge', glyph: '紅', color: '#c45c48' },
+    pl_enfant: { name: 'Enfant au sac vide', title: 'bouche à nourrir', glyph: '童', color: '#d8c8a0' },
+  },
+  quand: 'Plaines : Hong des collines, à la Cité de Jade (tu as fait fermer la meule de Qinghe)',
+  attente: '« Pas encore. Nos sacs sont trop légers pour parler. »',
+  rappel: 'La faim des collines te cherche, {nom}.',
+  steps: ['Écouter Hong, à la Cité de Jade', 'Suivre les sacs vides jusqu\'au Bourg du Clan Gao', 'Lire les marques de ration', 'Choisir au Marché des Rizières', 'Revenir auprès de Hong'],
+  labels: ['Lire une marque', 'Trancher'], objet: 'Sachet de riz rouge', slot: 'acc2',
+  intro: [['pl_hong', '« À Qinghe, tu as fermé la meule. Nos sacs de riz rouge pourrissent. » Il te montre un enfant. « Voici le prix de ta prime. »'],
+    ['pl_hong', '« Au marché des Rizières, on vend encore. Tu paies, tu voles, ou tu détournes un convoi. Choisis comment tu digères. »']],
+  arrivee: [['narr', 'Au Bourg du Clan Gao, les sacs vides trainent sous un auvent. Des marques de ration à la craie.'],
+    ['pl_enfant', '« Maman a dit que le fantôme du meunier était gentil. Puis un campagnard l\'a tué. »']],
+  indices: ['Une marque : « Ration coupée — collines. »', 'Une seconde : « Convoi Jade → Gao, non escorté. »', 'Un billet : « La prime de Qinghe a un nom. »'],
+  conclusion: 'Tu as dénoncé le meunier. Ici, la faim a un visage. Au Marché des Rizières, tu choisis le prix.',
+  repaire: [['narr', 'Au Marché des Rizières, Hong attend près d\'un convoi de sacs.'],
+    ['pl_hong', '« Paie le riz. Détourne le convoi. Ou vends encore notre faim. »']],
+  question: 'Des sacs, une prime déjà dépensée, et des collines qui se souviennent.',
+  choix: [
+    { k: 'payer', rumeur: '« Un cultivateur a acheté du riz pour les collines au marché. On dit qu\'il avait fermé une meule, un jour. »', etiquette: 'riz racheté pour les collines', txt: 'Acheter le riz et le rendre aux collines', hint: 'Voie orthodoxe · réparer', voie: 12, acte: 'aides', lines: [['pl_hong', '« Compté. » Il charge l\'enfant. « La meule reste fermée. Toi, tu as payé une fois. Ce n\'est pas tout, mais c\'est quelque chose. »']] },
+    { k: 'detourner', rumeur: '« Un convoi de Jade a disparu entre Gao et le marché. Personne n\'a vu de sang. »', etiquette: 'convoi détourné vers les collines', txt: 'Détourner un convoi non escorté vers les collines', hint: 'Voie libre · voler pour nourrir', voie: -2, acte: 'voles', lines: [['narr', 'Le convoi change de route. Hong ne dit merci qu\'à voix basse. « On ne t\'oubliera pas. Ni la meule. »']] },
+    { k: 'revendre', rumeur: '« La faim des collines a un prix, et quelqu\'un l\'a encaissé deux fois. »', etiquette: 'faim revendue', txt: 'Vendre l\'info du convoi aux Masques et garder l\'or', hint: 'Voie démoniaque · encaisser encore', voie: -14, acte: 'voles', rep: { legion: 100, alliance: -120 }, lines: [['pl_hong', 'Il recule. « Alors tu es bien celui de la prime. » L\'enfant cache son sac. « Ne reviens pas. »']] },
+  ],
+  retour: {
+    payer: '« Le riz part. » Il te glisse un sachet. « Pour que tu te souviennes du goût. »',
+    detourner: '« Le convoi est arrivé. » Pas de sourire. « Ne nous nomme pas. »',
+    revendre: '« … » Il tourne le dos. L\'enfant crache à terre.',
+  },
+  merci: {
+    payer: '« Mange aussi, un jour. »',
+    detourner: '« Disparais proprement. »',
+    revendre: '« … »',
+  },
+  apres: ['narr', 'À Qinghe tu as vendu une meule. Aux Plaines, la faim a présenté la facture.'],
 });
 
 // ───────────────────────── Suite du serment du Juste (chapitre III) : la route des faibles ─────────────────────────
@@ -57972,6 +58057,114 @@ const genRegionAvantAmbulants = genRegion;
 genRegion = function (R) {
   const sc = genRegionAvantAmbulants(R);
   if (sc && sc.type === 'region') ambulantsPoser(sc);
+  return sc;
+};
+
+// ───────────────────────── Crieur de marché (vie des bourgs berceaux) ─────────────────────────
+// Un crieur sur la place du marché (Qinghe, Longwan, Meishan) : rumeurs du jour, aucun bonus de stats.
+// État S.commerces.crieur[regionId].day — une rumeur / jour / région.
+const CRIEUR_RUMEURS = {
+  qinghe: [
+    '« Les Saules disent que la meule tourne seule, la nuit. N\'écoute que si tu dois de l\'or. »',
+    '« Un voyageur a vu Tang Rui au Col. L\'éventail était fendu. »',
+    '« La rivière Qing monte. Les digues du clan Gao ont besoin de bras, pas de héros. »',
+    '« On vend de la Brume des sous-bois deux fois le prix près du Pont des Saules. Fuis. »',
+  ],
+  longwan: [
+    '« Trois jonques sans lanternes ont quitté le chantier avant l\'aube. Les gardes font les sourds. »',
+    '« Le sel de la crique a changé de goût. Mei dit que c\'est la cendre. »',
+    '« Un colporteur vend des herbes de Givre — trop belles pour être vraies. »',
+    '« La marée a ramené un clou gris. Personne ne l\'a touché. »',
+  ],
+  meishan: [
+    '« Les terrasses du haut ont gelé une nuit. Le thé a le goût du fer. »',
+    '« Un pèlerin sans prière est passé. Il demandait le chemin des Grues. »',
+    '« On a entendu la cloche du monastère, mais le moine dit qu\'elle est muette. »',
+    '« Les cerfs descendent plus bas. Quelque chose les chasse vers le bourg. »',
+  ],
+};
+const CRIEUR_BERCEAUX = Object.keys(CRIEUR_RUMEURS);
+
+function crieurEnsure() {
+  if (typeof ensureCommerces === 'function') ensureCommerces();
+  if (!S.commerces || typeof S.commerces !== 'object') S.commerces = {};
+  if (!S.commerces.crieur || typeof S.commerces.crieur !== 'object') S.commerces.crieur = { day: '' };
+  const c = S.commerces.crieur;
+  const day = typeof todayKey === 'function' ? todayKey() : '';
+  const renew = typeof jourDoitRenouveler === 'function' ? jourDoitRenouveler(c.day) : c.day !== day;
+  if (renew) { c.day = day; c.par = {}; }
+  if (!c.par || typeof c.par !== 'object') c.par = {};
+  return c;
+}
+
+function crieurRumeur(id) {
+  const list = CRIEUR_RUMEURS[id]; if (!list || !list.length) return '« Rien à crier aujourd\'hui. »';
+  const c = crieurEnsure();
+  if (!c.par[id]) {
+    const g = (typeof mulberry32 === 'function' && typeof hashStr === 'function')
+      ? mulberry32(hashStr(id + '-' + (c.day || '') + '-crieur')) : Math.random;
+    c.par[id] = { i: Math.floor(g() * list.length) % list.length, entendu: 0 };
+  }
+  return list[c.par[id].i];
+}
+
+function crieurEcouter(n) {
+  if (!n || !n.crieur || !G.scene) return false;
+  const id = G.scene.id;
+  const txt = crieurRumeur(id);
+  const c = crieurEnsure();
+  if (!c.par[id]) c.par[id] = { i: 0, entendu: 0 };
+  c.par[id].entendu = (c.par[id].entendu || 0) + 1;
+  if (typeof toast === 'function') toast('Crieur · rumeur du jour', 'info');
+  if (typeof openNpc === 'function') {
+    n.lignes = [txt, '« Reviens demain. La place change de voix chaque aube. »'];
+    openNpc(n);
+  }
+  if (typeof saveGame === 'function') saveGame();
+  return true;
+}
+
+function crieurPoser(sc) {
+  if (!sc || sc.type !== 'region' || !CRIEUR_RUMEURS[sc.id] || sc.crieurPose || typeof bourgPersonne !== 'function') return;
+  const B = sc.bourg; if (!B || !B.rect) return;
+  const R = B.rect;
+  const x = (R.x0 + R.x1) / 2, y = (R.y0 + R.y1) / 2 + 40;
+  bourgPersonne(sc, 'passant', 901, x, y, 'place');
+  const n = sc.npcs[sc.npcs.length - 1];
+  n.name = 'Crieur de la place';
+  n.crieur = true;
+  n.crowd = true;
+  n.bourg = true;
+  n.lignes = ['« Écoute la place. Je crie ce que les autres murmurent. »', crieurRumeur(sc.id)];
+  sc.crieurPose = 1;
+}
+
+if (typeof findInteract === 'function') {
+  const avant = findInteract;
+  findInteract = function () {
+    const it = avant();
+    const sc = G.scene; if (!sc || !P) return it;
+    let best = null, bd = Infinity;
+    for (const n of sc.npcs || []) {
+      if (!n.crieur) continue;
+      const d = dist2(P.x, P.y, n.x, n.y);
+      if (d < 70 * 70 && d < bd) { bd = d; best = n; }
+    }
+    if (best && (!it || bd < 55 * 55)) return { kind: 'crieur', ref: best, label: 'Écouter le crieur' };
+    return it;
+  };
+}
+if (typeof doInteract === 'function') {
+  const avant = doInteract;
+  doInteract = function (it) {
+    if (it && it.kind === 'crieur') { crieurEcouter(it.ref); return; }
+    return avant(it);
+  };
+}
+const genRegionAvantCrieur = genRegion;
+genRegion = function (R) {
+  const sc = genRegionAvantCrieur(R);
+  if (sc && sc.type === 'region') crieurPoser(sc);
   return sc;
 };
 
