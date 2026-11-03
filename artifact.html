@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="e9a94b5d055f" aria-label="Identifiant de version">Version générée : e9a94b5d055f</div>
+      <div class="meta" id="t-build" data-build="0a2fca4d2447" aria-label="Identifiant de version">Version générée : 0a2fca4d2447</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -58059,6 +58059,40 @@ genRegion = function (R) {
   if (sc && sc.type === 'region') ambulantsPoser(sc);
   return sc;
 };
+
+// ───────────────────────── Cadrage : garder le héros dans le cadre ─────────────────────────
+// Si la caméra 2D traîne trop loin du héros (téléport, chargement, interaction), on la recolle.
+// En portrait, un léger biais vers le sud remonte le héros au-dessus du bandeau d'actions.
+(function () {
+  if (typeof updateCamera !== 'function') return;
+  const avant = updateCamera;
+  const SNAP = 520; // px monde : au-delà, recollement immédiat
+  updateCamera = function (dt) {
+    if (typeof P !== 'undefined' && P && typeof G !== 'undefined' && G && G.cam && G.scene) {
+      const dx = G.cam.x - P.x, dy = G.cam.y - P.y;
+      if (dx * dx + dy * dy > SNAP * SNAP) { G.cam.x = P.x; G.cam.y = P.y; }
+      // Portrait : viser un peu devant les pieds du héros (bandeau bas) — G.cam.y plus grand = sud à l'écran 3D
+      if (typeof VH === 'number' && typeof VW === 'number' && VH > VW * 1.05) {
+        // bias appliqué via léger décalage de P.y dans la cible : on ajuste après amortissement
+        // en poussant la caméra vers le sud (oy positif en 3D vient de G.cam.y)
+        const avantY = G.cam.y;
+        avant(dt);
+        // tire G.cam.y de ~36 px vers le sud du héros si on est encore trop « sur » les pieds
+        const want = P.y + 36;
+        const k = 1 - Math.exp(-(dt || 0.016) * 3.2);
+        G.cam.y += (want - G.cam.y) * k * 0.35;
+        return;
+      }
+    }
+    return avant(dt);
+  };
+  // Helper captures / tests : coller la caméra sur le héros tout de suite
+  globalThis.camCollerHero = function () {
+    if (typeof P === 'undefined' || !P || !G || !G.cam) return false;
+    G.cam.x = P.x; G.cam.y = P.y;
+    return true;
+  };
+})();
 
 // ───────────────────────── Crieur de marché (vie des bourgs berceaux) ─────────────────────────
 // Un crieur sur la place du marché (Qinghe, Longwan, Meishan) : rumeurs du jour, aucun bonus de stats.
