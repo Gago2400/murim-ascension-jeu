@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="243a7c16c80a" aria-label="Identifiant de version">Version générée : 243a7c16c80a</div>
+      <div class="meta" id="t-build" data-build="b26bdb81d489" aria-label="Identifiant de version">Version générée : b26bdb81d489</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -7300,6 +7300,46 @@ recitRegion('troisieme_groupe', {
     associer: '« Trois noms partagent maintenant le raccourci de Kang. » Elle ne te regarde plus en face. « Le frère de Rong est mort pour ça. Son frère vivant en vit, maintenant. »',
   },
   merci: { avouer: '« Les nuées se souviennent de qui répond de ses actes. »', racheter: '« Le raccourci reste fermé. J\'ignore à quel prix. »', associer: '« … Ne reviens plus par ici. »' },
+});
+
+// ───────────────────────── Suite orthodoxe : le raccourci qu'on rouvre en ton nom (Domaine, miroir du troisième groupe) ─────────────────────────
+// Conséquence tardive de recit:domaine_guide='fermer'. Porteur Lei, ancien assistant de Kang, a retrouvé la corde secrète
+// laissée par la fermeture du « raccourci béni » et rouvre la route au nom du héros qui l'a close. Même mécanique
+// recitRegion et RECITS (34_voie.js), aucun champ de sauvegarde nouveau. Miroir de 02_voie_regions_suites_domaine.js (greffé sur 'reprendre').
+recitRegion('raccourci_rouvert', {
+  name: 'Le raccourci qu\'on rouvre en ton nom', region: 'domaine', quest: 28, key: 'raccourci_rouvert', who: 'domaine_ping3', label: 'Porteur Lei et la corde retrouvée de Kang',
+  si: { choix: { 'recit:domaine_guide': 'fermer' } }, suite: 'recit:domaine_guide', art: 'aube',
+  lieux: { repaire: 'hameau1' },
+  cast: {
+    domaine_ping3: { name: 'Guide Ping', title: 'meneuse des nuées, qui voit revenir ce qu\'elle croyait fermé', glyph: '云', color: '#cfe0f0' },
+    domaine_lei: { name: 'Porteur Lei', title: 'ancien assistant de Kang, qui a retrouvé sa corde secrète', glyph: '徒', color: '#a8906a' },
+  },
+  quand: 'Domaine Céleste : Guide Ping, à la Terrasse des Pèlerins (un raccourci rouvert porte encore le nom de {nom})',
+  attente: '« Les nuées n\'ont rien de neuf pour toi, aujourd\'hui. »',
+  rappel: 'Porteur Lei rouvre le raccourci en ton nom, {nom}.',
+  steps: ['Écouter Guide Ping, à la Terrasse des Pèlerins', 'Retourner interroger les pèlerins de la Terrasse', 'Suivre les traces de la corde retrouvée de Kang', 'Trouver Porteur Lei, au bord du sentier interdit', 'Revenir auprès de Guide Ping'],
+  labels: ['Examiner la planche peinte', 'Entrer dans le repaire'], objet: 'Planche peinte à ton nom, décrochée du sentier', slot: 'acc2',
+  intro: [['domaine_ping3', '« Un raccourci a rouvert près des nids, {nom}. Une planche à l\'entrée porte ton nom : "béni par celui qui a fermé l\'ancien". Les pèlerins y croient, puisque c\'est toi qui as fermé le premier. »'],
+    ['domaine_ping3', '« Je n\'ai rien béni du tout. Va voir ce que les pèlerins de la Terrasse en disent, avant qu\'un nid n\'en profite encore. »']],
+  arrivee: [['narr', 'À la Terrasse des Pèlerins, un jeune porteur vante un « second raccourci, approuvé par le héros qui a fermé celui de Kang ». Les pèlerins paient déjà pour s\'inscrire.']],
+  indices: ['Une corde neuve, nouée exactement comme celle que Kang cachait pour redescendre seul.',
+    'La planche peinte elle-même, où ton nom est ajouté en dessous d\'une bénédiction que tu n\'as jamais donnée.',
+    'Un registre de « dons pour le sanctuaire du héros », empoché chaque soir par Porteur Lei, sans sanctuaire nulle part.'],
+  conclusion: 'Lei a retrouvé la corde secrète que Kang cachait, rouvert le même sentier près des nids, et emprunte ton nom de héros pour que les pèlerins paient sans poser de questions.',
+  repaire: [['narr', 'Au bord du sentier interdit, Porteur Lei tient la planche peinte à ton nom dans une main, la corde secrète de Kang dans l\'autre.'],
+    ['domaine_lei', '« Ton nom ouvre plus de bourses que celui de Kang n\'en a jamais fermé, {nom}. Dénonce-moi, et les pèlerins sauront qu\'ils ont payé pour rien. Ou prends ta part : c\'est ton nom, après tout. »']],
+  question: 'La planche peinte à ton nom dans une main, la corde secrète de Kang dans l\'autre, et des pèlerins qui paient déjà pour un sanctuaire qui n\'existe pas.',
+  choix: [
+    { k: 'denoncer', rumeur: '« Le raccourci rouvert près des nids est fermé pour de bon. La planche à ton nom a brûlé devant les pèlerins, et {nom} a rendu chaque don empoché. »', etiquette: 'raccourci rouvert fermé, dons rendus', txt: 'Dénoncer Lei aux pèlerins, brûler la planche et rendre les dons empochés', hint: 'Voie orthodoxe · dénoncer', voie: 10, acte: 'aides', lines: [['domaine_lei', 'Il regarde la planche brûler sans un mot, puis vide ses poches dans tes mains. « Ton nom ne m\'ouvrira plus rien, alors. »']] },
+    { k: 'encadrer', rumeur: '« Le raccourci de Lei reste ouvert, mais balisé comme celui de Kang jadis, et sous l\'œil de Guide Ping. Les dons vont enfin à un vrai sanctuaire. »', etiquette: 'raccourci encadré, dons redirigés', txt: 'Laisser Lei guider, mais sous la surveillance de Ping et les dons versés à un vrai sanctuaire', hint: 'Voie libre · encadrer', voie: 2, lines: [['domaine_lei', 'Il hésite, puis accepte. « Un sanctuaire qui existe, pour une fois. Ça me va, si ça te va. »']] },
+    { k: 'profiter', rumeur: '« Le raccourci à ton nom prospère près des nids. On dit que {nom} en reçoit désormais sa part, chaque soir. »', etiquette: 'raccourci exploité en ton nom', txt: 'Garder le secret et prendre ta part des dons collectés en ton nom', hint: 'Voie démoniaque · profiter', voie: -14, acte: 'voles', lines: [['domaine_lei', 'Il sourit, presque soulagé. « Voilà qui simplifie tout. Ton nom, ma corde, nos parts. »']] },
+  ],
+  retour: {
+    denoncer: '« Le second raccourci est fermé, {nom}. » Elle regarde la cendre de la planche. « Ton nom ne servira plus à voler personne. »',
+    encadrer: '« Lei guide encore, mais je compte chaque don, maintenant. » Elle hésite. « Ce n\'est pas ce que j\'aurais choisi. Mais ça tient. »',
+    profiter: 'Elle ne dit rien pendant longtemps, puis détourne le regard. « Les nuées se souviennent de qui a fermé le premier raccourci, {nom}. Et de qui a rouvert le second. »',
+  },
+  merci: { denoncer: '« Les nuées n\'entendent plus parler de ton nom, et c\'est bien ainsi. »', encadrer: '« Le sanctuaire existe, maintenant. Au moins ça. »', profiter: '« … Ne reviens plus par ici. »' },
 });
 
 // ───────────────────────── Suite du sort de l'Ermite (chapitre IV) : le souffle qu'on a bu (Claude) ─────────────────────────
