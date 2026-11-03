@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="03688676c142">
+<meta name="murim-build" content="afd8c6b64866">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1532,6 +1532,12 @@ body:has(#vcour) #net-parler { display: none !important; }
     max-width: calc(100vw - var(--sal) - var(--sar) - 222px);
   }
 }
+/* [Claude] paysage 3D (shots backlog 720/780px) : replier le menu comme en paysage court,
+   sans les règles de largeur bannière/suivi du bloc 500px ci-dessous (inutiles ici). */
+@media (orientation: landscape) and (max-height: 820px) {
+  #m-toggle { display: grid; }
+  #hud-tr:not(.menu-open) #h-menu > button[data-tab] { display: none; }
+}
 @media (orientation: landscape) and (max-height: 500px) {
   #h-menu {
     position: fixed;
@@ -2289,7 +2295,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="03688676c142" aria-label="Identifiant de version">Version générée : 03688676c142</div>
+      <div class="meta" id="t-build" data-build="afd8c6b64866" aria-label="Identifiant de version">Version générée : afd8c6b64866</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
