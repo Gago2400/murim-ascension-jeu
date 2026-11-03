@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="e9934002985f" aria-label="Identifiant de version">Version générée : e9934002985f</div>
+      <div class="meta" id="t-build" data-build="f4f721b0fc02" aria-label="Identifiant de version">Version générée : f4f721b0fc02</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -53444,6 +53444,147 @@ if (typeof genDungeonRoom === 'function') {
 if (typeof updateZones === 'function') {
   const updateZonesAvantPieges = updateZones;
   updateZones = function (dt) { donjonPiegesTick(dt); updateZonesAvantPieges(dt); };
+}
+
+// Puits des Clous — donjon optionnel du Désert de Cendres, à côté de la Forge des Anciens
+// (docs/DONJONS.md, « À faire ensuite »). Niveaux 42–50. Contrairement à la Crypte (plan et rendu
+// sur mesure), ce donjon réutilise tout le flux générique : genDungeonRoom construit les salles,
+// 97_lieux_visuels les habille, enterDungeon pose boss et bêtes. On n'ajoute ici que les données
+// (bêtes, gardien, fiche), la mécanique signature du gardien (les clous télégraphiés), un butin de
+// fin ouvert à toutes les voies, et l'entrée dans le Désert. Aucun type de rendu nouveau.
+
+const PUITS_ID = 'puits_clous';
+
+// Bêtes de la fonderie : un automate massif et un forgeron qui lance des éclats.
+ENEMIES.automate_clou = { name: 'Automate à clous', kind: 'golem', c1: '#9a6a3a', c2: '#3a2414', eye: '#ff8a3a', size: 0.6, speed: 2.6, beh: 'brute', elem: 'feu', hp: 1.3, atk: 1.0 };
+ENEMIES.forgeron_cendre = { name: 'Forgeron de cendre', kind: 'human', c1: '#6a4a3a', c2: '#2a1a14', eye: '#ff9a4a', size: 0.5, speed: 3.2, beh: 'caster', elem: 'feu' };
+
+// Gardien : le Cendre-Garde. Trois lectures. La mécanique signature « les clous » est une rangée de
+// cercles au sol qui jaillit avec un trou sûr : on s'y glisse. Vents au-dessus du plancher 0,72 s,
+// pas de pulse d'enrage. Le reste (fauchage, masse, charge, onde) passe par l'IA commune.
+BOSSES.cendre_garde = {
+  name: 'Cendre-Garde', kind: 'golem', c1: '#8a5a30', c2: '#2a1810', eye: '#ff7a3a', glow: '#ff7a1a',
+  size: 1.1, speed: 2.3, lvl: 46, elem: 'feu', hpMul: 18, atkMul: 0.6, gdd: 18000,
+  thresholds: [0.6, 0.3],
+  phases: [
+    [{ t: 'swipe', r: 3.2, half: 0.95, dmg: 0.85, wind: 0.95, cd: 3.2, label: 'Fauchage' }, { t: 'slam', r: 3.3, dmg: 1.0, wind: 1.2, cd: 5.2, label: 'Masse de laitier', burn: true }],
+    [{ t: 'clous', n: 6, spread: 7, r: 1.3, dmg: 0.95, wind: 1.3, cd: 7, label: 'Les clous' }, { t: 'charge', len: 9, w: 1.5, dmg: 1.05, wind: 1.15, cd: 7.5, label: 'Charge' }],
+    [{ t: 'clous', n: 8, spread: 9.5, r: 1.35, dmg: 1.0, wind: 1.5, cd: 6.5, label: 'Pluie de clous' }, { t: 'nova', r: 6, r2: 2.4, dmg: 1.1, wind: 1.4, cd: 8.5, label: 'Onde de cendre' }],
+  ],
+  loot: { cat: [['pierre_qi', 1]] },
+};
+
+DUNGEONS[PUITS_ID] = {
+  name: 'Puits des Clous', region: 'desert', lvl: [42, 50], rooms: 6, boss: 'cendre_garde',
+  mobs: ['automate_clou', 'forgeron_cendre'], reward: 'Minerai et manuel de protection', elite: 0.8,
+};
+
+if (typeof MONSTRE_LOOK !== 'undefined') {
+  MONSTRE_LOOK.automate_clou = { m: 'golem', s: 1 };
+  MONSTRE_LOOK.cendre_garde = { m: 'golem', s: 1.25 };
+}
+
+// Mécanique signature : une rangée de clous au sol, perpendiculaire au joueur, avec un trou sûr.
+function poserClous(e, a, dmgMul, spdMul) {
+  e.cds[bossKey(a)] = a.cd / spdMul * rand(0.9, 1.15);
+  e.gap = 0.6 / spdMul;
+  const brut = Math.max(1.05, (a.wind || 1.3) / (e.phase >= 1 ? 1.1 : 1));
+  const wind = typeof windFloor === 'function' ? windFloor(brut, true) : brut;
+  e.state = 'wind'; e.st = 0; e.windDur = wind; e.cur = a;
+  G.texts.push({ x: e.x, y: e.y - e.r - 36, txt: a.label || 'Les clous', color: '#ffcf8a', scale: 0.9, t: 0, dur: 1.4, label: true });
+  const sc = G.scene;
+  const dmg = e.atkBase * (a.dmg || 1) * (dmgMul || 1);
+  const n = Math.max(4, a.n || 6);
+  const spread = (a.spread || 7) * M;
+  const cy = sc ? clamp(P.y, 110, sc.h - 110) : P.y;
+  let x0 = P.x - spread / 2;
+  if (sc) x0 = clamp(x0, 110, sc.w - 110 - spread);
+  const safe = 1 + Math.floor(Math.random() * (n - 2)); // le trou n'est jamais au tout bord
+  for (let i = 0; i < n; i++) {
+    if (i === safe) continue;
+    let x = x0 + (spread / (n - 1)) * i;
+    if (sc) x = clamp(x, 90, sc.w - 90);
+    addTele(e, { shape: 'circle', x, y: cy, r: (a.r || 1.3) * M, wind: wind + i * 0.03, dmg, elem: 'feu', falling: true });
+  }
+  if (typeof toast === 'function') toast('Les clous jaillissent : glisse-toi dans le trou', 'warn');
+}
+
+// Butin de fin ouvert à toutes les voies (docs/DONJONS.md, règle 4) : minerai, parchemin, essence,
+// pierre de Qi et un manuel de protection. Jamais une technique de faction ni une arme d'une voie.
+const PUITS_VOIE = new Set(['danse', 'lotus', 'conquerant', 'cinqmontagnes']);
+function puitsButin(first, alea) {
+  const rng = alea || Math.random;
+  if (!first && rng() >= 0.33) return [];
+  const n = first ? 1 : 0.5;
+  const lots = [
+    { kind: 'mat', data: { k: 'minerai', n: Math.max(1, Math.round(6 * n)) } },
+    { kind: 'mat', data: { k: 'parchemin', n: Math.max(1, Math.round(2 * n)) } },
+    { kind: 'mat', data: { k: 'essence', n: Math.max(1, Math.round(2 * n)) } },
+  ];
+  if (first) {
+    lots.push({ kind: 'cat', data: 'pierre_qi', n: 1 });
+    const manuel = S.techs && S.techs.bouclier ? 'peaufer' : 'bouclier';
+    if (typeof TECHS !== 'undefined' && TECHS[manuel] && !PUITS_VOIE.has(manuel) && !(S.techs && S.techs[manuel])) lots.push({ kind: 'tech', data: manuel });
+  }
+  return lots;
+}
+function puitsDonnerButin(first) {
+  const lots = puitsButin(first);
+  let i = 0;
+  for (const l of lots) {
+    if (l.kind === 'cat') { for (let k = 0; k < (l.n || 1); k++) dropLoot(P.x + 28 + i * 6, P.y, 'cat', l.data); }
+    else dropLoot(P.x + 28 + i * 6, P.y, l.kind, l.data);
+    i++;
+  }
+  return lots;
+}
+
+// Entrée dans le Désert : une bouche de puits sur la terre ferme, à l'écart de la Forge et du refuge.
+function puitsLibre(sc, x, y) {
+  if (x < 160 || y < 160 || x > sc.w - 160 || y > sc.h - 160) return false;
+  if (sc.safe && dist2(x, y, sc.safe.x, sc.safe.y) < (sc.safe.r + 160) * (sc.safe.r + 160)) return false;
+  if ((sc.portals || []).some((p) => dist2(p.x, p.y, x, y) < 320 * 320)) return false;
+  if ((sc.decor || []).some((d) => d.r && dist2(d.x, d.y, x, y) < (d.r + 40) * (d.r + 40))) return false;
+  if ((sc.spawns || []).some((s) => dist2(s.x, s.y, x, y) < 200 * 200)) return false;
+  return true;
+}
+function poserEntreePuits(sc) {
+  if (!sc || sc.id !== 'desert' || sc.type !== 'region') return;
+  if ((sc.portals || []).some((p) => p.id === PUITS_ID)) return;
+  const pref = { x: sc.w * 0.34, y: sc.h * 0.3 };
+  let spot = null;
+  for (let r = 0; r <= 1800 && !spot; r += 90) {
+    for (const [ux, uy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+      const x = pref.x + ux * r, y = pref.y + uy * r;
+      if (puitsLibre(sc, x, y)) { spot = { x, y }; break; }
+    }
+  }
+  if (!spot) return;
+  sc.portals.push({ type: 'dungeon', id: PUITS_ID, x: spot.x, y: spot.y, name: DUNGEONS[PUITS_ID].name });
+  if (typeof buildGrid === 'function') buildGrid(sc);
+}
+
+if (typeof startBossAttack === 'function') {
+  const startBossAttackAvantClous = startBossAttack;
+  startBossAttack = function (e, a, dmgMul, spdMul) {
+    if (a && a.t === 'clous') { poserClous(e, a, dmgMul, spdMul); return; }
+    startBossAttackAvantClous(e, a, dmgMul, spdMul);
+  };
+}
+if (typeof dungeonReward === 'function') {
+  const dungeonRewardAvantPuits = dungeonReward;
+  dungeonReward = function (did, first) {
+    if (did === PUITS_ID) return puitsDonnerButin(first);
+    return dungeonRewardAvantPuits(did, first);
+  };
+}
+if (typeof genRegion === 'function') {
+  const genRegionAvantPuits = genRegion;
+  genRegion = function (R) {
+    const sc = genRegionAvantPuits(R);
+    if (sc && sc.id === 'desert') poserEntreePuits(sc);
+    return sc;
+  };
 }
 
 'use strict';
