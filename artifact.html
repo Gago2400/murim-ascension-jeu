@@ -2266,7 +2266,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="eaabefd33bbd" aria-label="Identifiant de version">Version générée : eaabefd33bbd</div>
+      <div class="meta" id="t-build" data-build="84ee1c01945f" aria-label="Identifiant de version">Version générée : 84ee1c01945f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -12655,7 +12655,18 @@ function drawFlats(sc, v) {
       case 'shell': ctx.fillStyle = '#f4e8d8'; ctx.beginPath(); ctx.ellipse(d.x, d.y, 5 * s, 3.5 * s, d.v * 3, 0, TAU); ctx.fill(); ctx.strokeStyle = '#c9a888'; ctx.lineWidth = 1; ctx.stroke(); break;
       case 'snow': ctx.drawImage(R_CACHE.blobW, d.x - 60 * s, d.y - 30 * s, 120 * s, 60 * s); break;
       case 'cloud': ctx.drawImage(R_CACHE.blobW, d.x - 90 * s, d.y - 40 * s, 180 * s, 80 * s); break;
-      case 'dune': ctx.strokeStyle = 'rgba(255,230,190,0.18)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(d.x, d.y + 40, 60 * s, -2.4, -0.7); ctx.stroke(); break;
+      case 'dune': {
+        // [Grok] tache de dune lisible (repli 2D) : le trait pâle (alpha 0,18) se fondait dans le sol cendre.
+        // En 3D les dunes sont des dômes (R3_FLAT3D) ; ici, ellipse pleine plus claire que le sable.
+        ctx.fillStyle = 'rgba(214, 184, 132, 0.42)';
+        ctx.beginPath();
+        ctx.ellipse(d.x, d.y, 74 * s, 34 * s, (d.v || 0) * 2.4, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 232, 196, 0.28)';
+        ctx.lineWidth = 3.5;
+        ctx.stroke();
+        break;
+      }
       case 'bones': ctx.strokeStyle = '#d8d0c0'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(d.x - 7 * s, d.y - 2); ctx.lineTo(d.x + 7 * s, d.y + 2); ctx.moveTo(d.x - 3, d.y + 5); ctx.lineTo(d.x + 4, d.y - 5); ctx.stroke(); ctx.fillStyle = '#d8d0c0'; ctx.beginPath(); ctx.arc(d.x + 10 * s, d.y - 4, 4 * s, 0, TAU); ctx.fill(); break;
       case 'toxic': {
         ctx.fillStyle = 'rgba(80,140,20,0.55)'; ctx.beginPath(); ctx.ellipse(d.x, d.y, 40 * s, 22 * s, 0, 0, TAU); ctx.fill();
@@ -18482,6 +18493,15 @@ function R3init(T) {
         put('hemi', 't', '#e6dcc8', 0, 0.04, 0, 0.14, 0.08, 0.1, 0.4, d.v, 0, false);
       } else if (d.type === 'snow') {
         // Plus d'objet neige sur l'herbe (les plaques lisaient en meules). Voile : voileNeigeRoche, Col seulement.
+      } else if (d.type === 'dune') {
+        // [Grok] dune 3D : dôme allongé (volume hemi), plus un second plus
+        // petit pour la crête. Une nappe PlaneGeometry vue de champ = lame.
+        // Échelle via base.s (0,4–2,2) × (1,45 × 0,42) → hauteur ≤ 0,93 m.
+        paint = '';
+        const sable = id === 'desert' ? '#d2b888' : (id === 'longwan' ? '#d0c090' : '#c4b080');
+        const a = (d.v || 0) * 6.2832;
+        put('hemi', 't', sable, 0, 0.0, 0, 1.45, 0.42, 0.78, 0, a, 0, false);
+        put('hemi', 't', shade(sable, -0.06), 0.40, 0.0, -0.12, 0.88, 0.26, 0.50, 0, a + 0.9, 0, false);
       } else if (d.type === 'bones') {
         // Pas de crâne/os dans les packs. On retire le rendu 3D (reste dans R3_FLAT3D pour ne pas repeindre le sol).
       } else if (d.type === 'toxic') {
@@ -26910,7 +26930,7 @@ function R3init(T) {
 }
 // types de « flats » rendus en relief plutôt que peints au sol
 const BOURG3D = new Set(['bassin_koi', 'koi', 'cerf', 'table_the', 'bambou', 'rocher_mousse', 'falaise', 'mannequin', 'pont', 'gue', 'statue_dragon', 'lingots', 'oeuf_dragon', 'paifang', 'portique', 'cloture', 'tas_bois', 'tonneau', 'panier', 'chariot_rue', 'cloche', 'demeure', 'lanterne_pierre', 'kiosque', 'borne', 'rempart', 'muret', 'tourguet', 'porte', 'boutique', 'taverne', 'temple', 'ecurie', 'grenier', 'entrepot', 'etal', 'puits', 'charrette', 'meule', 'linge', 'potager', 'champ', 'banc', 'claie']);
-const R3_FLAT3D = new Set(['grass', 'tallgrass', 'mushroom', 'floatrock', 'flower', 'shell', 'snow', 'bones', 'toxic', 'cloud']);
+const R3_FLAT3D = new Set(['grass', 'tallgrass', 'mushroom', 'floatrock', 'flower', 'shell', 'snow', 'bones', 'toxic', 'cloud', 'dune']);
 
 // ── lieux remarquables (#66) : silhouettes dédiées, lues dans sc.landmark (logique et collisions dans 26_lieux.js) ──
 // Mètres autour du centre ; +z vers le sud (côté caméra). Emprise ≈ rayon de collision (70 px ≈ 3,2 m).
