@@ -2270,7 +2270,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="44651233e8bc" aria-label="Identifiant de version">Version générée : 44651233e8bc</div>
+      <div class="meta" id="t-build" data-build="953e380b5fc1" aria-label="Identifiant de version">Version générée : 953e380b5fc1</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -22591,9 +22591,10 @@ function R3init(T) {
   function souffleIdle(m, t, amp) {
     const o = osGeste(m); if (!o) return 0;
     const s = Math.sin(t * 1.65) * (amp == null ? 0.1 : amp);
-    if (o.sp) o.sp.rotateX(s);
-    if (o.ul) o.ul.rotateZ(s * 0.9);
-    if (o.ur) o.ur.rotateZ(-s * 0.9);
+    // #787 avait rotate* hors garde → hélices ; #647 : après le mixeur via osApresMixeur
+    if (o.sp) osApresMixeur(o.sp, (os) => { os.rotateX(s); }, m.osJeton);
+    if (o.ul) osApresMixeur(o.ul, (os) => { os.rotateZ(s * 0.9); }, m.osJeton);
+    if (o.ur) osApresMixeur(o.ur, (os) => { os.rotateZ(-s * 0.9); }, m.osJeton);
     return s;
   }
   // Esquive : saut groupé. L'ancien roulé (66°) passait trop vite pour se lire.
@@ -22618,8 +22619,8 @@ function R3init(T) {
     root.position.x -= Math.cos(face) * a * 0.34;
     root.position.z -= Math.sin(face) * a * 0.34;
     const o = osGeste(m); if (!o) return;
-    if (o.sp) o.sp.rotateX(-a * 0.4);
-    if (o.hd) o.hd.rotateX(a * 0.45);
+    if (o.sp) osApresMixeur(o.sp, (os) => { os.rotateX(-a * 0.4); }, m.osJeton);
+    if (o.hd) osApresMixeur(o.hd, (os) => { os.rotateX(a * 0.45); }, m.osJeton);
   }
   // Glisse du pied verrouillé (m/s vers l'avant), après l'IK. Proche de zéro quand la cadence suit.
   function glissePosee(m, root, dt) {
