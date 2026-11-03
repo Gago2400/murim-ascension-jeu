@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="a22f15ad08ab" aria-label="Identifiant de version">Version générée : a22f15ad08ab</div>
+      <div class="meta" id="t-build" data-build="570afae294de" aria-label="Identifiant de version">Version générée : 570afae294de</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -38564,7 +38564,9 @@ BOURGS.meishan = bourgVariante(BOURGS.qinghe, 'Bourg de Meishan', [
     { t: 'lanterne_pierre', x: -45, y: 420, r: 9 }, { t: 'lanterne_pierre', x: 45, y: 420, r: 9 },
     { t: 'shrine', x: -130, y: -460, r: 16 },
   ]),
-  libres: BOURGS.qinghe.libres.concat([{ t: 'panier', x: 652, y: -210 }, { t: 'panier', x: 676, y: -206 }, { t: 'panier', x: 724, y: -210 }]),
+  // monde-coherence §2.1/§2.4 : Meishan n'a qu'une seule essence en altitude (pin), aucun accent — le bambou du
+  // Jardin du Lettré de Qinghe (hérité par .concat) n'a rien à faire dans l'enceinte du bourg de montagne.
+  libres: BOURGS.qinghe.libres.filter((o) => o.t !== 'bambou').concat([{ t: 'panier', x: 652, y: -210 }, { t: 'panier', x: 676, y: -206 }, { t: 'panier', x: 724, y: -210 }]),
 });
 // le chantier naval de Longwan est au sud de la porte du Sud, les terrasses de Meishan au nord de la porte du Nord
 // (42_hors_murs.js, coordonnées figées) et la pierre de passage du Hameau du Thé au sud de Meishan : chaque enceinte s'agrandit du côté libre
