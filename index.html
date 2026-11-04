@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="f205b0394da3">
+<meta name="murim-build" content="eed0ddfbd5ef">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="f205b0394da3" aria-label="Identifiant de version">Version générée : f205b0394da3</div>
+      <div class="meta" id="t-build" data-build="eed0ddfbd5ef" aria-label="Identifiant de version">Version générée : eed0ddfbd5ef</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -16126,7 +16126,9 @@ function R3init(T) {
   function geo(k) {
     let g = GEO[k]; if (g) return g;
     switch (k) {
-      case 'sph': g = new T.IcosahedronGeometry(1, 1); break;
+      // [Claude] 'sph' lissée : l'icosaèdre à 80 faces (non indexé, normales par face) donnait des boules à facettes
+      // partout (fruits, lanternes, têtes de repli, pierres, chignons). Sphère indexée, mêmes cotes, normales lissées.
+      case 'sph': g = new T.SphereGeometry(1, 16, 12); break;
       case 'sph2': g = new T.IcosahedronGeometry(1, 2); break;
       case 'sphL': g = new T.SphereGeometry(1, 32, 20); break; // [Grogrok] sphère lisse (normales lissées) : l'icosaèdre non indexé gardait ses facettes
       case 'hemi': g = new T.SphereGeometry(1, 12, 6, 0, TAU, 0, Math.PI / 2); break;
@@ -16166,7 +16168,7 @@ function R3init(T) {
         g.computeBoundingSphere(); break;
       }
       case 'dode': g = new T.DodecahedronGeometry(1, 0); break;
-      case 'ico': g = new T.IcosahedronGeometry(1, 0); break;
+      case 'ico': g = new T.IcosahedronGeometry(1, 0); break; // [Claude] gardé anguleux pour le golem de roche seulement ; buissons et houppiers passent par 'touffe'
       case 'roc0': g = rocherIrr(1.3, false); break;
       case 'roc1': g = rocherIrr(2.7, false); break;
       case 'roc2': g = rocherIrr(4.1, true); break;
@@ -16174,7 +16176,9 @@ function R3init(T) {
       case 'roc4': g = rocherIrr(8.2, true); break;
       case 'roc5': g = rocherIrr(3.55, false); break;
       case 'touffe': { // houppier : plusieurs lobes, bord découpé, sans UV (une grille peinte ferait un damier)
-        g = new T.IcosahedronGeometry(1, 1);
+        // [Claude] sphère indexée (normales lissées) : l'icosaèdre à 80 faces non indexé sortait en boules à facettes,
+        // le « low poly » le plus visible du jeu (houppiers des arbres dessinés, buissons). Les lobes restent.
+        g = new T.SphereGeometry(1, 22, 14);
         const p = g.attributes.position;
         for (let i = 0; i < p.count; i++) {
           const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
@@ -17758,6 +17762,9 @@ function R3init(T) {
       g.scene.traverse((o) => {
         if (!o.isMesh) return;
         const geo = o.geometry.clone(); geo.applyMatrix4(o.matrixWorld); geo.computeBoundingSphere(); geo.userData.keep = true;
+        // [Claude] la coque « masse » (huit faces sous les cartes de feuilles) dépassait de la couronne en octogones sombres
+        // à facettes : on la rentre de 18 % autour de son centre, elle bouche encore le cœur du houppier sans se voir.
+        if (o.name === 'masse') { const c = geo.boundingSphere.center.clone(); geo.translate(-c.x, -c.y, -c.z); geo.scale(0.82, 0.82, 0.82); geo.translate(c.x, c.y, c.z); geo.computeBoundingSphere(); }
         const src = Array.isArray(o.material) ? o.material[0] : o.material;
         let mat;
         if (o.name === 'lanterne') {
@@ -17767,7 +17774,9 @@ function R3init(T) {
           const feuille = o.name === 'feuilles' || o.name === 'fleurs' || o.name === 'loin';
           const hall = k.endsWith('qh_temple'); // le hall entier ne doit pas être percé : ça le réduit à des éclats
           const couvre = o.name === 'toit' || o.name === 'linteau';
-          mat = new T.MeshToonMaterial({ color: 0xffffff, map: src.map, gradientMap: gradTex, alphaTest: feuille ? 0.55 : 0, side: T.DoubleSide });
+          // [Claude] feuillages : rampe lisse à huit paliers (feuillageRamp, comme les touffes dessinées) au lieu des cinq
+          // bandes dures, et base à 90 % : la photo de feuilles du pack sortait en aplat vert fluo sans volume.
+          mat = new T.MeshToonMaterial({ color: feuille ? 0xe4e8e0 : 0xffffff, map: src.map, gradientMap: feuille ? feuillageRamp : gradTex, alphaTest: feuille ? 0.55 : 0, side: T.DoubleSide });
           mat.map.colorSpace = T.SRGBColorSpace; mat.map.anisotropy = Math.min(4, ren.capabilities.getMaxAnisotropy()); mat.map.userData.keep = true;
           // [Grok] découpe franche : le seuil 0,2 laissait des carrés pâles, triés dans le désordre.
           if (feuille) {
@@ -17786,7 +17795,8 @@ function R3init(T) {
           mat = new T.MeshToonMaterial({ color: 0xffffff, gradientMap: gradTex, vertexColors: true });
           if (!k.endsWith('qh_temple')) occludeMat(mat, 'qh-toit', 'dessus');
         } else {
-          mat = new T.MeshToonMaterial({ color: 0xffffff, gradientMap: gradTex, vertexColors: true });
+          // [Claude] la coque « masse » suit la rampe lisse des feuillages ; le reste garde ses cinq bandes
+          mat = new T.MeshToonMaterial({ color: 0xffffff, gradientMap: o.name === 'masse' ? feuillageRamp : gradTex, vertexColors: true });
         }
         const feuille = o.name === 'feuilles' || o.name === 'fleurs' || o.name === 'loin' || o.name === 'masse';
         mat.userData.keep = true; parts.push({ nom: o.name, geo, mat, lod: o.name === 'loin' ? 'far' : (feuille ? 'near' : '') });
@@ -18701,7 +18711,7 @@ function R3init(T) {
             }
             break;
           }
-          paint = 'leaf'; put('ico', 't', shade(pal.g2, -0.15), 0, 0.35, 0, 0.6, 0.45, 0.6); put('ico', 't', shade(pal.g2, -0.05), 0.3, 0.5, 0.15, 0.38, 0.32, 0.38, 0.6); break;
+          paint = 'leaf'; put('touffe', 't', shade(pal.g2, -0.15), 0, 0.35, 0, 0.6, 0.45, 0.6); put('touffe', 't', shade(pal.g2, -0.05), 0.3, 0.5, 0.15, 0.38, 0.32, 0.38, 0.6); break;
         case 'rock': case 'boulder': {
           poserRocher(d.x, d.y, d.v || 0, d.type === 'boulder' ? 1.02 : 0.62);
           break;
@@ -19847,7 +19857,7 @@ function R3init(T) {
         const h = 2.2 + (i % 3) * 0.45;
         paint = '';
         put('cyl', 't', i % 2 ? '#2f5a30' : '#3d6a38', 0, h * 0.5, 0, 0.04, h, 0.04);
-        put('ico', 't', '#5a9444', 0.04, h * 0.78, 0, 0.22, 0.14, 0.18);
+        put('touffe', 't', '#5a9444', 0.04, h * 0.78, 0, 0.22, 0.14, 0.18);
       }
       // lisière : le refuge s'arrêtait sur un vide. Des arbres sombres, pas le bambou fluo. (Dans un bourg, ce sont les rues et le rempart.)
       if (!sc.bourg) for (let i = 0; i < 18; i++) {
@@ -20141,6 +20151,17 @@ function R3init(T) {
       if (b.p.nom === 'feuilles' || b.p.nom === 'fleurs' || b.p.nom === 'masse' || b.p.lod === 'far') im.userData.presCam = 2.4 * 2.4;
       if (key.startsWith('qh_saule') || key.startsWith('qh_pin') || key.startsWith('qh_cerisier')) im.userData.arbre = true;
       im.userData.pNom = b.p.nom;
+      // [Claude] un ton par arbre : luminance ±9 % et dérive jaune ↔ bleu ±6 % tirées de la position (stable d'une image à
+      // l'autre), sur feuilles, canopée lointaine et masse. Une forêt de clones identiques se lisait comme un tapis.
+      if (im.userData.arbre && (b.p.nom === 'feuilles' || b.p.nom === 'loin' || b.p.nom === 'masse' || b.p.nom === 'fleurs')) {
+        const c = new T.Color();
+        b.m.forEach((m, i) => {
+          const e = m.elements, h = Math.sin(e[12] * 12.9898 + e[14] * 78.233) * 43758.5453, u = h - Math.floor(h), u2 = ((h * 1.37) - Math.floor(h * 1.37));
+          const l = 0.91 + u * 0.18, t = (u2 - 0.5) * 0.12; // t > 0 : plus jaune ; t < 0 : plus bleu
+          c.setRGB(l * (1 + t), l, l * (1 - t)); im.setColorAt(i, c);
+        });
+        im.instanceColor.needsUpdate = true;
+      }
       if (b.p.nom === 'toit' || b.p.nom === 'linteau') im.renderOrder = 1;
       im.computeBoundingSphere(); root.add(im); jumeauOcc(im);
       if (im.userData.arbre) lierVoile(im);
@@ -28563,13 +28584,13 @@ const LANDMARK3D = (() => {
     q.put('taper', 't', '#3a2a1e', 0, 1.9, 0, 0.95, 3.8, 0.95);
     for (const [a, h] of [[0.4, 0.4], [2.5, 0.35], [4.4, 0.45]]) q.put('cone', 't', '#3a2a1e', Math.cos(a) * 1.0, 0.3, Math.sin(a) * 1.0, 0.45, h * 2, 0.45, Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9); // racines
     q.set('leaf');
-    q.put('ico', 't', fol[0], 0, 5.0, 0, 2.9, 1.9, 2.9);
-    q.put('ico', 't', fol[1], -2.0, 4.2, 0.5, 1.8, 1.3, 1.8, 0.5);
-    q.put('ico', 't', fol[2], 1.9, 4.4, -0.4, 1.9, 1.4, 1.9, 1.1);
-    q.put('ico', 't', fol[2], 0.3, 6.2, 0.1, 1.6, 1.1, 1.6, 0.3);
+    q.put('touffe', 't', fol[0], 0, 5.0, 0, 2.9, 1.9, 2.9);
+    q.put('touffe', 't', fol[1], -2.0, 4.2, 0.5, 1.8, 1.3, 1.8, 0.5);
+    q.put('touffe', 't', fol[2], 1.9, 4.4, -0.4, 1.9, 1.4, 1.9, 1.1);
+    q.put('touffe', 't', fol[2], 0.3, 6.2, 0.1, 1.6, 1.1, 1.6, 0.3);
     q.set('cloth'); for (let i = 0; i < 5; i++) q.put('box', 't', ['#d04030', '#e8c050', '#f0ece0'][i % 3], -0.95 + i * 0.47, 2.6, 0.92, 0.12, 0.7, 0.02, 0, 0, 0, false); // rubans de prière
     q.set('wood'); q.put('taper', 't', '#3a2a1e', 1.82, 0.9, 0.91, 0.35, 1.8, 0.35);
-    q.set('leaf'); q.put('ico', 't', fol[1], 1.82, 2.3, 0.91, 1.15, 0.95, 1.15);
+    q.set('leaf'); q.put('touffe', 't', fol[1], 1.82, 2.3, 0.91, 1.15, 0.95, 1.15);
     if (q.id === 'foret') q.light(q.x - 30, q.y + 20, 2.6, '#96ffc8', 1.6, true);
   };
   const academie = (q) => {
@@ -28610,7 +28631,7 @@ const LANDMARK3D = (() => {
     q.put('cyl', 't', '#3a7a8a', 0, 0.05, 1.0, 2.6, 0.1, 1.8);
     for (const [x, z, r] of [[0, 0.1, 0.7], [-0.6, 0.4, 0.45], [0.7, 0.35, 0.5]]) q.put('sph', 'b', '#f0f8fa', x, 0.35, z, r, r * 0.6, r, 0, 0, 0, false);
     q.set('stone'); for (const [x, z] of [[-2.2, 2.0], [2.3, 1.8], [-1.0, 2.8]]) q.put('dode', 't', dk, x, 0.3, z, 0.7, 0.5, 0.6, 0.3, x, 0);
-    q.set('leaf'); for (const [x, z] of [[-3.4, 0.6], [3.5, 0.4]]) q.put('ico', 't', '#24402e', x, 1.2, z, 1.0, 1.3, 1.0);
+    q.set('leaf'); for (const [x, z] of [[-3.4, 0.6], [3.5, 0.4]]) q.put('touffe', 't', '#24402e', x, 1.2, z, 1.0, 1.3, 1.0);
     q.light(q.x, q.y + 1.0 * M, 1.2, '#bfe8ff', 1.6, true);
   };
   const colosse = (q) => {
