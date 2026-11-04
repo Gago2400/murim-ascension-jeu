@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="5b096c0e399f">
+<meta name="murim-build" content="e7f43e88f6ff">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="5b096c0e399f" aria-label="Identifiant de version">Version générée : 5b096c0e399f</div>
+      <div class="meta" id="t-build" data-build="e7f43e88f6ff" aria-label="Identifiant de version">Version générée : e7f43e88f6ff</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -16437,10 +16437,15 @@ function R3init(T) {
   const whiteTex = new T.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, T.RGBAFormat); whiteTex.needsUpdate = true;
   const PAINT = {}; // nom → { lum: CanvasTexture en niveaux de gris (moyenne 1/1,6), ok }
   function loadPainted(name, onReady) {
-    // artifact.html : data URI. index.html (HTTP) et file:// : fichier à côté de la page (MURIM_LAZY).
+    // artifact.html : data URI. index.html (HTTP) : fichier à côté de la page (MURIM_LAZY).
     // Sans fichier : motif calculé, déjà en place — rien ne change.
+    // [Claude] file:// : pas de fichier à côté. Chrome tient chaque fichier local pour une origine à part : l'image
+    // souillait la toile (canvas) qu'on lui donnait, et chaque envoi de cette toile au GPU levait une SecurityError
+    // (« Tainted canvases may not be loaded ») — huit erreurs WebGL par partie ouverte depuis le disque, images
+    // perdues en plein rendu. Même garde que les modèles et les sons (lazyOk, 07_audio.js) : hors HTTP, motif calculé.
     const inline = ASSETS && ASSETS['textures/' + name + '.webp'];
-    const lazy = (typeof window !== 'undefined' && window.MURIM_LAZY && window.MURIM_LAZY['textures/' + name]) || null;
+    const httpOk = typeof location !== 'undefined' && /^https?:$/.test(location.protocol);
+    const lazy = (httpOk && typeof window !== 'undefined' && window.MURIM_LAZY && window.MURIM_LAZY['textures/' + name]) || null;
     const src = inline || lazy; if (!src) return;
     const img = new Image();
     img.onload = () => { try { onReady(img); } catch (err) { /* image illisible : on garde le motif calculé */ } };
@@ -32976,7 +32981,7 @@ const LANDMARKS = {
   montagnes: { k: 'temple', label: 'Temple du Dragon' },
   marecages: { k: 'ruine', label: 'Sanctuaire Englouti' },
   citadelle: { k: 'tour', label: 'Tour des Étoiles' },
-  // Abysses : plus de Flèche (pas de GLB). Aucune quête ni route ne visait ce point.
+  abysses: { k: 'stele', label: 'Stèle du Vide' },
   domaine: { k: 'palais', label: 'Palais flottant' },
 };
 
@@ -59887,13 +59892,14 @@ if (typeof genRegion === 'function') {
   genRegion = function (R) { return ruesNettes(genRegionAvantRuesNettes(R)); };
 }
 
-// ───────────────────────── Secrets d'exploration : Col, Forêt, Désert, Montagnes, Marécages, Vallée ─────────────────────────
+// ───────────────────────── Secrets d'exploration : les treize régions ─────────────────────────
 // Un secret caché par région, posé près d'un lieu du plan (46_plans_regions.js) : grotte, ruines,
-// stèle, carrière ou entrepôt. Interaction une fois : toast FR + or léger + herbe régionale, aucun
-// bonus de combat.
+// stèle, carrière, entrepôt, nid ou arène. Interaction une fois : toast FR + or léger + herbe
+// régionale, aucun bonus de combat.
 // État : S.exploration.secrets[regionId] = 1 (via explEnsure, 98_zz_z_landmarks_offre.js).
 // Les trois premiers honorés (Col, Forêt, Désert) débloquent le titre « Marcheur des Trois Ombres ».
-// Les six honorés débloquent ensuite « Sage des Six Secrets » (toujours sans bonus de stats).
+// Les six honorés (+ Montagnes, Marécages, Vallée) débloquent ensuite « Sage des Six Secrets ».
+// Les treize régions honorées débloquent enfin « Maître des Treize Secrets » (toujours cosmétique).
 
 const EXPL_SECRETS = {
   col: { lieuK: 'taniere', label: 'Secret de la Grotte de l\'Ermite' },
@@ -59902,9 +59908,17 @@ const EXPL_SECRETS = {
   montagnes: { lieuK: 'carriere', label: 'Secret de la Carrière Scellée' },
   marecages: { lieuK: 'taniere', label: 'Secret de la Bauge Engloutie' },
   vallee: { lieuK: 'entrepots', label: 'Secret des Greniers Oubliés' },
+  citadelle: { lieuK: 'stele_sept', label: 'Secret du Cadran des Étoiles' },
+  abysses: { lieuK: 'carriere', label: 'Secret des Éboulis Primordiaux' },
+  domaine: { lieuK: 'ruines_pavillon', label: 'Secret des Terrasses des Immortels' },
+  meishan: { lieuK: 'nid', label: 'Secret du Nid des Aigles' },
+  qinghe: { lieuK: 'manoir_gao', label: 'Secret du Manoir du clan Gao' },
+  longwan: { lieuK: 'entrepots', label: 'Secret des Entrepôts de la Maison Fu' },
+  plaines: { lieuK: 'arene', label: 'Secret de l\'Arène du Tournoi' },
 };
 const EXPL_SECRET_IDS = ['col', 'foret', 'desert'];
-const EXPL_SECRET_IDS_TOUS = Object.keys(EXPL_SECRETS);
+const EXPL_SECRET_IDS_TOUS = ['col', 'foret', 'desert', 'montagnes', 'marecages', 'vallee'];
+const EXPL_SECRET_IDS_TREIZE = Object.keys(EXPL_SECRETS);
 const EXPL_SECRET_R = 90;
 
 if (typeof explEnsure === 'function') {
@@ -59933,6 +59947,10 @@ function explSecretBundleFait() {
 
 function explSecretBundleFaitTous() {
   return EXPL_SECRET_IDS_TOUS.every((id) => explSecretFait(id));
+}
+
+function explSecretBundleFaitTreize() {
+  return EXPL_SECRET_IDS_TREIZE.every((id) => explSecretFait(id));
 }
 
 function explSecretVerifierBundle() {
@@ -59965,6 +59983,21 @@ function explSecretVerifierBundleTous() {
   if (typeof saveGame === 'function') saveGame();
 }
 
+function explSecretVerifierBundleTreize() {
+  const e = explEnsure();
+  if (e.secretsBundleTreize) return;
+  if (!explSecretBundleFaitTreize()) return;
+  e.secretsBundleTreize = 1;
+  if (typeof grantTitle === 'function') grantTitle('maitre_treize_secrets', 'Maître des Treize Secrets');
+  else {
+    if (!Array.isArray(S.titles)) S.titles = [];
+    if (!S.titles.some((t) => t.id === 'maitre_treize_secrets')) S.titles.push({ id: 'maitre_treize_secrets', name: 'Maître des Treize Secrets' });
+    if (!S.title) S.title = 'maitre_treize_secrets';
+  }
+  if (typeof toast === 'function') toast('Treize régions, treize secrets. Titre « Maître des Treize Secrets ».', 'gold');
+  if (typeof saveGame === 'function') saveGame();
+}
+
 function explSecretTrouver() {
   const sc = G.scene; if (!sc) return false;
   const spot = explSecretSpot(sc); if (!spot) return false;
@@ -59983,6 +60016,7 @@ function explSecretTrouver() {
   if (typeof sfx === 'function') sfx('quest');
   explSecretVerifierBundle();
   explSecretVerifierBundleTous();
+  explSecretVerifierBundleTreize();
   if (typeof saveGame === 'function') saveGame();
   return true;
 }
