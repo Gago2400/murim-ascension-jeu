@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="570afae294de" aria-label="Identifiant de version">Version générée : 570afae294de</div>
+      <div class="meta" id="t-build" data-build="5b096c0e399f" aria-label="Identifiant de version">Version générée : 5b096c0e399f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -36351,8 +36351,30 @@ function recitRecompense(id) {
   else { S.gold += 250 + S.level * 20; grantStoryReward({ item: { rar: 3, slot: 'acc1', name: 'Jeton de cendre de Kui' } }); }
   centerMsg('Récit accompli', RECITS[id].name, 'gold'); sfx('victory');
 }
+// Suite ouverte par un choix alors que le joueur est déjà dans la région : genRegion ne repasse pas,
+// donc le donneur manquerait jusqu'à la prochaine entrée. On le pose tout de suite (même packing qu'au gen).
+function recitPoserDonneursManquants() {
+  const sc = G && G.scene; if (!sc || sc.type !== 'region') return;
+  const s = sc.safe || sc.spawn || (sc.hamlets && sc.hamlets[0]); if (!s) return;
+  for (const id in RECITS) {
+    const Rc = RECITS[id]; if (!recitIci(Rc, sc.id) || (!recitSiOk(Rc) && !S.recits[id])) continue;
+    if (sc.npcs.some((n) => n.recit === id)) continue;
+    let x = s.x + 120, y = s.y + 230;
+    const lim = (s.r || 500) * 0.9;
+    for (let t = 0; t < 40 && sc.npcs.some((n) => dist2(n.x, n.y, x, y) < 60 * 60); t++) {
+      const a = t * 0.85, rad = Math.min(90 + t * 28, lim);
+      x = s.x + Math.cos(a) * rad; y = s.y + Math.sin(a) * rad;
+    }
+    if (s.r) {
+      const d = Math.hypot(x - s.x, y - s.y);
+      if (d >= s.r) { const k = (s.r - 24) / (d || 1); x = s.x + (x - s.x) * k; y = s.y + (y - s.y) * k; }
+    }
+    sc.npcs.push(Object.assign(npc(Rc.giver.role, Rc.giver.name, x, y), { recit: id }));
+  }
+}
 function recitApresChoix(key, o) {
   if (key === 'recit:kui' && o.k === 'executer') { dropLoot(P.x, P.y, 'item', Object.assign(makeItem(Math.max(1, S.level), 2, 'arme'), { name: 'Sabre de Kui', quete: true })); S.gold += 60; }
+  recitPoserDonneursManquants();
 }
 // donneur : parler (étape 0) et retour (dernière étape)
 const openNpcBeforeVoie = openNpc;
