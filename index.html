@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="5ea1ea0dbad8">
+<meta name="murim-build" content="f205b0394da3">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="5ea1ea0dbad8" aria-label="Identifiant de version">Version générée : 5ea1ea0dbad8</div>
+      <div class="meta" id="t-build" data-build="f205b0394da3" aria-label="Identifiant de version">Version générée : f205b0394da3</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -15947,7 +15947,9 @@ function R3init(T) {
   if (typeof isTouch !== 'undefined' && isTouch) R3.auto = 1; // auto sur téléphone : départ en « moyenne », la mesure monte ou descend
   const hq0 = S ? qualityMode() === 'haute' || (qualityMode() === 'auto' && !isTouch) : !isTouch; // écran titre : pas encore de sauvegarde chargée ; anticrénelage fixé à la création
   const ren = new T.WebGLRenderer({ canvas, antialias: hq0, powerPreference: 'high-performance' });
-  ren.toneMapping = T.NeutralToneMapping; ren.toneMappingExposure = 1.15;
+  // [Claude] ACES filmique : le Neutral laissait une image lavée (robes grises, lanternes pâles, sols sans relief).
+  // ACES creuse les ombres et sature les teintes à exposition égale, sans coût (même programme, autre courbe).
+  ren.toneMapping = T.ACESFilmicToneMapping; ren.toneMappingExposure = 1.15;
   ren.shadowMap.type = T.PCFShadowMap; // PCF simple : ombres nettes et bon marché (PCFSoft coûtait 4 échantillons de plus)
   // Sans lecture des journaux de compilation : getProgramInfoLog bloquait jusqu'à 20 % du temps d'image à chaque
   // nouveau matériau (effets, modèles chargés en combat). Les erreurs de shader restent visibles dans la console WebGL.
@@ -26977,7 +26979,7 @@ function R3init(T) {
       moteur = new T.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
       moteur.setPixelRatio(1);
       moteur.setClearColor(0x000000, 0);
-      moteur.toneMapping = T.NeutralToneMapping;
+      moteur.toneMapping = T.ACESFilmicToneMapping; // même courbe que le jeu : le héros du créateur ressemble à celui de la partie
       moteur.toneMappingExposure = 1.22;
       if (T.SRGBColorSpace) moteur.outputColorSpace = T.SRGBColorSpace;
     } catch (e) { moteur = null; }
