@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="6049b40a5dc5">
+<meta name="murim-build" content="6def15a2b0f5">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="6049b40a5dc5" aria-label="Identifiant de version">Version générée : 6049b40a5dc5</div>
+      <div class="meta" id="t-build" data-build="6def15a2b0f5" aria-label="Identifiant de version">Version générée : 6def15a2b0f5</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -22248,7 +22248,9 @@ function R3init(T) {
     for (const o of skinned) {
       if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
       const gs = o.geometry.boundingBox.getSize(V2).length(), ws = new T.Box3().setFromObject(o, true).getSize(V2).length();
-      const w = Number((0.03 * (gs > 0 && ws > 0 ? gs / ws : 1)).toPrecision(3));
+      // [Claude] figurines : 2,1 cm au lieu de 3 : vues de la caméra du jeu (personnage de 60 px), 3 cm de contour noir
+      // mangeaient le quart de la silhouette, les PNJ viraient au noir (relevé galerie Qinghe). Les anciens modèles gardent 3.
+      const w = Number(((g.userData.figurine ? 0.021 : 0.03) * (gs > 0 && ws > 0 ? gs / ws : 1)).toPrecision(3));
       if (!inkMats.has(w)) inkMats.set(w, inkSkinMat(w));
       const ink = new T.SkinnedMesh(o.geometry, inkMats.get(w)); inks.push(ink);
       if (o.morphTargetInfluences) { ink.morphTargetInfluences = o.morphTargetInfluences; ink.morphTargetDictionary = o.morphTargetDictionary; } ink.bind(o.skeleton, o.bindMatrix);
