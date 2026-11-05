@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="33bcb0453ec0">
+<meta name="murim-build" content="72f8e96cab5e">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="33bcb0453ec0" aria-label="Identifiant de version">Version générée : 33bcb0453ec0</div>
+      <div class="meta" id="t-build" data-build="72f8e96cab5e" aria-label="Identifiant de version">Version générée : 72f8e96cab5e</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -28011,7 +28011,9 @@ function R3init(T) {
         MENU.rt.texture.colorSpace = T.SRGBColorSpace;
       }
       MENU.cam.aspect = pw / ph;
-      MENU.cam.fov = 34; MENU.cam.position.set(1.05, 1.32, 3.85); MENU.cam.lookAt(0.0, 0.92, -0.6); MENU.cam.updateProjectionMatrix();
+      // [Claude] plan américain (genoux → chignon) au lieu du plan en pied : dans le canevas de 160 px de large, le héros
+      // en pied faisait 90 px de haut, visage et cheveux illisibles, le choix de teint ou de coiffure invisible.
+      MENU.cam.fov = 34; MENU.cam.position.set(0.66, 1.45, 2.21); MENU.cam.lookAt(0.0, 1.18, -0.6); MENU.cam.updateProjectionMatrix();
       const ratio = ren.getPixelRatio();
       ren.setPixelRatio(1); ren.setRenderTarget(MENU.rt); ren.setViewport(0, 0, pw, ph);
       ren.render(MENU.scn, MENU.cam);
