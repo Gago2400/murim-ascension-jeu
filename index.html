@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="74c7fd935286">
+<meta name="murim-build" content="33bcb0453ec0">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="74c7fd935286" aria-label="Identifiant de version">Version générée : 74c7fd935286</div>
+      <div class="meta" id="t-build" data-build="33bcb0453ec0" aria-label="Identifiant de version">Version générée : 33bcb0453ec0</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -20788,6 +20788,12 @@ function R3init(T) {
     if (im.instanceColor) v.instanceColor = new T.InstancedBufferAttribute(new Float32Array(im.count * 3), 3);
     v.userData.ownGeo = true; v.userData.ownMat = true; // [Claude] clones privés : clearWorld les libère au changement de région (les textures partagées restent, userData.keep)
     im.parent.add(v); im.userData.voile = v;
+    // [Claude] la coque sombre du houppier (« masse », remplissage olive sous les cartes de feuilles) ne se dessine pas en
+    // fantôme : à 22 % sur l'herbe, c'était un hexagone sombre et anguleux autour du héros (relevé forêt de Qinghe,
+    // Longwan). Les instances voilées de cette pièce sortent du maillage opaque comme les autres, mais le voile reste muet.
+    // (Une prépasse de profondeur, comme celle des toits, a été essayée pour ne garder qu'une couche de feuilles : +8 à
+    // +20 ms/image en Moyenne au même instant que main, écartée.)
+    if (im.userData.pNom === 'masse') v.userData.muet = true;
   }
   function majVoile() {
     if (!P || typeof W !== 'function') return;
@@ -20890,6 +20896,11 @@ function R3init(T) {
           const dxh = CSPH.center.x - W(P.x), dzh = CSPH.center.z - W(P.y);
           const rHide = Math.max(2.8, u.S[i * 4 + 3] * 0.8);
           if (dxh * dxh + dzh * dzh < rHide * rHide) continue;
+          // [Claude] et à moins de 20 m de la caméra (bas de l'écran jusqu'au héros) : à cette distance ses huit faces
+          // font un hexagone sombre plus grand que le héros, sous des cartes de feuilles qui suffisent à dessiner le
+          // houppier. Elle ne remplit la couronne qu'entre 20 m et la canopée lointaine (38 m).
+          const dxc = CSPH.center.x - p.x, dyc = CSPH.center.y - p.y, dzc = CSPH.center.z - p.z;
+          if (dxc * dxc + dyc * dyc + dzc * dzc < 20 * 20) continue;
         }
         const i16 = i * 16;
         const sc = Math.hypot(u.M[i16], u.M[i16 + 1], u.M[i16 + 2]);
@@ -20916,7 +20927,8 @@ function R3init(T) {
         if (im.userData.jumeauProf) { im.userData.jumeauProf.count = 0; im.userData.jumeauProf.visible = false; }
       }
       if (voile) {
-        voile.count = kv; voile.visible = kv > 0; vis += kv;
+        const muet = !!voile.userData.muet;
+        voile.count = kv; voile.visible = kv > 0 && !muet; vis += muet ? 0 : kv;
         if (kv) {
           voile.instanceMatrix.clearUpdateRanges(); voile.instanceMatrix.addUpdateRange(0, kv * 16); voile.instanceMatrix.needsUpdate = true;
           const fa = voile.geometry.getAttribute('aVoile'); fa.clearUpdateRanges(); fa.addUpdateRange(0, kv); fa.needsUpdate = true;
@@ -28508,6 +28520,7 @@ function R3init(T) {
   R3.horsMurs = () => ({ scene: curScene && curScene.horsMurs ? curScene.id : null, volumes: curScene && curScene.horsMurs ? curScene.horsMurs.volumes.length : 0, natif: true });
   // Diagnostic réversible pour comparer les mêmes scènes avec et sans tri, sans modifier la logique.
   R3.setDecorCull = (on) => { decorCull = !!on; cullKey = ''; };
+  R3.sceneThree = () => scn; // [Claude] diagnostic : la scène three (sondes qui masquent une pièce de pack pour voir ce qu'elle dessine)
   R3.decorCullInfo = () => ({ enabled: decorCull, shadows: ren.shadowMap.enabled, total: CULLI.reduce((n, im) => n + im.userData.cull.n, 0), visible: CULLI.reduce((n, im) => n + im.count, 0) });
   R3.dbg = () => ({ cam: Math.round(CAM.dist * 10) / 10, camY: +cam.position.y.toFixed(2), pitch: Math.round(CAM.pitch * 180 / Math.PI), hemi: hemi.intensity, hemiC: hemi.color.getHexString(), sun: sun.intensity, fog: fog.color.getHexString(), near: fog.near, far: fog.far, lamps: lamps.map((l) => l.intensity), scene: curScene && curScene.id, type: curScene && curScene.type, shadows: ren.shadowMap.enabled, bloom: BLOOM.on && BLOOM_OK && !BLOOM.bad });
   if (typeof ancrerDans === 'function') {
