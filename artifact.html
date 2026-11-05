@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="6def15a2b0f5" aria-label="Identifiant de version">Version générée : 6def15a2b0f5</div>
+      <div class="meta" id="t-build" data-build="d5656d516296" aria-label="Identifiant de version">Version générée : d5656d516296</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -25805,10 +25805,17 @@ function R3init(T) {
     const st = NPC_STYLE[n.role] || NPC_STYLE.voix; const root = group(world, W(n.x), hSol(n.x, n.y), W(n.y)); const mats = [];
     const o = { root, n, mats, update: null };
     if (n.role === 'autel') {
-      mesh(root, 'box', sharedToon('#6a5a4a'), 0, 0.22, 0, 2.2, 0.45, 1.1);
-      mesh(root, 'box', sharedToon('#8a7a64'), 0, 0.55, 0, 1.6, 0.25, 0.8);
-      mesh(root, 'cyl', sharedToon('#c9a24a'), 0, 0.72, 0, 0.42, 0.1, 0.42);
-      for (let i = 0; i < 3; i++) mesh(root, 'cyl', sharedBasic('#ff9a5a'), (i - 1) * 0.12, 0.9, 0, 0.015, 0.3, 0.015, 0, 0, 0, false);
+      // [Claude] autel de pierre au lieu d'une boîte beige à disque jaune (relevé Qinghe, portrait) : marche, socle à
+      // moulure, dalle de pierre claire, brûle-encens de bronze à trois pieds, bâtons d'encens, deux lanternes de pierre.
+      mesh(root, 'box', sharedToon('#5e5852'), 0, 0.07, 0, 2.6, 0.14, 1.4);
+      mesh(root, 'box', sharedToon('#6e6860'), 0, 0.32, 0, 2.0, 0.36, 1.0);
+      mesh(root, 'box', sharedToon('#7e766c'), 0, 0.56, 0, 2.2, 0.12, 1.16);
+      mesh(root, 'box', sharedToon('#9a9288'), 0, 0.66, 0, 1.9, 0.08, 0.9);
+      mesh(root, 'cyl18', sharedToon('#5a4a34'), 0, 0.78, 0, 0.3, 0.16, 0.3);
+      mesh(root, 'cyl18', sharedToon('#7a6646'), 0, 0.88, 0, 0.34, 0.06, 0.34);
+      for (const a of [0, 2.1, 4.2]) mesh(root, 'cyl', sharedToon('#5a4a34'), Math.cos(a) * 0.22, 0.72, Math.sin(a) * 0.22, 0.04, 0.1, 0.04);
+      for (let i = 0; i < 3; i++) mesh(root, 'cyl', sharedBasic('#ff9a5a'), (i - 1) * 0.08, 1.02, 0, 0.012, 0.28, 0.012, 0, 0, 0, false);
+      for (const sx of [-1, 1]) { mesh(root, 'box', sharedToon('#6e6860'), sx * 0.8, 0.8, 0, 0.16, 0.28, 0.16); mesh(root, 'box', sharedToon('#5e5852'), sx * 0.8, 0.99, 0, 0.26, 0.1, 0.26); mesh(root, 'sph', sharedBasic('#f6d890'), sx * 0.8, 0.85, 0, 0.055, 0.07, 0.055, 0, 0, 0, false); }
       o.update = (t) => { for (let i = 0; i < 3; i++) { const hh = (t * 0.5 + i / 3) % 1; parts3.push([W(n.x) + Math.sin(t + i) * 0.12, 1.05 + hh * 1.4, W(n.y), 0.5 + hh * 0.7, pc('#e6dcc8'), (1 - hh) * 0.35]); } };
     } else if (n.role === 'relais') {
       // Pierre de passage : stèle de pierre à sommet arrondi sur double socle, plaque gravée 驛 (le caractère de
