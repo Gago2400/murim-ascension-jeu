@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="d5656d516296" aria-label="Identifiant de version">Version générée : d5656d516296</div>
+      <div class="meta" id="t-build" data-build="cfb3756a676f" aria-label="Identifiant de version">Version générée : cfb3756a676f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -16583,8 +16583,13 @@ function R3init(T) {
     const uBiomeTint = { value: new T.Vector3(...(solBiome[sc.id] || [1, 1, 1])) };
     const lift = jourLift(sc);
     const uL = { value: new T.Vector3(...(lift > 1 ? JOUR.chaud.map((c) => c * Math.min(lift, 1.15)) : [1, 1, 1])) };
-    m.userData = { detailName: name, uL };
+    // [Claude] nuit : le sol affiche sa photo sans lumière (voir plus bas), donc seule l'exposition (−38 %) le baissait la
+    // nuit, quand tout le reste perdait en plus 75 % de soleil et 60 % de ciel : herbe vert vif sous un ciel nocturne
+    // (relevé forêt de Qinghe, nuitForce 0,85). uNuit suit nuitK() : le sol passe à 30 % en bleu nuit, comme le décor.
+    const uNuit = { value: 0 };
+    m.userData = { detailName: name, uL, uNuit };
     m.onBeforeCompile = (sh) => {
+      sh.uniforms.uNuit = uNuit;
       sh.uniforms.tGrass = { value: GROUND_RGB.herbe };
       sh.uniforms.tDirt = { value: GROUND_RGB.terre };
       sh.uniforms.tSeche = { value: GROUND_RGB.seche };
@@ -16607,7 +16612,7 @@ function R3init(T) {
       // La lumière du soleil (×2) lavait toute texture en un aplat. On affiche la photo telle quelle,
       // et on ne garde le sol peint que pour l'eau (bleue dans la carte).
       // Terre battue partout, sauf le désert (tSeche, boue craquelée). Les planches : auberges et maisons.
-      sh.fragmentShader = 'varying vec2 vGW; uniform sampler2D tGrass, tDirt, tSeche, tStone, tWood; uniform float uMode; uniform vec3 uBiomeTint, uLieu; uniform float uMer, uGrassGain, uSnow;\n' + sh.fragmentShader.replace('#include <colorspace_fragment>',
+      sh.fragmentShader = 'varying vec2 vGW; uniform sampler2D tGrass, tDirt, tSeche, tStone, tWood; uniform float uMode; uniform vec3 uBiomeTint, uLieu; uniform float uMer, uGrassGain, uSnow, uNuit;\n' + sh.fragmentShader.replace('#include <colorspace_fragment>',
         '#include <colorspace_fragment>\n { vec3 base = diffuseColor.rgb;\n'
         + ' vec2 g1 = vGW * 0.16; vec2 i1 = floor(g1); vec2 f1 = fract(g1); f1 = f1 * f1 * (3.0 - 2.0 * f1);\n'
         + ' float a00 = fract(sin(dot(i1, vec2(127.1, 311.7))) * 43758.5);\n'
@@ -16686,9 +16691,10 @@ function R3init(T) {
         + '   photo = mix(photo, sentier * vec3(1.08, 0.96, 0.8), road * (1.0 - water));\n'
         + ' }\n'
         + ' if (uMode > 0.5) { float hh = dot(photo, vec3(0.299, 0.587, 0.114)); photo *= clamp(1.0 + (dFdx(hh) - dFdy(hh)) * 4.0, 0.9, 1.1); }\n'
+        + ' photo *= mix(vec3(1.0), vec3(0.3, 0.34, 0.46), uNuit);\n'
         + ' if (uMer > 0.5 || water < 0.5) gl_FragColor = vec4(photo, 1.0); }');
     };
-    m.customProgramCacheKey = () => 'sol-cc0k-herbe3';
+    m.customProgramCacheKey = () => 'sol-cc0k-herbe3-nuit';
     groundMats.push(m);
     return m;
   }
@@ -26592,6 +26598,7 @@ function R3init(T) {
     } else if (R3.nkPrev > 0.001 && R3.mood) { sun.intensity = R3.sunBase; hemiLamps(); if (R3.fogBase) { fog.color.copy(R3.fogBase); scn.background = R3.fogBase.clone(); } }
     const crypte = curScene && curScene.dungeon === 'crypte_sceau';
     ren.toneMappingExposure = (crypte ? 1.32 : 1.15) * (1 - 0.38 * nk); // la nuit se voit aussi sur les sols déjà éclairés par le relevé du jour
+    for (const gm of groundMats) if (gm.userData.uNuit) gm.userData.uNuit.value = nk; // [Claude] le sol suit la nuit (voir groundMaterial)
     R3.nkPrev = nk;
     // [Claude] plus de saut de lumière : une lampe garde sa lanterne tant qu'elle reste parmi les plus proches, une
     // lanterne entre et sort du trio à intensité quasi nulle (atténuation sur les 6 derniers mètres des 22 m de portée)
