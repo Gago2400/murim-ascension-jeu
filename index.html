@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="72f8e96cab5e">
+<meta name="murim-build" content="1ba1d75eac36">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="72f8e96cab5e" aria-label="Identifiant de version">Version générée : 72f8e96cab5e</div>
+      <div class="meta" id="t-build" data-build="1ba1d75eac36" aria-label="Identifiant de version">Version générée : 1ba1d75eac36</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -19039,9 +19039,15 @@ function R3init(T) {
           paint = 'stone'; put('box', 't', '#77706a', 0, 0.4, 0, L + 0.2, 0.8, 1.3);
           paint = 'rempart'; put('box', 't', '#b9a47e', 0, 1.95, 0, L, 2.3, 0.95);
           paint = 'roof'; put('box', 't', shade(tuile, 0.1), 0, 3.16, 0, L + 0.2, 0.16, 1.25);
+          // [Claude] créneaux : vus de la caméra du jeu (47°, de haut), deux rangées de cubes de sable (0,7 × 0,55 m)
+          // posés sur la dalle de tuiles lisaient comme des caisses alignées (Plaines, Bourg du Clan Gao). Parapet de
+          // pierre continu de chaque côté du chemin de ronde, dents basses et serrées dessus : une muraille, pas des blocs.
           paint = 'stone';
-          const nb = Math.max(1, Math.floor(L / 1.3));
-          for (let k = 0; k < nb; k++) { const x = -L / 2 + (k + 0.5) * L / nb; put('box', 't', '#8a7e6c', x, 3.5, 0.5, 0.7, 0.55, 0.26); put('box', 't', '#8a7e6c', x, 3.5, -0.5, 0.7, 0.55, 0.26); }
+          const nb = Math.max(2, Math.floor(L / 0.9));
+          for (const sz of [-1, 1]) {
+            put('box', 't', '#746c62', 0, 3.42, sz * 0.53, L + 0.2, 0.38, 0.2);
+            for (let k = 0; k < nb; k++) { const x = -L / 2 + (k + 0.5) * L / nb; put('box', 't', '#7e766c', x, 3.72, sz * 0.53, 0.42, 0.22, 0.22); }
+          }
           break;
         }
         case 'tourguet': {
@@ -28522,6 +28528,7 @@ function R3init(T) {
   R3.horsMurs = () => ({ scene: curScene && curScene.horsMurs ? curScene.id : null, volumes: curScene && curScene.horsMurs ? curScene.horsMurs.volumes.length : 0, natif: true });
   // Diagnostic réversible pour comparer les mêmes scènes avec et sans tri, sans modifier la logique.
   R3.setDecorCull = (on) => { decorCull = !!on; cullKey = ''; };
+  R3.cameraThree = () => cam; // [Claude] diagnostic : la caméra du jeu (lancer de rayon depuis un pixel d'une capture)
   R3.sceneThree = () => scn; // [Claude] diagnostic : la scène three (sondes qui masquent une pièce de pack pour voir ce qu'elle dessine)
   R3.decorCullInfo = () => ({ enabled: decorCull, shadows: ren.shadowMap.enabled, total: CULLI.reduce((n, im) => n + im.userData.cull.n, 0), visible: CULLI.reduce((n, im) => n + im.count, 0) });
   R3.dbg = () => ({ cam: Math.round(CAM.dist * 10) / 10, camY: +cam.position.y.toFixed(2), pitch: Math.round(CAM.pitch * 180 / Math.PI), hemi: hemi.intensity, hemiC: hemi.color.getHexString(), sun: sun.intensity, fog: fog.color.getHexString(), near: fog.near, far: fog.far, lamps: lamps.map((l) => l.intensity), scene: curScene && curScene.id, type: curScene && curScene.type, shadows: ren.shadowMap.enabled, bloom: BLOOM.on && BLOOM_OK && !BLOOM.bad });
