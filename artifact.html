@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="cfb3756a676f" aria-label="Identifiant de version">Version générée : cfb3756a676f</div>
+      <div class="meta" id="t-build" data-build="06d584cd4c39" aria-label="Identifiant de version">Version générée : 06d584cd4c39</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -18728,25 +18728,24 @@ function R3init(T) {
           // [Grogrok] Marécages : mangrove (échasses + houppier olive), pas le bâton nu.
           if (id === 'marecages') {
             // Mangrove : échasses écartées sous un houppier relevé (lisible vue plongeante).
+            // [Claude] vues de la caméra du jeu (47°, de haut), les six échasses inclinées à 66° dépassaient loin d'un
+            // houppier bas, noir et étroit : chaque mangrove était une étoile noire à six branches (relevé refuge des
+            // Marécages). Échasses plus droites et plus courtes sous un houppier plus large, bois brun au lieu du noir.
             paint = 'wood';
-            const tc = '#2c2418';
+            const tc = '#4a3a2c';
             const k = [0.95, 1.1, 1.25][Math.floor(d.v * 3) % 3];
             // tronc court au-dessus des pilotis
             put('cyl', 't', tc, 0, 1.35 * k, 0, 0.16 * k, 0.7 * k, 0.16 * k);
             for (let i = 0; i < 6; i++) {
               const a = d.v * TAU + i * (Math.PI / 3);
-              const reach = 0.55 * k;
-              put('cyl', 't', i % 2 ? '#3a2c1c' : tc, Math.cos(a) * reach * 0.55, 0.55 * k, Math.sin(a) * reach * 0.55, 0.055 * k, 1.15 * k, 0.055 * k, Math.sin(a) * 1.15, 0.15, -Math.cos(a) * 1.15);
-            }
-            for (let i = 0; i < 4; i++) {
-              const a = d.v * TAU + i * 1.57 + 0.5;
-              put('cyl', 't', tc, Math.cos(a) * 0.28 * k, 1.55 * k, Math.sin(a) * 0.28 * k, 0.05 * k, 0.75 * k, 0.05 * k, Math.sin(a) * 0.85, 0.35, -Math.cos(a) * 0.85);
+              const reach = 0.26 * k;
+              put('cyl', 't', i % 2 ? '#564636' : tc, Math.cos(a) * reach * 0.55, 0.5 * k, Math.sin(a) * reach * 0.55, 0.055 * k, 1.0 * k, 0.055 * k, Math.sin(a) * 0.32, 0.15, -Math.cos(a) * 0.32);
             }
             marqueArbre = true;
-            // houppier sombre olive, un peu plus haut pour laisser voir les échasses
-            poserTouffes('#2a3c28', [
-              [0, 2.15 * k, 0, 0.52 * k], [-0.45 * k, 1.95 * k, 0.25 * k, 0.34 * k], [0.48 * k, 1.98 * k, -0.2 * k, 0.34 * k],
-              [0.08 * k, 2.55 * k, 0.05 * k, 0.3 * k], [-0.25 * k, 2.25 * k, -0.35 * k, 0.3 * k], [0.3 * k, 2.2 * k, 0.32 * k, 0.28 * k],
+            // houppier olive, large : il couvre les échasses vu de haut
+            poserTouffes('#4a6440', [
+              [0, 2.15 * k, 0, 0.78 * k], [-0.6 * k, 1.98 * k, 0.32 * k, 0.48 * k], [0.62 * k, 2.0 * k, -0.28 * k, 0.48 * k],
+              [0.08 * k, 2.6 * k, 0.05 * k, 0.38 * k], [-0.3 * k, 2.3 * k, -0.48 * k, 0.4 * k], [0.36 * k, 2.25 * k, 0.45 * k, 0.38 * k],
             ], d.v);
             marqueArbre = false;
             break;
