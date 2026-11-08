@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="f5fb383a7d9a" aria-label="Identifiant de version">Version générée : f5fb383a7d9a</div>
+      <div class="meta" id="t-build" data-build="eb4fac60759a" aria-label="Identifiant de version">Version générée : eb4fac60759a</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -16170,7 +16170,7 @@ function R3init(T) {
         g.computeBoundingSphere(); break;
       }
       case 'dode': g = new T.DodecahedronGeometry(1, 0); break;
-      case 'ico': g = new T.IcosahedronGeometry(1, 0); break; // [Claude] gardé anguleux pour le golem de roche seulement ; buissons et houppiers passent par 'touffe'
+      case 'ico': g = new T.IcosahedronGeometry(1, 0); break; // [Claude] anguleux : golem de roche seulement ('touffe' ailleurs)
       case 'roc0': g = rocherIrr(1.3, false); break;
       case 'roc1': g = rocherIrr(2.7, false); break;
       case 'roc2': g = rocherIrr(4.1, true); break;
@@ -16869,7 +16869,7 @@ function R3init(T) {
     const bOcc = (G.scene && G.scene.dungeon === 'crypte_sceau' && G.boss && !G.boss.dead) ? G.boss : null;
     const hx0 = bOcc ? (P.x + bOcc.x) * 0.5 : P.x;
     const hy0 = bOcc ? (P.y + bOcc.y) * 0.5 : P.y;
-    HEROW.value.set(W(hx0), hSol(hx0, hy0), W(hy0), ok ? (bOcc ? 4.6 : 3.2) : 0); // [Claude] rayon du couloir de visée (m) : le héros et ses voisins immédiats
+    HEROW.value.set(W(hx0), hSol(hx0, hy0), W(hy0), ok ? (bOcc ? 4.6 : 3.2) : 0); // [Claude] rayon du couloir de visée (m)
     const hx = W(P.x), hz = W(P.y);
     for (const im of JUMEAUX) if (!im.userData.cull) remplirJumeau(im, im.instanceMatrix.array, im.instanceColor && im.instanceColor.array, im.count, hx, hz);
     updatePaifangToits();
@@ -19343,7 +19343,7 @@ function R3init(T) {
           break;
         }
         case 'tonneau': paint = 'wood'; put('cyl', 't', '#6a4a2c', 0, 0.42, 0, 0.38, 0.85, 0.38); break;
-        case 'panneau': { // [Claude] poteau indicateur : poteau, une lame par route, inclinée vers le ciel pour la caméra en plongée (texte : panneauxTextes)
+        case 'panneau': { // [Claude] poteau indicateur : une lame par route, inclinée vers la caméra (panneauxTextes)
           paint = 'wood';
           put('cyl', 't', '#4e3421', 0, 1.0, 0, 0.07, 2.0, 0.07);
           E1.order = 'YXZ'; // lacet de la route, puis inclinaison autour de l'axe de la lame
@@ -19358,7 +19358,7 @@ function R3init(T) {
         case 'panier': paint = 'wood'; put('cyl', 't', '#9a7a48', 0, 0.3, 0, 0.3, 0.6, 0.3); break;
         case 'chariot_rue': paint = 'wood'; put('box', 't', '#6a8a5a', 0, 1.1, 0, 1.6, 1.2, 2.6); paint = 'roof'; put('box', 't', '#5a5048', 0, 2.5, 0, 1.9, 0.12, 2.9); break;
         case 'cloche': paint = 'stone'; put('cone', 't', '#4a5a48', 0, 1.0, 0, 0.9, 2.0, 0.9); break;
-        case 'pont': { // [Claude] dos d'âne : tablier de bois à PONT_H au-dessus de l'eau (le héros y monte, solH), rampes pavées sur les berges, culées et arche de pierre sous le tablier
+        case 'pont': { // [Claude] dos d'âne : tablier à PONT_H (solH), rampes, culées et arche
           const L = W(d.len || 400), B = W(d.larg || 104), hb = B / 2, ep = 0.2; // tablier mince : la pierre de l'arche se voit sous le bois
           const gy = hSol(d.x, d.y); // le groupe est posé à la hauteur du tablier : y local 0 = dessus des planches
           const sol = -gy, eau = 0.06 - gy; // sol et surface de l'eau (riverRibbons) en local
@@ -20799,7 +20799,7 @@ function R3init(T) {
     const v = new T.InstancedMesh(g, matVoile(im.material), im.count);
     v.count = 0; v.frustumCulled = false; v.castShadow = false; v.receiveShadow = false; v.renderOrder = 2;
     if (im.instanceColor) v.instanceColor = new T.InstancedBufferAttribute(new Float32Array(im.count * 3), 3);
-    v.userData.ownGeo = true; v.userData.ownMat = true; // [Claude] clones privés : clearWorld les libère au changement de région (les textures partagées restent, userData.keep)
+    v.userData.ownGeo = true; v.userData.ownMat = true; // [Claude] clones privés : clearWorld les libère (textures partagées gardées)
     im.parent.add(v); im.userData.voile = v;
     // [Claude] la coque sombre du houppier (« masse », remplissage olive sous les cartes de feuilles) ne se dessine pas en
     // fantôme : à 22 % sur l'herbe, c'était un hexagone sombre et anguleux autour du héros (relevé forêt de Qinghe,
@@ -22044,7 +22044,7 @@ function R3init(T) {
   // En cas d'échec (hors ligne, fichier invalide), les personnages restent en primitives.
   const MDL = { st: 'off', lib: {}, SU: null };
   const ADDON = 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/';
-  const CLIP_RX = { idle: /idle|standing|stand/i, walk: /walk|run/i, run: /^run$|course/i, attack: /attack|slash|sword|punch/i, sit: /sit/i, death: /death|die/i }; // [Claude] run : clip de course propre (tools/personnages.mjs) ; walk garde /run/ pour les anciens modèles qui n'ont qu'une course
+  const CLIP_RX = { idle: /idle|standing|stand/i, walk: /walk|run/i, run: /^run$|course/i, attack: /attack|slash|sword|punch/i, sit: /sit/i, death: /death|die/i }; // [Claude] walk garde /run/ : anciens modèles sans marche
   function loadModels() {
     // index.html sert les modèles du héros à côté de la page (window.MURIM_LAZY, HTTP same-origin, comme les monstres) :
     // la page d'accueil n'embarque plus 1,7 Mo de GLB, elle arrive et devient jouable plus vite. artifact.html garde les
@@ -23553,6 +23553,9 @@ function R3init(T) {
     const a = Math.sin(clamp(k, 0, 1) * Math.PI);
     root.position.y += a * 0.78;
     root.rotateX(a * 0.36);
+    // [Claude] roulade groupée : buste, tête et bras rentrés (avant : corps droit, jambes seules pliées)
+    const og = m && osGeste(m);
+    if (og) { plierBuste(og, m, a * 0.7, a * 0.45); brasDevant(og, m, a, 1.3, 0.5); }
     const pieds = m && piedsHumain(m);
     if (!pieds) return a;
     const ry = root.rotation.y;
@@ -23570,8 +23573,16 @@ function R3init(T) {
     root.position.x -= Math.cos(face) * a * 0.34;
     root.position.z -= Math.sin(face) * a * 0.34;
     const o = osGeste(m); if (!o) return;
-    if (o.sp) osApresMixeur(o.sp, (os) => { os.rotateX(-a * 0.4); }, m.osJeton);
-    if (o.hd) osApresMixeur(o.hd, (os) => { os.rotateX(a * 0.45); }, m.osJeton);
+    plierBuste(o, m, -a * 0.4, a * 0.45); brasDevant(o, m, a, 1.1, 0.35); // [Claude] bras en garde devant le visage
+  }
+  // [Claude] après mixeur : buste/tête (radians), bras devant (épaules −rx·a, écart rz·a)
+  function plierBuste(o, m, sp, hd) {
+    if (o.sp) osApresMixeur(o.sp, (os) => { os.rotateX(sp); }, m.osJeton);
+    if (o.hd) osApresMixeur(o.hd, (os) => { os.rotateX(hd); }, m.osJeton);
+  }
+  function brasDevant(o, m, a, rx, rz) {
+    if (o.ul) osApresMixeur(o.ul, (os) => { os.rotateX(-a * rx); os.rotateZ(a * rz); }, m.osJeton);
+    if (o.ur) osApresMixeur(o.ur, (os) => { os.rotateX(-a * rx); os.rotateZ(-a * rz); }, m.osJeton);
   }
   // Glisse du pied verrouillé (m/s vers l'avant), après l'IK. Proche de zéro quand la cadence suit.
   function glissePosee(m, root, dt) {
@@ -26607,7 +26618,7 @@ function R3init(T) {
     } else if (R3.nkPrev > 0.001 && R3.mood) { sun.intensity = R3.sunBase; hemiLamps(); if (R3.fogBase) { fog.color.copy(R3.fogBase); scn.background = R3.fogBase.clone(); } }
     const crypte = curScene && curScene.dungeon === 'crypte_sceau';
     ren.toneMappingExposure = (crypte ? 1.32 : 1.15) * (1 - 0.38 * nk); // la nuit se voit aussi sur les sols déjà éclairés par le relevé du jour
-    for (const gm of groundMats) if (gm.userData.uNuit) gm.userData.uNuit.value = nk; // [Claude] le sol suit la nuit (voir groundMaterial)
+    for (const gm of groundMats) if (gm.userData.uNuit) gm.userData.uNuit.value = nk; // [Claude] le sol suit la nuit
     R3.nkPrev = nk;
     // [Claude] plus de saut de lumière : une lampe garde sa lanterne tant qu'elle reste parmi les plus proches, une
     // lanterne entre et sort du trio à intensité quasi nulle (atténuation sur les 6 derniers mètres des 22 m de portée)
@@ -26987,7 +26998,7 @@ function R3init(T) {
       o.root.traverse((q) => { if (q.isMesh && q.frustumCulled) { q.frustumCulled = false; culled.push(q); } });
       for (const ch of world.children) hide(ch);
       for (const ch of dyn.children) hide(ch);
-      scn.background = col('#140e0c'); fog.near = 1e5; fog.far = 1e6; ren.toneMappingExposure = 1.05; // [Claude] brouillard repoussé, pas retiré : même programme qu'en jeu (fog est dans la clef), buste identique au pixel
+      scn.background = col('#140e0c'); fog.near = 1e5; fog.far = 1e6; ren.toneMappingExposure = 1.05; // [Claude] brouillard repoussé, pas retiré : même programme qu'en jeu
       sun.position.set(lx + fx * 1.5, lookY + 0.55, lz + fz * 1.5);
       sun.target.position.set(lx, lookY, lz); sun.target.updateMatrixWorld();
       sun.intensity = 1.7;
@@ -28549,7 +28560,7 @@ function R3init(T) {
     };
   };
   // tests : ombres de contact visibles sous une vue qui porte déjà une ombre portée (0 attendu)
-  // [Claude] liste des programmes GLSL vivants (nom du matériau + clef de cache) : pour savoir quelle variante s'est compilée en plein jeu
+  // [Claude] programmes GLSL vivants (matériau + clef) : variante compilée en jeu
   R3.programmes = () => (ren.info.programs || []).map((p) => p.name + ' | ' + String(p.cacheKey));
   R3.ombresDoubles = () => { let n = 0; for (const o of BLOBS) { if (!o.userData.perso || !o.visible || !o.parent) continue; let cast = false; o.parent.traverse((x) => { if (x.isMesh && x.castShadow) cast = true; }); if (cast && ren.shadowMap.enabled) n++; } return n; };
   R3.ren = ren;
@@ -28558,7 +28569,8 @@ function R3init(T) {
   // Diagnostic réversible pour comparer les mêmes scènes avec et sans tri, sans modifier la logique.
   R3.setDecorCull = (on) => { decorCull = !!on; cullKey = ''; };
   R3.cameraThree = () => cam; // [Claude] diagnostic : la caméra du jeu (lancer de rayon depuis un pixel d'une capture)
-  R3.sceneThree = () => scn; // [Claude] diagnostic : la scène three (sondes qui masquent une pièce de pack pour voir ce qu'elle dessine)
+  R3.heros = () => PV; // [Claude] sondes de pose
+  R3.sceneThree = () => scn; // [Claude] diagnostic : la scène three (sondes)
   R3.decorCullInfo = () => ({ enabled: decorCull, shadows: ren.shadowMap.enabled, total: CULLI.reduce((n, im) => n + im.userData.cull.n, 0), visible: CULLI.reduce((n, im) => n + im.count, 0) });
   R3.dbg = () => ({ cam: Math.round(CAM.dist * 10) / 10, camY: +cam.position.y.toFixed(2), pitch: Math.round(CAM.pitch * 180 / Math.PI), hemi: hemi.intensity, hemiC: hemi.color.getHexString(), sun: sun.intensity, fog: fog.color.getHexString(), near: fog.near, far: fog.far, lamps: lamps.map((l) => l.intensity), scene: curScene && curScene.id, type: curScene && curScene.type, shadows: ren.shadowMap.enabled, bloom: BLOOM.on && BLOOM_OK && !BLOOM.bad });
   if (typeof ancrerDans === 'function') {
@@ -28578,7 +28590,7 @@ function R3init(T) {
     R3.tailles = () => ancreApi.tailles();
     R3.grille = (o) => ancreApi.grille(o);
     R3.ancresMesures = () => ancreApi.mesures();
-    R3.cadrer = (z) => { CAM.zoom = z; CAM.dist = CAM.base + z; };
+    R3.cadrer = (z, tangage) => { CAM.zoom = z; CAM.dist = CAM.base + z; if (tangage != null) CAM.pitch = tangage * Math.PI / 180; }; // [Claude] tangage en degrés (sondes)
   }
 }
 // types de « flats » rendus en relief plutôt que peints au sol
