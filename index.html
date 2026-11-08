@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="9334caf60079">
+<meta name="murim-build" content="82866a1574e9">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="9334caf60079" aria-label="Identifiant de version">Version générée : 9334caf60079</div>
+      <div class="meta" id="t-build" data-build="82866a1574e9" aria-label="Identifiant de version">Version générée : 82866a1574e9</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -23622,10 +23622,10 @@ function R3init(T) {
   // [Claude] regard : la tête pivote vers une cible (x, z monde) dans la limite de ±60°, lissée, et revient au clip sans cible.
   // Appelé après gaineArme : au repos, les ancres d'équipement (56_ancres.js, debout) remettent la tête droite.
   const RG_P = new T.Quaternion(), RG_I = new T.Quaternion(), RG_Q = new T.Quaternion(), RG_Y = new T.Vector3(0, 1, 0);
-  function regarder(m, root, tx, tz, dt) {
+  function regarder(m, root, tx, tz, dt, max) {
     const o = osGeste(m); if (!o || !o.hd) return;
-    let vise = 0;
-    if (tx != null) { const dx = tx - root.position.x, dz = tz - root.position.z; if (dx * dx + dz * dz > 0.04) vise = clamp(angDiff(-root.rotation.y, Math.atan2(dz, dx)), -1.05, 1.05); }
+    let vise = 0; const lim = max || 1.05;
+    if (tx != null) { const dx = tx - root.position.x, dz = tz - root.position.z; if (dx * dx + dz * dz > 0.04) vise = clamp(angDiff(-root.rotation.y, Math.atan2(dz, dx)), -lim, lim); }
     m._rg = (m._rg || 0) + (vise - (m._rg || 0)) * Math.min(1, (dt || 0.016) * 9);
     if (Math.abs(m._rg) < 1e-3) return;
     const a = -m._rg;
@@ -25882,6 +25882,10 @@ function R3init(T) {
           const mv = n.cap != null; poserPnj(md, root, mv, t, n.anim, look, 1.2);
           if (n.geste === 'esquive') sautEsquive(root, md.m, 0.55);
           else if (n.geste === 'coup') reculCoup(root, md.m, 0.9, -root.rotation.y);
+          else { // [Claude] le villageois suit le héros du regard à moins de 6 m, debout comme en marche
+            const px = W(P.x), pz = W(P.y), pres = Math.hypot(px - root.position.x, pz - root.position.z) < 6;
+            regarder(md.m, root, pres ? px : null, pres ? pz : null, pasAnim(t, o._rdt == null ? t : o._rdt), 0.8); o._rdt = t; // ±46° : le futou du lettré reste lisible
+          }
         }
         showModelInk(md.m, !o.thin); showInk(md.ink, !o.thin);
       }; }
