@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="a21ec7ca3b64">
+<meta name="murim-build" content="546e51aefa0d">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -857,6 +857,8 @@ html.hud-boss #fps {
 #hud.combat #h-quest .q-corps,
 #hud.combat #h-quest .q-recit,
 #hud.combat #h-quest .q-goal { display: none; }
+#hud.boss #h-quest.compacte .q-corps,#hud.combat #h-quest.compacte .q-corps{display:block;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hud.boss #h-quest.compacte,#hud.combat #h-quest.compacte{max-width:min(62vw,220px)}
 #hud.boss #h-quest::after,
 #hud.combat #h-quest::after { display: none; }
 #hud.boss #h-quest small,
@@ -2302,7 +2304,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="a21ec7ca3b64" aria-label="Identifiant de version">Version générée : a21ec7ca3b64</div>
+      <div class="meta" id="t-build" data-build="546e51aefa0d" aria-label="Identifiant de version">Version générée : 546e51aefa0d</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -8225,13 +8227,11 @@ saveGame = function () {
   saveGameBeforeInteriors();
 };
 
-// ───────────────────────── État persistant & formules ─────────────────────────
-// Même clé dans Safari et dans l'app « Ajouter à l'écran d'accueil ». Depuis iOS 16.4 elles partagent
-// le localStorage (même origine). Avant iOS 16.4 le Web Clip autonome avait un stockage isolé :
-// une partie commencée dans Safari n'apparaissait pas sur l'écran d'accueil, et inversement.
-// On ne change pas de clé selon le mode. Copier le code (Options) reste le pont sûr.
+// État persistant. Même clé Safari / écran d'accueil (localStorage partagé depuis iOS 16.4).
 const SAVE_KEY = 'murim_ascension_v1';
 let S = null; // sauvegarde (persistante)
+// Compteur hors de S : une page en mémoire n'écrase pas une session plus récente.
+let sauveSession = 0;
 
 function newSave(o) {
   const s = {
@@ -8282,47 +8282,69 @@ function sauvegardeValide(s) {
   return !!(s && typeof s === 'object' && s.attrs && typeof s.attrs === 'object' && !Array.isArray(s.attrs)
     && Number.isFinite(+s.level) && +s.level >= 1 && typeof s.name === 'string' && s.name);
 }
+function lireGenSauvegarde() {
+  try { const n = Math.floor(+localStorage.getItem(SAVE_KEY + '_gen')); return n > 0 && n < 1e15 ? n : 0; } catch (e) { return 0; }
+}
+function poserGenSauvegarde(n) {
+  sauveSession = n;
+  try { localStorage.setItem(SAVE_KEY + '_gen', String(n)); } catch (e) { }
+}
+function adopterGenerationDisque() { sauveSession = lireGenSauvegarde(); }
+// savedAt bouge toujours : on l'ignore pour voir si la partie a vraiment changé.
+function memeCorpsSauvegarde(a, b) {
+  if (a === b) return true;
+  try {
+    const pa = JSON.parse(a), pb = JSON.parse(b);
+    if (!pa || !pb || typeof pa !== 'object') return false;
+    delete pa.savedAt; delete pb.savedAt;
+    return JSON.stringify(pa) === JSON.stringify(pb);
+  } catch (e) { return false; }
+}
 function saveGame() {
   if (!S) return;
   if (typeof elaguerSauvegarde === 'function') elaguerSauvegarde(S);
   S.savedAt = Date.now();
   try {
     const raw = JSON.stringify(S);
-    let parsed;
-    try { parsed = JSON.parse(raw); } catch (eParse) { throw eParse; }
+    const parsed = JSON.parse(raw);
     if (!sauvegardeValide(parsed)) {
-      if (typeof console !== 'undefined' && console.warn) {
-        console.warn('[sauvegarde] écriture refusée : état incomplet, dernière copie intacte conservée');
-      }
+      if (typeof console !== 'undefined' && console.warn) console.warn('[sauvegarde] écriture refusée : état incomplet, dernière copie intacte conservée');
       if (!saveGame.refusSignale) {
         saveGame.refusSignale = true;
         if (typeof toast === 'function') toast('Sauvegarde : copie intacte conservée.', 'info');
       }
       return;
     }
-    // [Grok] figer la dernière bonne avant d'écrire : une nouvelle illisible ou un quota
-    // iOS ne doit pas écraser _ok. Si la principale seule est écrite, _ok reste jouable.
-    try {
-      const prev = localStorage.getItem(SAVE_KEY);
-      if (prev && prev !== raw) {
-        try {
-          if (sauvegardeValide(JSON.parse(prev))) localStorage.setItem(SAVE_KEY + '_ok', prev);
-        } catch (ePrev) { /* principale déjà illisible : ne pas toucher _ok */ }
+    let prev = null;
+    try { prev = localStorage.getItem(SAVE_KEY); } catch (e0) { prev = null; }
+    // Page en arrière-plan sans progrès : ne pas avancer le compteur, l'autre session doit pouvoir écrire.
+    if (prev && memeCorpsSauvegarde(prev, raw)) {
+      if (lireGenSauvegarde() < sauveSession) poserGenSauvegarde(sauveSession);
+      saveGame.echec = false; return;
+    }
+    const gen = lireGenSauvegarde();
+    if (gen > sauveSession) {
+      try { localStorage.setItem(SAVE_KEY + '_autre', raw); } catch (eA) { }
+      if (typeof console !== 'undefined' && console.warn) console.warn('[sauvegarde] autre session plus récente : copie locale non appliquée');
+      if (!saveGame.conflitSignale) {
+        saveGame.conflitSignale = true;
+        if (typeof toast === 'function') toast('Autre session plus récente : ta partie est gardée à part, sans écraser.', 'warn');
       }
-    } catch (eOk) { /* quota : on tente quand même la principale */ }
+      return;
+    }
+    // Dernière bonne figée avant l'écriture : un quota iOS ne doit pas écraser _ok.
+    try { if (prev && prev !== raw && sauvegardeValide(JSON.parse(prev))) localStorage.setItem(SAVE_KEY + '_ok', prev); } catch (eOk) { }
     localStorage.setItem(SAVE_KEY, raw);
-    try { localStorage.setItem(SAVE_KEY + '_ok', raw); } catch (e2) { /* quota : la copie précédente suffit */ }
+    try { localStorage.setItem(SAVE_KEY + '_ok', raw); } catch (e2) { }
+    poserGenSauvegarde(gen + 1);
     saveGame.echec = false;
   } catch (e) {
-    // [Claude] stockage refusé (navigation privée, quota, désactivé) : le joueur l'apprend une fois, au lieu de perdre sa session sans le savoir
-    if (typeof console !== 'undefined' && console.warn) {
-      console.warn('[sauvegarde] écriture refusée : stockage plein ou désactivé, dernière copie intacte conservée');
-    }
+    if (typeof console !== 'undefined' && console.warn) console.warn('[sauvegarde] écriture refusée : stockage plein ou désactivé, dernière copie intacte conservée');
     if (!saveGame.echec) { saveGame.echec = true; if (typeof toast === 'function') toast('Sauvegarde impossible dans ce navigateur (stockage plein ou désactivé) : copie ton code dans Options', 'warn'); }
   }
 }
 function loadGameCandidats() {
-  const keys = [SAVE_KEY, SAVE_KEY + '_ok', SAVE_KEY + '_avant_nouvelle', SAVE_KEY + '_avant_import'];
+  const keys = [SAVE_KEY, SAVE_KEY + '_ok', SAVE_KEY + '_avant_nouvelle', SAVE_KEY + '_avant_import', SAVE_KEY + '_autre'];
   if (typeof ONLINE_KEYS !== 'undefined' && ONLINE_KEYS.backup) keys.push(ONLINE_KEYS.backup);
   return keys;
 }
@@ -8332,6 +8354,7 @@ function loadGameLire(raw) {
   return s && s.attrs ? s : null;
 }
 function loadGame() {
+  adopterGenerationDisque();
   loadGame.erreur = null;
   loadGame.depuis = null;
   let rawPrincipal = null;
@@ -8346,9 +8369,7 @@ function loadGame() {
   if (rawPrincipal && loadGame.erreur) {
     try { if (!localStorage.getItem(SAVE_KEY + '_illisible')) localStorage.setItem(SAVE_KEY + '_illisible', rawPrincipal); } catch (e2) { }
   }
-  // JSON tronqué / partiel : on reprend la dernière copie bonne, sans écran noir.
-  // On n'écrit _ok qu'après avoir réussi à replacer la principale : un quota ne doit
-  // pas remplacer la copie bonne par une restauration inachevée.
+  // JSON tronqué : dernière copie bonne. _ok n'est réécrit qu'après la principale.
   for (const k of loadGameCandidats()) {
     if (k === SAVE_KEY) continue;
     try {
@@ -8367,10 +8388,11 @@ function loadGame() {
   return null;
 }
 function effacerSauvegarde() {
-  const extra = [SAVE_KEY + '_illisible'];
+  const extra = [SAVE_KEY + '_illisible', SAVE_KEY + '_gen'];
   for (const k of loadGameCandidats().concat(extra)) {
     try { localStorage.removeItem(k); } catch (e) { }
   }
+  sauveSession = 0;
 }
 // Plafonds iOS (~5 Mo). L'or en trop est fusionné (jamais jeté) ; les objets, listings et offres restent.
 function elaguerSauvegarde(s) {
@@ -8411,9 +8433,10 @@ function installerSauvegardeArrierePlan(doc, win) {
     w.addEventListener('beforeunload', () => sauverSiArrierePlan(d, true));
   }
 }
-// [Claude] copie de secours de la clef courante avant qu'une nouvelle partie ou un code importé ne l'écrase
+// Copie de secours avant une nouvelle partie ou un import, qui a le droit d'écrire ensuite.
 function sauvegardeDeCote(suffixe) {
   try { const raw = localStorage.getItem(SAVE_KEY); if (raw) localStorage.setItem(SAVE_KEY + suffixe, raw); } catch (e) { }
+  adopterGenerationDisque();
 }
 function migrate(s) {
   if (!s || !s.attrs) return null;
@@ -8599,8 +8622,7 @@ function saveItems(s) {
   return out;
 }
 
-// Objets d'anciennes sauvegardes : `spec` / `sockets` / `base` / `sec` peuvent manquer.
-// Sans garde, computeStats / itemScore / fiche UI plantent (« it.spec is not iterable ») au Continuer.
+// Anciennes sauvegardes : spec, sockets, base ou sec peuvent manquer (sinon « spec is not iterable »).
 function normalizeItems(s) {
   for (const it of saveItems(s)) {
     if (!isObj(it)) continue;
@@ -8850,10 +8872,7 @@ function itemStats(it) {
   return o;
 }
 const itemPrice = (it) => Math.round((5 + it.ilvl * 3) * (1 + it.rar * it.rar * 0.8) * (1 + it.plus * 0.12));
-// Aperçu concret du gain de stats entre l'objet et une version modifiée (forge +N ou trempe) :
-// [{ k, from, to }] pour chaque stat de base mise à l'échelle (hors stats en %). Rend le sink d'or
-// tangible (la forge et la trempe affichaient un « +X % » abstrait). Réutilise itemStats : aucune
-// formule dupliquée.
+// [{ k, from, to }] : gain des stats de base (hors %) entre l'objet et sa version forge ou trempe.
 function statGainPreview(it, nextIt) {
   const cur = itemStats(it), next = itemStats(nextIt);
   const out = [];
@@ -8893,7 +8912,8 @@ function repairItem(it) {
   return true;
 }
 function itemScore(it) {
-  const s = itemStats(it); const L = Math.max(1, it.ilvl);
+  // L=20 : même chiffre de stat → même score (l'ilvl ne fausse plus le classement).
+  const s = itemStats(it); const L = 20;
   const bA = baseStat('atk', L), bD = baseStat('def', L), bH = baseStat('hp', L), bQ = baseStat('qi', L);
   let v = 0;
   v += (s.atk || 0) / bA + (s.qipwr || 0) / bA * 0.8 + (s.def || 0) / bD + (s.hp || 0) / bH + (s.qimax || 0) / bQ * 0.6;
@@ -8902,7 +8922,7 @@ function itemScore(it) {
   v += (Array.isArray(it.spec) ? it.spec : []).length * 0.4;
   return v * L;
 }
-// Écart réel (après forge, trempe, gemmes) entre deux objets du même emplacement : même source que les flèches de la fiche.
+// Écart réel (forge, trempe, gemmes) entre deux objets du même emplacement.
 function itemDelta(it, compare) {
   const s = itemStats(it), cs = compare ? itemStats(compare) : {};
   const keys = Array.from(new Set([...Object.keys(s), ...Object.keys(cs)]));
@@ -9025,8 +9045,7 @@ function dominantVoie() {
 
 // ───────── Progression ─────────
 const levelCap = () => RANKS[S.rank].cap;
-// Élan du disciple, revu à la baisse (progression voulue lente) : EXP de combat ×1,3 jusqu'au niveau 8, retour à ×1 au niveau 12.
-// La progression vient surtout des quêtes et de l'exploration (voir completeQuest et 52_rythme.js), pas du farm.
+// Élan du disciple : EXP de combat ×1,3 jusqu'au niveau 8, ×1 dès le niveau 12.
 function elanDisciple(l) { return l <= 8 ? 1.3 : l >= 12 ? 1 : 1.3 - 0.3 * (l - 8) / 4; }
 function expMult() {
   let m = testMul() * elanDisciple(S.level);
@@ -9095,8 +9114,7 @@ function breakInfo() {
   if (typeof cultDeviated === 'function' && cultDeviated()) checks.push({ ok: false, txt: 'Déviation de qi', val: 'une méditation la dissipe' });
   return { R, q, rate, cd, checks, ready: checks.every((c) => c.ok) && cd <= 0 };
 }
-// Rythme (grogrok-monde) : chaque percée exige d'avoir mené la trame jusqu'à l'étape qui l'annonce.
-// La quête « rang N » de MAIN_QUESTS sert de jalon : toutes les étapes qui la précèdent sont l'épreuve du rang.
+// Percée : la quête « rang N » exige les étapes de trame qui la précèdent.
 function rankGate(rank) {
   const idx = MAIN_QUESTS.findIndex((q) => q.t === 'rank' && q.n === rank);
   if (idx <= 0) return null;
@@ -9133,8 +9151,7 @@ function attemptBreakthrough() {
 
 // ───────── Quêtes (§16) ─────────
 function currentQuest() { return MAIN_QUESTS[S.quest] || null; }
-// [Grogrok] niveau conseillé d'un boss ou d'un donjon de la trame. Trop bas de plus de 2 niveaux : le bandeau le dit
-// et l'étoile mène d'abord aux lieux à explorer (questMapGoal, 33_monde.js). Pas de verrou : le joueur peut tenter.
+// Niveau conseillé d'un boss ou donjon de trame. Trop bas de plus de 2 : le bandeau le dit, sans verrou.
 function questNiveauConseille(q) {
   if (!q) return 0;
   if (q.t === 'dungeon') { const D = DUNGEONS[q.id]; return D ? D.lvl[0] : 0; }
@@ -9439,17 +9456,14 @@ function rayonSolide(d) {
   if (t) return Math.max(d.r || 0, t * (d.s || 1));
   return d.r || 0;
 }
-// Maison à rayon (haltes, hameaux) : boîte des murs, pas le cercle. L'avant-toit dépasse,
-// l'allée entre deux maisons (pas ~146 px) reste ouverte. Façade vers +z local (rot 0 = +y du monde).
-// Les toits r = 0 (bourg / cité) sont solides via toitEmprise, pas ici : agrandir cette boîte
-// boucherait les allées des hameaux (leçon dunes / vapeurs : pas de « relief » au sol).
+// Maison à rayon : boîte des murs (pas le cercle). Toits r = 0 : toitEmprise. Ne pas agrandir (allées).
 function maisonBoite(d) {
   if (d.type !== 'house' || !d.r || d.interieur) return null;
-  const s = d.s || 1;
-  return { hw: 46 * s, hh: 30 * s, rot: d.rot || 0 };
+  const s = d.s || 1, rot = d.rot || 0, c = d._boite;
+  if (c && c.s === s && c.rot === rot) return c;
+  return d._boite = { hw: 46 * s, hh: 30 * s, rot, s };
 }
-// Bâtiments à toiture (bourg, cité) : souvent r = 0, collision = anneau de bornes. L'intérieur
-// restait praticable : on se tenait « sur le toit ». Même emprise que placeEmprise (95_placement).
+// Toiture r = 0 : l'intérieur était praticable. Même emprise que placeEmprise.
 const TOIT_TYPES = new Set(['house', 'boutique', 'taverne', 'temple', 'ecurie', 'grenier', 'entrepot', 'demeure']);
 function toitEmprise(d) {
   if (!d || !TOIT_TYPES.has(d.type) || d.interieur) return null;
@@ -9488,14 +9502,6 @@ function pousseToit(o, r, d) {
   else o.y = d.y + (dy < 0 ? -1 : 1) * hh;
   return true;
 }
-function mondeVersMaison(d, x, y) {
-  const rot = d.rot || 0, c = Math.cos(rot), s = Math.sin(rot);
-  const gx = x - d.x, gy = y - d.y;
-  return { lx: gx * c + gy * s, lz: -gx * s + gy * c, c, s };
-}
-function maisonVersMonde(d, lx, lz, c, s) {
-  return { x: d.x + lx * c - lz * s, y: d.y + lx * s + lz * c };
-}
 // Seuil devant la porte si un passage (portail, intérieur) est sur la façade. Sinon le mur est plein.
 function maisonSeuil(sc, d, c, s) {
   const liste = sc.portals || [];
@@ -9509,16 +9515,15 @@ function maisonSeuil(sc, d, c, s) {
 }
 function pousseMaison(o, r, d, sc) {
   const b = maisonBoite(d); if (!b) return false;
-  const loc = mondeVersMaison(d, o.x, o.y);
+  const rot = d.rot || 0, c = Math.cos(rot), s = Math.sin(rot);
+  const gx = o.x - d.x, gy = o.y - d.y, lx0 = gx * c + gy * s, lz0 = -gx * s + gy * c;
   const hw = b.hw + r, hh = b.hh + r;
-  if (Math.abs(loc.lx) >= hw || Math.abs(loc.lz) >= hh) return false;
-  if (loc.lz > b.hh - 6 && Math.abs(loc.lx) < 28 && maisonSeuil(sc, d, loc.c, loc.s)) return false;
-  const penX = hw - Math.abs(loc.lx), penZ = hh - Math.abs(loc.lz);
-  let lx = loc.lx, lz = loc.lz;
-  if (penX < penZ) lx = (loc.lx < 0 ? -1 : 1) * hw;
-  else lz = (loc.lz < 0 ? -1 : 1) * hh;
-  const w = maisonVersMonde(d, lx, lz, loc.c, loc.s);
-  o.x = w.x; o.y = w.y;
+  if (Math.abs(lx0) >= hw || Math.abs(lz0) >= hh) return false;
+  if (lz0 > b.hh - 6 && Math.abs(lx0) < 28 && maisonSeuil(sc, d, c, s)) return false;
+  const penX = hw - Math.abs(lx0), penZ = hh - Math.abs(lz0);
+  const lx = penX < penZ ? (lx0 < 0 ? -1 : 1) * hw : lx0;
+  const lz = penX < penZ ? lz0 : (lz0 < 0 ? -1 : 1) * hh;
+  o.x = d.x + lx * c - lz * s; o.y = d.y + lx * s + lz * c;
   return true;
 }
 // Clôtures (r = 0, absentes de la grille) : un segment. Les ponts ont déjà leurs bornes de garde-corps.
@@ -9556,16 +9561,23 @@ function pousseSegment(o, r, g) {
   o.x = px + ox / l * rr; o.y = py + (oy / l * rr) / 1.25;
 }
 let COLLIDE_VU = 1;
+// Une chaîne par case, gardée : plus de concaténation à chaque lecture.
+function cleGrille(ix, iy) {
+  const sc = G.scene, n = (ix + 8192) * 16384 + (iy + 8192);
+  let m = sc._ck; if (!m) m = sc._ck = new Map();
+  let s = m.get(n); if (s === undefined) m.set(n, s = ix + ',' + iy);
+  return s;
+}
 function collideDecor(o, r) {
   const sc = G.scene; if (!sc) return;
   const stamp = (++COLLIDE_VU > 1e9) ? (COLLIDE_VU = 1) : COLLIDE_VU;
   const gx = sc.cs ? Math.floor(o.x / sc.cs) : 0, gy = sc.cs ? Math.floor(o.y / sc.cs) : 0;
   if (sc.grid) {
-    // Poteaux, troncs, rochers : le rayon stocké sert au placement. À la collision il couvre le fût visible.
-    // La grille ne couvre que d.r : un fût plus large se lit aussi dans les cases voisines.
+    // Le fût visible dépasse d.r : on lit aussi les cases voisines.
     for (let ix = gx - 1; ix <= gx + 1; ix++) for (let iy = gy - 1; iy <= gy + 1; iy++) {
-      const list = sc.grid.get(ix + ',' + iy); if (!list) continue;
-      for (const d of list) {
+      const list = sc.grid.get(cleGrille(ix, iy)); if (!list) continue;
+      for (let i = 0; i < list.length; i++) {
+        const d = list[i];
         if (d.berge) continue; // la rivière est bloquée par l'eau visible, pas par ces bornes
         if (d._vu === stamp) continue;
         const boite = d.type === 'house' && d.r && !d.interieur;
@@ -9585,7 +9597,7 @@ function collideDecor(o, r) {
   }
   if (sc.segsG) {
     for (let ix = gx - 1; ix <= gx + 1; ix++) for (let iy = gy - 1; iy <= gy + 1; iy++) {
-      const list = sc.segsG.get(ix + ',' + iy); if (!list) continue;
+      const list = sc.segsG.get(cleGrille(ix, iy)); if (!list) continue;
       for (let i = 0; i < list.length; i++) {
         const g = list[i]; if (g._vu === stamp) continue; g._vu = stamp;
         pousseSegment(o, r, g);
@@ -9598,23 +9610,25 @@ function collideDecor(o, r) {
   // Toits à r = 0 (temple, boutique…) : absents de la grille d.r, intérieur creux. On sort du rectangle.
   if (sc.roofs) {
     for (let ix = gx - 1; ix <= gx + 1; ix++) for (let iy = gy - 1; iy <= gy + 1; iy++) {
-      const list = sc.roofs.get(ix + ',' + iy); if (!list) continue;
-      for (const d of list) {
+      const list = sc.roofs.get(cleGrille(ix, iy)); if (!list) continue;
+      for (let i = 0; i < list.length; i++) {
+        const d = list[i];
         if (d._tv === stamp) continue; d._tv = stamp;
         if (d.type === 'house' && d.r && !d.interieur) continue; // déjà pousseMaison
         pousseToit(o, r, d);
       }
     }
   } else {
-    for (const d of toitsScene(sc)) {
+    const toits = toitsScene(sc);
+    for (let i = 0; i < toits.length; i++) {
+      const d = toits[i];
       if (d.type === 'house' && d.r && !d.interieur) continue;
       pousseToit(o, r, d);
     }
   }
   if (typeof eauRepousse === 'function') eauRepousse(o, r);
 }
-// Sous-pas de 6 px : le corps ne saute pas un tronc ni une clôture, et il ressort
-// sur la normale (glisse le long du mur). Un second essai par axe bloquait les garde-corps en biais.
+// Sous-pas de 6 px, sortie sur la normale. Un second essai par axe bloquait les garde-corps.
 function glisser(o, dx, dy, r) {
   const dist = Math.hypot(dx, dy);
   const n = Math.max(1, Math.ceil(dist / 6));
@@ -10132,9 +10146,16 @@ function enterBoss(bid, regionId) {
 }
 function leaveInstance() {
   const sc = G.scene; const rid = sc.region.id;
-  let at = null;
+  // Porte du lieu quitté. Le premier portail du type posait le Puits devant la Forge.
+  const voulu = sc.type === 'dungeon' ? sc.dungeon : (sc.type === 'boss' ? (sc.bossId || sc.id) : null);
+  const genre = sc.type === 'dungeon' ? 'dungeon' : (sc.type === 'boss' ? 'boss' : null);
   enterRegion(rid);
-  const p = G.scene.portals.find((pp) => (sc.type === 'dungeon' && pp.type === 'dungeon') || (sc.type === 'boss' && pp.type === 'boss'));
+  const liste = G.scene.portals || [];
+  let p = null;
+  if (genre) {
+    if (voulu) p = liste.find((pp) => pp.type === genre && pp.id === voulu);
+    if (!p) p = liste.find((pp) => pp.type === genre);
+  }
   if (p) { P.x = p.x - 70; P.y = p.y + 50; }
   departLibre(G.scene, P);
 }
@@ -10308,8 +10329,7 @@ function elemBurst(x, y, elem) {
   const id = elem && typeof ELEMS !== 'undefined' && ELEMS[elem] ? elem : 'qi';
   G.fx.push({ type: 'elem', x, y, elem: id, t: 0, dur: 0.42, n: elemCount() });
 }
-// Textes flottants : petits et plafonnés (TXT, 02_ressenti.js). Au-delà de TXT.max, la plus ancienne étiquette
-// non critique disparaît ; les annonces d'attaque des boss (label) ne comptent pas.
+// Textes flottants plafonnés (TXT) : au-delà du max, la plus vieille étiquette non critique cède. Les annonces boss restent.
 function floatText(x, y, txt, color = '#fff', scale = 1, crit = false) {
   if (!S.settings.dmg && /^\d|^-/.test(txt)) return;
   pushText({ x: x + rand(-6, 6), y, txt: String(txt), color, scale, t: 0, dur: crit ? 1.0 : 0.8, crit });
@@ -10320,8 +10340,7 @@ function pushText(o) {
   if (n > TXT.max) G.texts.splice(old >= 0 ? old : oldAny, 1);
   return o;
 }
-// Dégâts regroupés : même cible et même genre dans la fenêtre TXT.win → une seule étiquette qui additionne
-// et suit la cible (zone touchant 12 ennemis = 12 nombres au plus, pas 12 par tic).
+// Dégâts regroupés (TXT.win) : une étiquette par cible et par genre, qui suit la cible.
 function dmgText(tgt, val, kind, color, scale, crit, dy, pre = '') {
   if (!S.settings.dmg) return;
   for (const t of G.texts) if (t.tgt === tgt && t.kind === kind && t.t < TXT.win && t.age < 1.1) {
@@ -10329,9 +10348,7 @@ function dmgText(tgt, val, kind, color, scale, crit, dy, pre = '') {
   }
   pushText({ tgt, kind, sum: val, ox: rand(-6, 6), dy, x: tgt.x, y: tgt.y - dy, txt: pre + fmtShort(val), color, scale, t: 0, age: 0, dur: crit ? 1.0 : 0.8, crit, bump: 0 });
 }
-// Tremblement et arrêt sur image : désactivables (Options, accessibilité).
-// « Effets réduits » et le réglage système « réduire les animations » coupent le tremblement
-// et divisent l'arrêt par deux. L'arrêt reste entre 40 et 70 ms quand l'effet est plein.
+// Secousse et arrêt sur image : coupés ou réduits selon Options et « réduire les animations » (arrêt 40–70 ms).
 function reducePref() {
   try { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; }
 }
@@ -10346,32 +10363,52 @@ function hitStop(t) {
 function feel(k, d) { return typeof COMBAT !== 'undefined' && COMBAT[k] != null ? COMBAT[k] : d; }
 
 // ───────── Ciblage ─────────
+// Manuel et arène : verrou hors de portée, 0 PV ou ennemi hors scène ne volent pas le coup. L'Auto ne change pas.
+function combatManuel() {
+  return !!(G && G.arena) || !(S && S.settings && S.settings.auto);
+}
+function cibleOk(e) {
+  if (!e || e.dead || e.hp <= 0) return false;
+  if (G.enemies && G.enemies.indexOf(e) !== -1) return true;
+  return typeof duelPuppet === 'function' && duelPuppet() === e;
+}
+function oterCiblesInvalides() {
+  if (!combatManuel()) return;
+  if (P.lock && !cibleOk(P.lock)) P.lock = null;
+  if (P.soft && !cibleOk(P.soft)) { P.soft = null; P.softT = 0; }
+  if (P.cast && P.cast.target && !cibleOk(P.cast.target)) P.cast.target = null;
+}
 function nearestEnemy(range, preferCone) {
   if (typeof duelCombat === 'function' && duelCombat()) {
     const pup = typeof duelPuppet === 'function' ? duelPuppet() : null;
-    if (pup && !pup.dead && dist2(pup.x, pup.y, P.x, P.y) <= range * range) return pup;
+    if (pup && !pup.dead && !(pup.hp <= 0) && dist2(pup.x, pup.y, P.x, P.y) <= range * range) return pup;
     return null;
   }
   let best = null, bd = range * range;
   for (const e of G.enemies) {
-    if (e.dead) continue;
+    if (e.dead || e.hp <= 0) continue;
     let d = dist2(e.x, e.y, P.x, P.y);
     if (preferCone && Math.abs(angDiff(P.face, angTo(P.x, P.y, e.x, e.y))) > 1.3) d *= 2.2;
     if (d < bd) { bd = d; best = e; }
   }
   return best;
 }
-function aimTarget(maxRange = 12) {
+function aimTarget(maxRange = 12, strict) {
   if (P.lock && P.lock.dead) P.lock = null;
+  if (strict) oterCiblesInvalides();
   const lockR = feel('lockRange', 18) * M;
-  if (P.lock && dist(P.lock.x, P.lock.y, P.x, P.y) < lockR) return P.lock;
-  if (P.lock) P.lock = null;
+  if (P.lock && dist(P.lock.x, P.lock.y, P.x, P.y) < lockR) {
+    if (!(strict && dist(P.lock.x, P.lock.y, P.x, P.y) > maxRange * M + (P.lock.r || 0))) return P.lock;
+  } else if (P.lock) P.lock = null;
   if (typeof COMBAT === 'undefined') return nearestEnemy(maxRange * M, true);
   // Cible molle : colle un court instant à l'ennemi devant soi (le doigt ne vise pas au pixel).
   const softR = Math.min(maxRange, COMBAT.softRange) * M;
-  if (P.soft && (P.soft.dead || dist(P.soft.x, P.soft.y, P.x, P.y) > softR * 1.45)) { P.soft = null; P.softT = 0; }
-  if (P.soft && P.softT > 0) return P.soft;
-  const best = nearestEnemy(softR, true) || nearestEnemy(maxRange * M, true);
+  if (P.soft && (P.soft.dead || (strict && !cibleOk(P.soft)) || dist(P.soft.x, P.soft.y, P.x, P.y) > softR * 1.45)) { P.soft = null; P.softT = 0; }
+  if (P.soft && P.softT > 0) {
+    if (!(strict && dist(P.soft.x, P.soft.y, P.x, P.y) > maxRange * M + (P.soft.r || 0))) return P.soft;
+  }
+  let best = nearestEnemy(softR, true) || nearestEnemy(maxRange * M, true);
+  if (strict && best && !cibleOk(best)) best = null;
   if (best) { P.soft = best; P.softT = COMBAT.softStick; }
   return best;
 }
@@ -10384,15 +10421,14 @@ function combatReadout() {
     dodgeCd: P.dodge.cd, dodgeCdMax: P.st ? P.st.dodgecd : feel('dodgeCd', 3),
     cds: P.cds, combo: A.idx, phase: A.ph,
     window: open, perfect: open && A.t <= perfect, windowLeft: open ? Math.max(0, win - A.t) : 0,
-    lock: P.lock && !P.lock.dead ? P.lock : null, soft: P.soft && !P.soft.dead ? P.soft : null,
+    lock: P.lock && cibleOk(P.lock) ? P.lock : null, soft: P.soft && cibleOk(P.soft) ? P.soft : null,
   };
 }
 
 // monture montée : bonus de course hors combat seulement (MONTURES, 02_data.js)
 function montureActive() { const id = S && S.montures && S.montures.active; return id && typeof MONTURES !== 'undefined' && MONTURES[id] ? MONTURES[id] : null; }
 function montureBonus() { const m = montureActive(); return m ? m.bonus : 0; }
-// Déplacement : à pied le corps du héros, en selle le corps de la monture (plus long).
-// Les coups gardent P.r. La bête s'arrête sur les maisons, les arbres et les bords de carte comme le héros.
+// Rayon au sol : corps du héros, ou de la monture. Les coups gardent P.r. La bête bloque comme le héros.
 function rayonSol() {
   if (!P.monte) return P.r;
   const m = montureActive();
@@ -10417,6 +10453,7 @@ function montureFx(on) {
 }
 // ───────── Joueur ─────────
 function updatePlayer(dt) {
+  oterCiblesInvalides();
   const st = P.st;
   P.iframes = Math.max(0, P.iframes - dt); P.dodge.cd = Math.max(0, P.dodge.cd - dt);
   P.softT = Math.max(0, (P.softT || 0) - dt);
@@ -10455,8 +10492,7 @@ function updatePlayer(dt) {
   for (const p of P.pending) { p.t -= dt; if (p.t <= 0) { p.fn(); p.done = true; } }
   P.pending = P.pending.filter((p) => !p.done);
 
-  // [Claude] pied à terre dès que le héros est étourdi, médite ou incante : la condition de selle plus bas n'est jamais
-  // atteinte dans ces états (les trois branches sortent avant), le héros restait en selle pour méditer.
+  // [Claude] pied à terre si étourdi, méditation ou incantation (ces branches sortent avant le test de selle).
   if (P.monte && (P.status.stun > 0 || P.med || P.cast)) { P.monte = false; montureFx(false); }
   if (P.status.stun > 0) {
     P.status.stun -= dt;
@@ -10478,13 +10514,13 @@ function updatePlayer(dt) {
     const enDuelDash = typeof duelCombat === 'function' && duelCombat();
     if (!enDuelDash) {
       const frapper = (e) => {
-        if (!e.dead && !d.hit.has(e) && dist(e.x, e.y, P.x, P.y) < e.r + 1.2 * M) { d.hit.add(e); hitEnemy(e, d.raw, d.opts); }
+        if (!e.dead && !(e.hp <= 0) && !d.hit.has(e) && dist(e.x, e.y, P.x, P.y) < e.r + 1.2 * M) { d.hit.add(e); hitEnemy(e, d.raw, d.opts); }
       };
       if (typeof forEnemiesNear === 'function' && G.egrid) forEnemiesNear(P.x, P.y, 1.2 * M + 80, frapper);
       else for (const e of G.enemies) frapper(e);
     }
     const pupD = enDuelDash && typeof duelPuppet === 'function' ? duelPuppet() : null;
-    if (pupD && !pupD.dead && !d.hit.has(pupD) && dist(pupD.x, pupD.y, P.x, P.y) < pupD.r + 1.2 * M) { d.hit.add(pupD); hitEnemy(pupD, d.raw, d.opts); }
+    if (pupD && !pupD.dead && !(pupD.hp <= 0) && !d.hit.has(pupD) && dist(pupD.x, pupD.y, P.x, P.y) < pupD.r + 1.2 * M) { d.hit.add(pupD); hitEnemy(pupD, d.raw, d.opts); }
     if (Math.random() < 0.8) G.fx.push({ type: 'after', x: P.x, y: P.y, face: P.face, t: 0, dur: 0.25, color: d.color });
     if (k >= 1 || bloque) P.dash = null;
     return;
@@ -10496,7 +10532,13 @@ function updatePlayer(dt) {
     if (I.atkPress) P.atk.queued = true;
     return;
   }
-  if (I.dodge) { tryDodge(); if (P.dodge.t > 0) return; }
+  if (I.dodge) {
+    const A = P.atk, man = combatManuel() && A && A.ph === 'swing' && !A.hit;
+    const snap = man ? { i: A.idx, p: A.perfect, t: A.t, d: A.dur, f: P.face } : null;
+    tryDodge();
+    if (snap && P.dodge.t > 0 && snap.t + dt >= snap.d * 0.45) { const f = P.face; P.face = snap.f; doBasicHit(snap.i, snap.p); P.face = f; }
+    if (P.dodge.t > 0) return;
+  }
   if (S.settings.auto && !G.arena && !moveIn && typeof autoEsquive === 'function') {
     autoEsquive();
     if (P.dodge.t > 0) return;
@@ -10571,9 +10613,7 @@ function updatePlayer(dt) {
       }
     }
   }
-  // auto-combat en donjon : salle nettoyée, on marche jusqu'à la porte suivante, puis on l'emprunte
-  // jamais pendant la fuite de 20 s : on ne quitte pas une salle de boss ni un donjon en cours
-  // #771 : boss laissé après 2 morts → on sort, on n'avance plus vers le gardien
+  // Auto en donjon : salle vide → porte suivante. Pas pendant la fuite. #771 : boss laissé → on sort.
   if (auto && !autoFuiteActive() && G.scene && (G.scene.type === 'dungeon' || G.scene.type === 'boss')
       && typeof autoBossLaisseIci === 'function' && autoBossLaisseIci()
       && typeof leaveInstance === 'function') {
@@ -10598,8 +10638,7 @@ function updatePlayer(dt) {
       }
     }
   }
-  // monture : montée hors combat seulement (région ouverte, 2 s sans combat, aucun ennemi en aggro à 10 m) ; pied à terre sinon,
-  // et pied à terre le temps d'une scène de récit (32_histoire.js) : on ne parle pas à Mo Xuan du haut d'un tigre.
+  // Monture : hors combat, région ouverte, 2 s calmes, personne en aggro à 10 m. Pied à terre en récit.
   const monte = !!montureActive() && !P.dead && !P.med && !P.cast && P.combatT > 2 && G.scene && G.scene.type === 'region' && !enemiesNear(10) && (typeof STORY === 'undefined' || !STORY.cur);
   if (monte !== !!P.monte) {
     P.monte = monte; montureFx(monte);
@@ -11018,9 +11057,7 @@ function autoButQuete() {
   if (via) return { x: via.x, y: via.y, label: g.label };
   return g;
 }
-// Faction : décision du joueur. Auto n'impose jamais une affiliation.
-// À l'émissaire : ouvrir le panneau, attendre, toast. Fermer sans choisir :
-// Col / Ermite / chasse, et on ne repropose qu'après 5 min.
+// Faction : Auto n'impose rien. Panneau à l'émissaire ; sans choix, on ne repropose qu'après 5 min.
 const AUTO_FACTION_CD = 300;
 function autoFactionDifferee() {
   if (!S || S.faction) return false;
@@ -11054,10 +11091,7 @@ function autoFaction() {
   if (typeof toast === 'function') toast('Choisis ta faction pour continuer', 'info');
   return true;
 }
-// Percée Disciple / Expert (pas de catalyseur). Méditation rapide si Qi ou
-// compréhension manquent — jamais de parchemin, minerai, Sang-d'herbe, Brume
-// ni Pierre de reset. Percée à catalyseur (Maître+) = décision du joueur.
-// Après un échec (Qi, déviation) : cooldown 120 s, pas de boucle.
+// Percée Disciple / Expert sans catalyseur. Méditation si Qi ou compréhension manquent. Échec : 120 s. Percée à catalyseur (Maître+) : le joueur décide.
 const AUTO_PERCEE_CD = 120;
 const AUTO_MED_IGNORE = 15;
 function autoPercée() {
@@ -11419,7 +11453,7 @@ function startSwing(idx, perfect) {
   const A = P.atk;
   A.ph = 'swing'; A.idx = idx; A.t = 0; A.hit = false; A.queued = false; A.perfect = perfect; P.serial = (P.serial || 0) + 1;
   A.dur = (idx === 2 ? 0.46 : 0.36) / P.st.atkspd;
-  const tg = aimTarget(4.5);
+  const tg = aimTarget(4.5, combatManuel());
   if (tg && dist(tg.x, tg.y, P.x, P.y) < tg.r + 4 * M) {
     P.face = angTo(P.x, P.y, tg.x, tg.y);
     const d = dist(tg.x, tg.y, P.x, P.y);
@@ -11441,13 +11475,12 @@ function doBasicHit(idx, perfect) {
   let hits = 0;
   const enDuelBas = typeof duelCombat === 'function' && duelCombat();
   if (!enDuelBas) for (const e of G.enemies) {
-    if (e.dead) continue;
+    if (e.dead || e.hp <= 0) continue;
     if (pointInCone(e.x, e.y, P.x, P.y, P.face, range, half, e.r)) { hitEnemy(e, raw, { isBasic: true, knock: idx === 2 ? 0.7 : 0.15, finisher: idx === 2 }); hits++; }
   }
   const pupB = enDuelBas && typeof duelPuppet === 'function' ? duelPuppet() : null;
-  if (pupB && !pupB.dead && pointInCone(pupB.x, pupB.y, P.x, P.y, P.face, range, half, pupB.r)) hitEnemy(pupB, raw, { isBasic: true, finisher: idx === 2 });
-  // Tremblement léger à chaque coup qui porte (pas seulement le finisseur) : le combo monte en intensité, c'est ce qui
-  // « claque ». addShake respecte déjà le réglage « secousses », « effets réduits » et « réduire les animations ».
+  if (pupB && !pupB.dead && !(pupB.hp <= 0) && pointInCone(pupB.x, pupB.y, P.x, P.y, P.face, range, half, pupB.r)) hitEnemy(pupB, raw, { isBasic: true, finisher: idx === 2 });
+  // Secousse légère à chaque coup qui porte (le finisseur plus fort). addShake respecte les options.
   if (hits) { P.combatT = 0; addShake(idx === 2 ? 2.5 : 1 + idx * 0.35); noteWeaponUse(); }
 }
 
@@ -11464,7 +11497,12 @@ function tryDodge() {
   }
   if (P.cast) P.cast = null;
   let dx = I.mx, dy = I.my;
-  if (Math.hypot(dx, dy) < 0.2) { dx = Math.cos(P.face); dy = Math.sin(P.face); }
+  if (Math.hypot(dx, dy) < 0.2) {
+    let tg = null;
+    if (combatManuel()) tg = (cibleOk(P.lock) && dist(P.lock.x, P.lock.y, P.x, P.y) < 6 * M + (P.lock.r || 0)) ? P.lock : nearestEnemy(6 * M, true);
+    if (tg && Math.abs(angDiff(P.face, angTo(P.x, P.y, tg.x, tg.y))) < 1.2) { dx = P.x - tg.x; dy = P.y - tg.y; }
+    if (Math.hypot(dx, dy) < 0.2) { dx = Math.cos(P.face); dy = Math.sin(P.face); }
+  }
   const l = Math.hypot(dx, dy); dx /= l; dy /= l;
   const dur = feel('dodgeTime', 0.18);
   P.dodge = { t: dur, dur, cd: P.st.dodgecd, start: G.t, sx: P.x, sy: P.y, dx, dy, dist: feel('dodgeDist', 3) * M, perfectDone: false };
@@ -11483,9 +11521,7 @@ function perfectDodge() {
 
 function techRaw(T, mult) {
   const st = P.st; const phys = st.atk * (1 + st.sword / 100);
-  // [Grogrok] plancher : une technique de qi vaut au moins 80 % de la frappe d'arme équivalente. Le budget des voies
-  // (techAtkFactor, 02_data.js) compte le qi à 0,8 × ATK ; en jeu, l'arme et l'épée gonflent la frappe physique, pas le qi,
-  // et le kit démoniaque (tout en qi) tombait à 50–60 % du kit orthodoxe dès le chapitre VI (tests/equilibre_trame.py).
+  // [Grogrok] plancher : un qi vaut au moins 80 % de la frappe d'arme (le kit démoniaque tombait trop bas, ch. VI).
   if (T.dmg === 'qi') return Math.max(st.qipwr, phys * 0.8) * mult;
   if (T.dmg === 'hybrid') return (phys * 0.5 + st.qipwr * 0.5) * mult;
   return phys * mult;
@@ -11499,7 +11535,7 @@ function useSkill(i) {
   if (P.qi < cost) { if (G.t - (P.nqT || -9) > 0.9) { P.nqT = G.t; floatText(P.x, P.y - 40, 'Qi insuffisant', '#4fc6ea', 0.85); sfx('deny'); } return; }
   P.qi -= cost; P.cds[i] = T.cd * (1 - P.st.cdr); P.serial = (P.serial || 0) + 1;
   const range = T.range || T.len || (T.speed ? T.range : 0) || 8;
-  const tgt = aimTarget(Math.max(6, range + 3));
+  const tgt = aimTarget(Math.max(6, range + 3), combatManuel());
   if (tgt) P.face = angTo(P.x, P.y, tgt.x, tgt.y);
   P.cast = { id, t: 0, dur: T.cast, slot: i, target: tgt };
   P.atk.ph = 'idle'; P.atk.idx = 0; P.combatT = Math.min(P.combatT, 3);
@@ -11510,14 +11546,14 @@ function useSkill(i) {
 function finishCast() {
   const c = P.cast; P.cast = null; if (!c) return;
   if (c.id === '__ult') return executeUlt();
-  executeTech(c.id, c.target && !c.target.dead ? c.target : null);
+  executeTech(c.id, cibleOk(c.target) ? c.target : null);
 }
 function hitsIn(test, raw, opts) {
   let n = 0, big = false;
   const enDuelHit = typeof duelCombat === 'function' && duelCombat();
-  if (!enDuelHit) for (const e of G.enemies) { if (e.dead) continue; if (test(e)) { hitEnemy(e, raw, opts); n++; if (e.isBoss || e.elite || e.champion) big = true; } }
+  if (!enDuelHit) for (const e of G.enemies) { if (e.dead || e.hp <= 0) continue; if (test(e)) { hitEnemy(e, raw, opts); n++; if (e.isBoss || e.elite || e.champion) big = true; } }
   const pupH = enDuelHit && typeof duelPuppet === 'function' ? duelPuppet() : null;
-  if (pupH && !pupH.dead && test(pupH)) hitEnemy(pupH, raw, opts);
+  if (pupH && !pupH.dead && !(pupH.hp <= 0) && test(pupH)) hitEnemy(pupH, raw, opts);
   return { n, big };
 }
 function executeTech(id, tgt) {
@@ -11557,7 +11593,7 @@ function executeTech(id, tgt) {
     }
     case 'multi': {
       if (typeof duelCombat === 'function' && duelCombat()) {
-        const tgD = aimTarget(T.range + 2); const aD = tgD ? angTo(P.x, P.y, tgD.x, tgD.y) : P.face; P.face = aD;
+        const tgD = aimTarget(T.range + 2, combatManuel()); const aD = tgD ? angTo(P.x, P.y, tgD.x, tgD.y) : P.face; P.face = aD;
         hitsIn((e) => pointInCone(e.x, e.y, P.x, P.y, aD, T.range * M, T.half, e.r), raw, opts);
         slashFx(P.x, P.y - 8, aD, T.range * M, Math.min(1.3, T.half), ecol, 0.18, 10 + pw * 3, pw);
         res = { n: 0, big: false };
@@ -11566,7 +11602,7 @@ function executeTech(id, tgt) {
       const n = T.hits; const step = T.dur / n;
       for (let k = 0; k < n; k++) {
         P.pending.push({ t: k * step, fn: () => {
-          const tg = aimTarget(T.range + 2); const a = tg ? angTo(P.x, P.y, tg.x, tg.y) : P.face; P.face = a;
+          const tg = aimTarget(T.range + 2, combatManuel()); const a = tg ? angTo(P.x, P.y, tg.x, tg.y) : P.face; P.face = a;
           const r = hitsIn((e) => pointInCone(e.x, e.y, P.x, P.y, a, T.range * M, T.half, e.r), raw, opts);
           slashFx(P.x, P.y - 8, a + rand(-0.5, 0.5), T.range * M, Math.min(1.3, T.half), ecol, 0.18, 10 + pw * 3, pw);
           if (r.n) sfx('hit');
@@ -11828,8 +11864,7 @@ function hitEnemy(e, raw, o = {}) {
   if (!e.isBoss && !e.duel && !o.dot) e.kbv = (IMPACT.kbMeters ? IMPACT.kbMeters * M : IMPACT.kbSpeed) * (e.elite || e.champion ? IMPACT.kbElite : 1) * e.hitK;
   let nImp = 0; for (const f of G.fx) if (f.type === 'impact') nImp++;
   if (nImp < IMPACT.impactMax) G.fx.push({ type: 'impact', x: e.x, y: e.y, h: e.r, t: 0, dur: crit ? 0.22 : 0.16, color: crit ? '#ffd23a' : (o.col || (o.qi ? '#ff9a7a' : '#ffffff')), big: crit || heavy, ang: e.hitA });
-  // Impact « pinceau d'encre » : éclaboussure sombre au sol + onde de qi colorée, réservée aux TECHNIQUES (plafonnée).
-  // Plus sur un simple critique : sur l'herbe en lavis la tache d'encre se lisait comme une grosse ombre noire autour de la cible.
+  // Encre au sol : techniques seulement (un critique simple faisait une tache noire sur l'herbe).
   if (o.isTech && !o.dot) {
     let nInk = 0; for (const f of G.fx) if (f.type === 'ink') nInk++;
     if (nInk < IMPACT.inkMax) {
@@ -11902,9 +11937,9 @@ function hurtPlayer(raw, o = {}) {
   if (P.shield > 0) { const ab = Math.min(P.shield, dmg); P.shield -= ab; dmg -= ab; if (ab) floatText(P.x, P.y - 30, 'Absorbé ' + fmtShort(ab), '#ffe08a', 0.7); }
   if (dmg <= 0) return 0;
   P.hp -= dmg; P.combatT = 0; P.hurtT = 0.25;
-  // Chiffre de dégât reçu un peu plus grand pour rester lisible sous le voile rouge ; rose = coup subi (distinct des dégâts infligés).
+  // Chiffre reçu un peu plus grand, rose : distinct des dégâts infligés.
   dmgText(P, dmg, 'p', '#ff6ab0', 1.05, false, 30, '-');
-  // Secousse LÉGÈRE, croissante avec la part de PV perdue, plafonnée bas (plus de caméra qui part en vrille sur un gros coup).
+  // Secousse légère, selon la part de PV perdue, plafonnée.
   addShake(Math.min(5, 1.5 + dmg / P.st.hp * 12));
   ultGain(0, dmg);
   if (P.med) cancelMed('Méditation interrompue');
@@ -11926,9 +11961,7 @@ function hurtPlayer(raw, o = {}) {
   if (o.drainSrc && o.src) o.src.hp = Math.min(o.src.maxHp, o.src.hp + dmg * 0.5);
   if (S.settings.auto && !G.arena && P.hp > 0) autoPilules();
   sfx('hurt');
-  // Ressenti mobile : coup reçu lisible (secousse légère + voile rouge bref), limité pour ne pas saturer.
-  // Voile rouge bref aux BORDS de l'écran (vignette), léger et plafonné (a ≤ ~0,30) — on sait qu'on encaisse sans que l'écran vire au rouge.
-  // Throttlé (une fois par 0,45 s) pour ne pas clignoter sous une rafale. La secousse du coup est déjà posée plus haut (une seule, légère).
+  // Vignette rouge au bord, légère, au plus une fois toutes les 0,45 s. La secousse est déjà posée.
   if (dmg > 0 && o.src && !(G.hurtFxT > 0)) { const fr = hurtFrac; G.hurtFxT = 0.45; if (fr > 0.08) hitStop(IMPACT.stopHurt || 0.04); if (fr > 0.05) G.fx.push({ type: 'flash', color: '#c9432f', t: 0, dur: 0.14 + fr * 0.16, a: 0.1 + fr * 0.2, vig: true }); }
   if (dmg > 0 && o.src) noteArmorHit(); // coups directs seulement : ni flaques ni auras (ticks de 0,5 s)
   if (P.hp <= 0) die();
@@ -11973,7 +12006,7 @@ function die() {
     let n = 0;
     for (const m of AUTO_NAV.morts) if (dist2(m.x, m.y, P.x, P.y) < 220 * 220) n++;
     if (n >= 2) {
-      // [Grogrok] Abysses / terres dures : 2 morts → éviter ; dès 3, rayon + fuite + pause chasse
+      // [Grogrok] 2 morts au même endroit → éviter ; dès 3, rayon, fuite et pause.
       // pour casser la boucle spawn↔meute (flake auto_fiabilite boucle ×4–5 selon le flux RNG).
       const r = n >= 3 ? 640 : 400;
       autoMarquerEvite(P.x, P.y, r, AUTO_EVITE_MAX);
@@ -12953,13 +12986,45 @@ function startBossAttack(e, a, dmgMul, spdMul) {
 // nombres ne servent qu'à l'oreille.
 const audioAlea = typeof mulberry32 === 'function' ? mulberry32((Date.now() % 2147483647) >>> 0) : Math.random; // bancs Node qui chargent le son seul
 const AC = { ctx: null, master: null, sfx: null, mus: null, noise: null, last: {} };
-function initAudio() {
-  if (AC.ctx) { if (AC.ctx.state === 'suspended' && !document.hidden) AC.ctx.resume(); return; }
-  // iOS : session « ambiante » → le jeu respecte le mode silencieux et se mêle à la musique de l'utilisateur
+function audioSessionAmbiante() {
   try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch (e) { }
+}
+// iOS : interrupted ou platine en pause → reprise au geste. Platine fantôme recoupée.
+function audioReprendreFlux() {
+  if (!AC.ctx || AUD.hidden || document.hidden) return;
+  audioSessionAmbiante();
+  const st = AC.ctx.state;
+  if (st === 'suspended' || st === 'interrupted') {
+    try { const p = AC.ctx.resume(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+  }
+  if (!AUD.chans) return;
+  const t = AC.ctx.currentTime || 0;
+  for (const k in AUD.chans) {
+    const ch = AUD.chans[k];
+    for (const d of ch.decks) {
+      const el = d.el; if (!el) continue;
+      if (d === ch.cur) {
+        if (!el.paused) continue;
+        const dur = el.duration;
+        if (dur && isFinite(dur) && el.currentTime > dur - 0.35) continue;
+        const p = el.play(); if (p && p.catch) p.catch(function () {});
+      } else if (!(d.stopAt && t < d.stopAt) && !el.paused && el.src && String(el.src).indexOf('blob:') < 0) {
+        try { el.pause(); } catch (e) {}
+      }
+    }
+  }
+}
+function initAudio() {
+  if (AC.ctx) {
+    if (!AUD.hidden && !document.hidden) audioVolumes();
+    audioReprendreFlux();
+    return;
+  }
+  audioSessionAmbiante();
   try {
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
     const ctx = new C(); AC.ctx = ctx;
+    try { const p = ctx.resume(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
     AC.master = ctx.createGain(); AC.master.gain.value = 0.8; AC.master.connect(ctx.destination);
     AC.sfx = ctx.createGain(); AC.sfx.gain.value = 0.55; AC.sfx.connect(AC.master);
     AC.mus = ctx.createGain(); AC.mus.gain.value = 0.2; AC.mus.connect(AC.master);
@@ -13382,7 +13447,7 @@ function ambianceTick(dt) {
 function audioTick(dt) {
   if (!AC.ctx || AUD.hidden) return;
   AUD.ctxT += dt;
-  if (AUD.ctxT > 0.5 && S) { AUD.ctxT = 0; audioVolumes(); if (AUD.chans) audioContexte(); }
+  if (AUD.ctxT > 0.5 && S) { AUD.ctxT = 0; audioVolumes(); if (AUD.chans) audioContexte(); audioReprendreFlux(); }
   if (AUD.chans) for (const k in AUD.chans) chanTick(AUD.chans[k]);
   // pas légers (au plus un toutes les 0,32 s en marche)
   if (G.running && !G.paused && P.moving && !P.dead && P.dodge.t <= 0 && S.settings.sound) {
@@ -13697,14 +13762,8 @@ function vaAmbiance(dt) {
     if (AUD.clocheVallee <= 0) { AUD.clocheVallee = 46; voixBruit('va_cloche', 0.3, AC.amb); }
   }
 }
-// ───────── Signature sonore par région (procédurale, 0 octet) ─────────
-// En plus (ou à la place) du lit nature enregistré, chaque grande région porte une texture propre, toujours
-// active, à bas niveau sur le bus d'ambiance : ressac au bord de mer, vent de cime dans la neige, drone trouble
-// des marais corrompus, nappe cristalline des hauts lieux célestes. Ainsi aucune région ne sonne comme sa voisine.
-// Qinghe et la Vallée gardent leur ambiance déjà sculptée (qhAmbiance/vaAmbiance) ; Plaines, Col et Forêt gardent
-// le lit nature, qui leur va. Un banc de bruit bouclé et filtré + de rares touches espacées, construit du bruit
-// déjà en mémoire (AC.noise). [filtre, fréquence, Q, niveau, amplitude du balayage, Hz du balayage, cadence min,
-// cadence max de la touche, nom de la touche]
+// Signature par région (procédurale, AC.noise) : [filtre, Hz, Q, niveau, balayage, Hz balayage, cadence min, max, touche].
+// Qinghe/Vallée : ambiance sculptée. Plaines, Col, Forêt : lit nature. Les huit autres : texture propre, bus d'ambiance.
 const SIGNATURES = {
   longwan:   ['lowpass', 520, 0.7, 0.12, 240, 0.09, 4.5, 9, 'vague'],     // embruns : ressac lent
   meishan:   ['highpass', 1700, 0.5, 0.055, 650, 0.06, 6, 12, 'tinte'],   // neige : vent haut et fin
@@ -13769,11 +13828,7 @@ function audioSilence(on) {
     try { AC.ctx.suspend(); } catch (e) {}
     return;
   }
-  try { const p = AC.ctx.resume(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
-  if (AUD.chans) for (const k in AUD.chans) {
-    const c = AUD.chans[k].cur;
-    if (c && c.el) { const p = c.el.play(); if (p && p.catch) p.catch(function () {}); }
-  }
+  audioReprendreFlux();
 }
 function audioVisibility() { audioSilence(typeof document !== 'undefined' && !!document.hidden); }
 if (typeof document !== 'undefined' && document.addEventListener) {
@@ -28990,9 +29045,7 @@ function guideTick() {
   const span = 1 / Math.max(Math.abs(Math.cos(ang)) / hw, Math.abs(Math.sin(ang)) / hh);
   const ex = cx + Math.cos(ang) * span;
   let ey = cy + Math.sin(ang) * span;
-  // [Claude] l'ellipse monte jusqu'à 30 px du haut en portrait : la flèche et son étiquette « Maître Hong · 16 m »
-  // s'imprimaient sur le texte du panneau de quête, la jauge de vie ou le bouton Menu (relevé dans les treize régions).
-  // Sous un cadre du HUD, elle descend juste sous ce cadre, toujours au même bord de l'écran.
+  // La flèche descend sous un cadre du HUD au lieu de s'imprimer dessus.
   ey = guideSousCadres(ex, ey);
   const dist = Math.round(Math.hypot(vrai.x - P.x, vrai.y - P.y) / (typeof M === 'number' ? M : 16));
   // [Claude] le panneau de quête n'était relu que toutes les 0,5 s (et après un voyage, d'une vue en retard) : « 16 m »
@@ -29138,10 +29191,7 @@ function coachTick() {
   box.hidden = false;
 }
 
-// ───────── Notifications ─────────
-// Deux canaux. Journal latéral (#toasts) : quêtes, butin, infos ; lignes courtes, NOTE_CFG.log au plus, doublons
-// regroupés (« ×2 »), une nouvelle ligne au plus tous les NOTE_CFG.gap s. Centre : une seule annonce à la fois
-// (région, boss, niveau, butin légendaire), file par priorité ; les niveaux successifs fusionnent.
+// Journal latéral (quêtes, butin) et une annonce centrale à la fois.
 const NOTE = { q: [], live: [], t: 0, center: null, cq: [], ct: 0, cshow: 0, expAcc: 0, expT: 0, titres: [] };
 function toastEstTitre(msg) {
   return /^(Titre obtenu|\d+ titres? obtenus|Succès :)/.test(String(msg || ''));
@@ -29590,10 +29640,7 @@ function debugHitDessiner() {
 UI.hitBox = hitBox;
 UI.debugHitDessiner = debugHitDessiner;
 
-// iOS Safari : un glissé sur une zone qui ne défile pas (ou en butée) tirait toute la page vers le bas et montrait
-// le fond du navigateur (panneau Personnage). overscroll-behavior n'y suffit pas : on annule ce glissé-là seulement.
-// Un ancêtre qui peut encore défiler dans le sens du geste garde son défilement natif ; le pincement (2 doigts) reste libre
-// hors commandes (tests/viewport.py). Joystick + attaque = 2 doigts : on bloque le rebond, pas le pincement sur le canevas.
+// iOS : on annule le glissé qui tire la page (overscroll ignoré). Un ancêtre encore défilable et le pincement restent.
 function cibleCommande(n) {
   for (; n && n.nodeType === 1; n = n.parentElement) {
     if (n.id === 'joy' || n.id === 'actions' || (n.classList && n.classList.contains('act'))) return true;
@@ -29815,7 +29862,6 @@ function paintDodge() {
 }
 
 // ───────── Interaction contextuelle ─────────
-const NPC_ROLE_LABEL = { master: 'Parler à', marchand: 'Commercer avec', forgeron: 'Forger avec', autel: 'Méditer à l\'', relais: 'Voyager depuis le', factions: 'Rencontrer les' };
 function interactOccupe() { return !!(UI.npcOuvert || (typeof STORY !== 'undefined' && STORY.cur)); }
 function npcPorteeTick() {
   if (!UI.npcOuvert || !UI.npc || !P || P.dead) return;
@@ -34310,14 +34356,11 @@ function accountAuthMessage(err) {
 
 if (typeof OSYNC !== 'undefined') OSYNC.newest = accountNewest;
 
-// ───────────────────────── Histoire : prologue, dialogues de trame, scènes de région (docs/HISTOIRE.md) ─────────────────────────
-// Données : 02_histoire.js. État : S.story (v6). Les fonctions existantes sont enveloppées (newGame, completeQuest, openNpc,
-// enterRegion, regionUnlockInfo, renderQuests) ; aucune lecture de l'état du rendu, aucune écriture hors S/G de la logique.
+// Histoire (docs/HISTOIRE.md). Données 02_histoire.js, état S.story.
 
 const STORY = { queue: [], cur: null, i: 0, shown: 0, t: 0, raf: 0, wasPaused: false, dom: null, onEnd: null };
 
-// Version de test (window.__m) : pas de scène automatique, pour garder les parcours existants déterministes.
-// tests/histoire.py les active avec window.__storyAuto = true ; ?histoire les force aussi.
+// Tests (window.__m) : pas de scène auto, sauf __storyAuto ou ?histoire.
 function storyAuto() { return !window.__m || window.__storyAuto === true || /[?&]histoire\b/.test(location.search); }
 
 function storyFill(txt) {
@@ -34341,7 +34384,7 @@ function storyCss() {
 #story .st-chap { z-index: 2; }
 #app.cine #hud, #app.cine #fps { opacity: 0; pointer-events: none; }
 #hud, #fps { transition: opacity .4s ease; }
-/* [Grok] pas de flou sur le monde : il changeait la cour en aplat gris et les lanternes en orbes flottants. */
+/* pas de flou sur le monde */
 #app.cine #cv, #app.cine #cv3 { filter: none; }
 #story canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 #story .st-chap { position: absolute; left: 16px; right: 16px; bottom: 100%; margin-bottom: 6px; text-align: left; font-family: var(--f-display, Georgia, serif); font-size: clamp(13px, 3.6vw, 18px); letter-spacing: .04em; color: #ffe2a0; text-shadow: 0 2px 6px #000; pointer-events: none; }
@@ -34355,8 +34398,8 @@ function storyCss() {
 #story .st-txt.narr { font-style: italic; color: #f0e2cc; }
 #story.narr .st-art, #story.narr .st-who { display: none; }
 #story.narr .st-txt { text-align: center; padding: 4px 6px 0; }
-@media (orientation: portrait) { #story .st-txt { min-height: 4.2em; } } /* trois lignes réservées : la boîte ne grandit plus pendant la frappe */
-#story .st-box:has(.st-ch:not([hidden])) { max-height: 64vh; } /* choix : la question restait coupée en haut de la boîte défilante */
+@media (orientation: portrait) { #story .st-txt { min-height: 4.2em; } }
+#story .st-box:has(.st-ch:not([hidden])) { max-height: 64vh; }
 #story .st-box:has(.st-ch:not([hidden])) .st-txt { min-height: 0; max-height: none; }
 #story .st-txt.run::after { content: "▍"; color: #e0c070; margin-left: 1px; animation: stCaret .7s steps(1) infinite; }
 @keyframes stCaret { 50% { opacity: 0; } }
@@ -34371,14 +34414,9 @@ function storyCss() {
 #story .st-ch .btn small { display: block; color: #e4d3b0; font-size: 12px; margin-top: 2px; }
 #story .st-skip[hidden] { display: none; }
 #story .st-skip { position: fixed; top: calc(var(--sat, 0px) + 8px); right: calc(var(--sar, 0px) + 8px); z-index: 8; min-height: 44px; min-width: 88px; pointer-events: auto; }
-@media (orientation: landscape) and (max-height: 560px) {
-  #story { padding-top: 8px; }
-  #story .st-art { width: 84px; height: 112px; }
-  #story .st-box { max-height: 78vh; }
-  #story .st-txt { max-height: 28vh; min-height: 2.2em; }
-}
+@media (orientation: landscape) and (max-height: 560px) { #story { padding-top: 8px; } }
 @media (prefers-reduced-motion: reduce) { #story .st-txt.run::after { animation: none; } #app.cine #cv, #app.cine #cv3 { filter: none; } }
-/* [Grok] iPhone : le texte ne se fait plus couper à droite ni en bas, les choix ne s'écrasent plus. Le prologue ne floute pas le monde (main). */
+/* iPhone : le texte et les choix restent entiers */
 #story { padding: 8px calc(12px + var(--sar, 0px)) calc(12px + var(--sab, 0px)) calc(12px + var(--sal, 0px)); max-height: calc(100dvh - var(--sat, 0px)); box-sizing: border-box; align-items: end; }
 #story .st-art { width: 88px; height: 118px; align-self: end; }
 #story .st-box { min-width: 0; min-height: 0; max-height: min(72dvh, calc(100dvh - var(--sat, 0px) - var(--sab, 0px) - 20px)); overflow-x: hidden; overflow-y: auto; }
@@ -34424,11 +34462,11 @@ function storyDom() {
     if (typeof voixDebloquer === 'function') voixDebloquer();
     const i0 = STORY.i, typing = !!(STORY.cur && STORY.shown < (STORY.full || '').length);
     storyNext();
-    // Le premier tap ne fait souvent que finir la frappe : on lance alors la voix, une fois le contexte déverrouillé.
+    // Le premier tap finit souvent la frappe : on lance alors la voix.
     if (STORY.cur && STORY.i === i0 && typing && typeof voixReplique === 'function' && !AUD.voixOn) voixReplique(storyLine());
   };
   next.onclick = advance; txt.onclick = advance; cv.onclick = advance;
-  // Passer ne saute jamais un choix : on va directement au prochain choix en attente.
+  // Passer mène au prochain choix.
   skip.onclick = (e) => {
     e.stopPropagation();
     if (typeof voixDebloquer === 'function') voixDebloquer();
@@ -34441,13 +34479,12 @@ function storyDom() {
   return STORY.dom;
 }
 
-// Joue une scène. force : rejoue même déjà vue. Renvoie true si elle est jouée ou mise en file.
-// Lignes conditionnelles : si = { choix: { clé: option } } ou { voie: 'orthodoxe' | 'demoniaque' | 'libre' }.
+// Joue une scène. force : rejoue même déjà vue.
 function storyCond(L) {
   const c = L.si; if (!c) return true;
   if (c.choix) for (const k in c.choix) { const v = S.voie && S.voie.choix[k]; if ([].concat(c.choix[k]).indexOf(v) < 0) return false; }
   if (c.voie && typeof voieNom === 'function' && voieNom().k !== c.voie) return false;
-  // [Grogrok] région déjà foulée (decouvert) ou pas encore (inconnu) : S.discovered
+  // Région déjà vue (decouvert) ou pas encore (inconnu).
   if (c.decouvert && !(S.discovered || []).includes(c.decouvert)) return false;
   if (c.inconnu && (S.discovered || []).includes(c.inconnu)) return false;
   return true;
@@ -34458,7 +34495,7 @@ function storyPendingChoice(from) {
   return -1;
 }
 function storyFinishTyping() { if (STORY.shown < STORY.full.length) { STORY.shown = STORY.full.length; STORY.dom.txt.textContent = STORY.full; STORY.dom.txt.classList.remove('run'); } }
-// Interlocuteur présent dans la scène (null : récit ou héros). Le rendu s'en sert pour le portrait et le travelling.
+// Interlocuteur de la scène, pour le portrait.
 function storyNpc() {
   if (!STORY.cur || !G || !G.scene || !G.scene.npcs || !P) return null;
   const L = storyLine(); if (!L || L.who === 'narr' || L.who === 'toi') return null;
@@ -34470,25 +34507,85 @@ function storyNpc() {
 }
 function storyCam() { const n = storyNpc(); return n ? { x: n.x, y: n.y } : null; }
 function storyCine(on) { const app = document.getElementById('app'); if (app) app.classList.toggle('cine', !!on); }
+// Choix encore ouvert. Auto ne le tranche pas.
+function storyChoixOuvert(sc) {
+  if (!sc || !sc.lines || !S) return -1;
+  for (let j = 0; j < sc.lines.length; j++) {
+    const L = sc.lines[j];
+    if (!storyCond(L) || !L.choice || !L.key || (S.voie && S.voie.choix && S.voie.choix[L.key])) continue;
+    if (L.choice.some((o) => !o.si || storyCond(o))) return j;
+  }
+  return -1;
+}
+function storyGarderChoix(id, onEnd) {
+  const g = STORY.garde || (STORY.garde = []);
+  if (id && !g.some((q) => q.id === id)) g.push({ id, onEnd: onEnd || null });
+  if (!STORY.gardeDit && typeof toast === 'function') { STORY.gardeDit = 1; toast('Choix de récit en attente.', 'gold'); }
+}
+function storySuiteSuivant(id) {
+  if (typeof ch6Suivante === 'function') { const n = ch6Suivante(id); if (n) return n; }
+  if (typeof CH9_SUITE === 'undefined' || !S || !S.story) return null;
+  for (const fil in CH9_SUITE) {
+    if (!S.story.seen[fil] || !CH9_SUITE[fil][id]) continue;
+    const nx = CH9_SUITE[fil][id], k = typeof CH9_DEJA !== 'undefined' && CH9_DEJA[nx];
+    if (k && ((S.voie.choix && S.voie.choix[k]) || S.story.seen[nx])) return null;
+    return nx;
+  }
+  return null;
+}
+function storySuiteChoix(id) {
+  if (!id || STORY.enSuite) return;
+  STORY.enSuite = 1;
+  try {
+    for (let cur = id, i = 0; i < 8; i++) {
+      const nx = storySuiteSuivant(cur), sc = nx && STORY_SCENES[nx]; if (!sc) break;
+      if (!(S.story.seen[nx] && storyChoixOuvert(sc) < 0)) playScene(nx);
+      if (storyChoixOuvert(sc) >= 0) break;
+      cur = nx;
+    }
+  } finally { STORY.enSuite = 0; }
+}
+function storyChoixSaute() {
+  const vu = (id) => !!(id && S.story.seen[id] && STORY_SCENES[id] && storyChoixOuvert(STORY_SCENES[id]) >= 0);
+  if (typeof MAIN_QUESTS !== 'undefined') for (let i = 0; i < S.quest + 1 && i < MAIN_QUESTS.length; i++) {
+    const q = MAIN_QUESTS[i]; if (!q) continue;
+    if (vu(q.after)) return q.after;
+    if (q.t !== 'talk' && vu(q.scene)) return q.scene;
+  }
+  for (const map of [typeof CH6_SUITE !== 'undefined' && CH6_SUITE, typeof CH9_SUITE !== 'undefined' && CH9_SUITE]) if (map) for (const fil in map) if (S.story.seen[fil]) for (const k in map[fil]) if (vu(map[fil][k])) return map[fil][k];
+  return null;
+}
+function storyReprendreChoix() {
+  if (!S || !S.story || (S.settings && S.settings.auto) || (typeof P !== 'undefined' && P && P.dead)) return;
+  if (STORY.cur || (STORY.queue && STORY.queue.length) || (G && G.paused)) return;
+  if (STORY.garde) STORY.garde = STORY.garde.filter((q) => storyChoixOuvert(STORY_SCENES[q.id]) >= 0);
+  let it = STORY.garde && STORY.garde.shift(), id = it && it.id;
+  if (!id && !(window.__m && window.__storyAuto !== true)) {
+    const t = (G && G.t) || 0;
+    if (STORY.repriseT != null && t - STORY.repriseT < 1) return;
+    STORY.repriseT = t; id = storyChoixSaute();
+  }
+  if (id) playScene(id, true, it && it.onEnd);
+}
 function playScene(id, force, onEnd) {
   const sc0 = STORY_SCENES[id]; if (!sc0 || !S) return false;
   const sc = Object.assign({}, sc0, { lines: sc0.lines.slice() }); if (!sc.lines.some(storyCond)) return false;
   if (!force && S.story && S.story.seen[id]) return false;
-  // Auto : une scène après quête figeait 20 min (G.paused). On marque vue, on continue.
+  // Auto : sans choix, vue et suite. Avec choix, on garde.
   if (!force && S.settings && S.settings.auto) {
+    const choix = storyChoixOuvert(sc) >= 0;
     if (S.story) S.story.seen[id] = 1;
+    if (choix) { storyGarderChoix(id, onEnd); return false; }
     if (typeof onEnd === 'function') onEnd();
+    if (!STORY.enSuite) storySuiteChoix(id);
     return false;
   }
-  // [Grogrok] la scène tirée de la file (force) se joue même si d'autres attendent derrière : sinon, avec deux
-  // scènes en file, elle se remettait au bout et plus rien ne se jouait (trame figée après la Tour)
   if (STORY.cur || (STORY.queue.length && !force)) { if (!STORY.queue.some((q) => q.id === id) && !(STORY.cur && STORY.cur.id === id)) STORY.queue.push({ id, onEnd }); return true; }
   const d = storyDom();
-  // Scène seule : un panneau ou une fiche PNJ ne reste jamais dessous.
   if (typeof uiFermerCalque === 'function') { uiFermerCalque('panel'); uiFermerCalque('npc'); }
   STORY.cur = { id, sc }; STORY.i = 0; STORY.onEnd = onEnd || null;
   STORY.wasPaused = !!G.paused; G.paused = true; I.atkHeld = false;
-  // pied à terre le temps de la scène (la boucle est en pause, 05_combat.js ne le ferait pas) ; la monture revient d'elle-même au retour
+  // Pied à terre le temps de la scène.
   if (typeof P !== 'undefined' && P.monte) { P.monte = false; if (typeof montureFx === 'function') montureFx(false); }
   d.root.hidden = false; storyCine(true);
   storyShowLine();
@@ -34497,8 +34594,7 @@ function playScene(id, force, onEnd) {
   STORY.raf = requestAnimationFrame(loop);
   return true;
 }
-// [Grogrok] compteur « 5 / 9 » sur les seules lignes jouables : les lignes conditionnelles écartées (si:) ne comptent pas.
-// Évalué à chaque ligne : un choix fait dans la scène peut en ouvrir d'autres plus loin.
+// Compteur sur les lignes jouables seulement.
 function storyCompte() {
   const ls = STORY.cur ? STORY.cur.sc.lines : []; let pos = 0, n = 0;
   for (let j = 0; j < ls.length; j++) if (j === STORY.i || storyCond(ls[j])) { n++; if (j <= STORY.i) pos++; }
@@ -34506,13 +34602,13 @@ function storyCompte() {
 }
 function storyLine() { return STORY.cur && STORY.cur.sc.lines[STORY.i]; }
 function storyShowLine() {
-  // lignes conditionnelles évaluées au moment de les montrer (un choix fait plus haut dans la scène compte)
+  // Lignes conditionnelles, au moment de les montrer.
   while (storyLine() && !storyCond(storyLine())) STORY.i++;
   const d = STORY.dom, L = storyLine(); if (!L) { storyEnd(false); return; }
   const who = STORY_CAST[L.who] || STORY_CAST.narr;
   const narr = L.who === 'narr';
   d.seal.textContent = who.glyph || '·'; d.seal.style.color = who.color; d.seal.style.visibility = narr ? 'hidden' : 'visible';
-  d.root.classList.toggle('narr', narr); // [Grogrok] récit : ni buste (un simple trait doré dans un cadre vide) ni ligne de nom vide ; le texte prend la largeur
+  d.root.classList.toggle('narr', narr);
   d.name.innerHTML = '';
   if (!narr) d.name.append(el('b', { style: 'color:' + who.color }, storyFill(who.name)), who.title ? el('small', null, storyFill(who.title)) : null);
   d.txt.className = 'st-txt' + (narr ? ' narr' : '') + ' run';
@@ -34526,13 +34622,13 @@ function storyShowLine() {
   d.choices.innerHTML = '';
   const pending = L.choice && !(S.voie && S.voie.choix[L.key]);
   d.choices.hidden = !pending; d.next.hidden = !!pending;
-  // [Grogrok] libellé honnête : « Passer » ne saute jamais un choix de voie, il y mène ; sinon il ferme la scène
+  // « Passer » mène au choix, il ne le saute pas.
   { const j = storyPendingChoice(STORY.i); d.skip.hidden = !!pending; d.skip.textContent = j >= 0 ? 'Aller au choix ⏭' : 'Passer la scène ⏭';
     d.skip.setAttribute('aria-label', j >= 0 ? 'Avancer jusqu\'au prochain choix' : 'Passer la fin de la scène'); }
   if (pending) for (const o of L.choice) {
     if (o.si && !storyCond(o)) continue;
     d.choices.append(el('button', { class: 'btn' + (o.voie > 0 ? ' st-o' : o.voie < 0 ? ' st-d' : ''), onclick: (e) => { e.stopPropagation(); if (typeof voixDebloquer === 'function') voixDebloquer(); storyChoose(L, o); } },
-      el('span', null, o.txt), o.hint ? el('small', null, o.hint) : null));
+      el('span', null, storyFill(o.txt)), o.hint ? el('small', null, storyFill(o.hint)) : null));
   }
   STORY.art = L.art || sc.art || 'portrait'; STORY.artWho = L.who; STORY.t0 = performance.now() / 1000;
   STORY.bustOk = false; STORY.bustWait = 0; STORY.bustBad = false;
@@ -34594,7 +34690,7 @@ function storyTick(now) {
   const cv = d.cv; const r = cv.getBoundingClientRect(); const dpr = Math.min(2, window.devicePixelRatio || 1);
   const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
   if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; STORY.bustOk = false; }
-  // En 3D, le rendu copie le modèle de l'interlocuteur (08_render3d.js). L'encre ne reste que si ce portrait n'arrive pas.
+  // En 3D le portrait est copié du modèle. L'encre ne reste qu'en secours.
   const vivant = typeof is3D === 'function' && is3D() && typeof storyNpc === 'function' && storyNpc();
   if (vivant && !STORY.bustBad) {
     if (!STORY.bustWait) STORY.bustWait = now;
@@ -34604,7 +34700,6 @@ function storyTick(now) {
   try { paintStoryBust(x, w, h, STORY.artWho); } catch (e) { x.fillStyle = '#0b0910'; x.fillRect(0, 0, w, h); }
 }
 
-// ───── Illustrations procédurales (canevas 2D, sans ressource externe) ─────
 function stGrad(x, h, stops) { const g = x.createLinearGradient(0, 0, 0, h); stops.forEach(([o, c]) => g.addColorStop(o, c)); return g; }
 function stHills(x, w, h, base, amp, col, seed) {
   x.fillStyle = col; x.beginPath(); x.moveTo(0, h);
@@ -34661,8 +34756,7 @@ function stSmoke(x, w, h, t, col) {
     x.fillStyle = g; x.fillRect(px - w * 0.2, py - w * 0.2, w * 0.4, w * 0.4);
   }
 }
-// Buste du locuteur (le monde reste visible derrière le bandeau) : même silhouette (drawHuman) que le héros
-// et les PNJ du monde, sur un lavis de sa couleur — zoomée tête+épaules pour remplir le cadre.
+// Buste 2D de secours, tête et épaules.
 function paintStoryBust(x, w, h, whoKey) {
   const who = (typeof STORY_CAST !== 'undefined' && STORY_CAST[whoKey]) || { color: '#c9a24a' };
   x.fillStyle = shade(who.color, -0.82); x.fillRect(0, 0, w, h);
@@ -34685,8 +34779,7 @@ function paintStoryBust(x, w, h, whoKey) {
   }
   stFigure(x, w * 0.5, h * 0.98, h * 0.46, '#1a1210', { hair: '#1a1410', skin: '#e8c4a0', sash: who.color, robe: who.color, mask: whoKey === 'inconnue' || whoKey === 'masque' || whoKey === 'voile' ? who.color : null });
 }
-// Couleurs du buste : le look du héros (S.look) pour 'toi', sinon celui du PNJ de la scène (storyNpc) par-dessus
-// le style de son rôle (NPC_STYLE) ; à défaut, la couleur du personnage dans STORY_CAST.
+// Couleurs du buste : look du héros, sinon le PNJ, sinon STORY_CAST.
 function storyBustLook(whoKey, who) {
   if (whoKey === 'toi') {
     if (!S || !S.look || typeof normalizeLook !== 'function') return null;
@@ -34788,7 +34881,6 @@ function paintStoryArt(x, key, w, h, t, who) {
   const v = x.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.75); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.6)'); x.fillStyle = v; x.fillRect(0, 0, w, h);
 }
 
-// ───── Accroches dans le jeu ─────
 const newGameBeforeStory = newGame;
 newGame = function () {
   newGameBeforeStory();
@@ -34805,7 +34897,7 @@ completeQuest = function (silent) {
   if (q.after) playScene(q.after);
   const nq = currentQuest();
   if (nq && nq.scene && nq.t !== 'talk') playScene(nq.scene);
-  // [Grogrok] scène d'arrivée gardée pour plus tard (REGION_SCENE_TARDIVE) : elle se joue quand la trame y arrive
+  // Scène d'arrivée tardive : quand la trame y arrive.
   const sc = G.scene, k = sc && sc.type === 'region' ? 'region:' + sc.id : null;
   if (k && REGION_SCENE_TARDIVE[sc.id] != null && S.quest >= REGION_SCENE_TARDIVE[sc.id]) playScene(k);
 };
@@ -34820,6 +34912,12 @@ openNpc = function (n) {
   openNpcBeforeStory(n);
 };
 
+if (typeof update === 'function' && !update.choixRecit) {
+  const updateAvantChoix = update;
+  update = function (dt) { updateAvantChoix(dt); storyReprendreChoix(); };
+  update.choixRecit = 1;
+}
+
 const enterRegionBeforeStory = enterRegion;
 enterRegion = function (id, at) {
   const fresh = S && !S.discovered.includes(id);
@@ -34830,10 +34928,7 @@ enterRegion = function (id, at) {
   if (fresh && STORY_SCENES[key] && storyAuto()) playScene(key);
 };
 
-// Progression liée à la trame : une région s'ouvre quand la trame y mène (ou si elle est déjà ouverte).
-// [Grogrok] Plaines ouvertes dès la Grotte (étape 10, percée d'Expert) : entre le niveau ~13 et le niveau 20,
-// leurs lieux (coffres, belvédères, grottes, élites rares, quêtes de la Cité) portent la progression sans chasse
-// (tests/goulot_niveau.py). La scène d'arrivée (chapitre III) attend l'étape 11 : REGION_SCENE_TARDIVE.
+// Région ouverte par la trame. Plaines à l'étape 10, scène à l'étape 11.
 const STORY_REGION_GATE = { vallee: 8, plaines: 10, col: 14, foret: 15, desert: 18, montagnes: 20, marecages: 23, citadelle: 24, abysses: 26, domaine: 28 };
 const REGION_SCENE_TARDIVE = { plaines: 11 };
 function storyRegionGate(R) {
@@ -34850,7 +34945,6 @@ regionUnlockInfo = function (R) {
   return g ? { ok: false, why: g.why } : base;
 };
 
-// Journal : Chronique en tête de l'onglet Quêtes
 const renderQuestsBeforeStory = renderQuests;
 renderQuests = function (b) {
   const q = currentQuest(); const chap = q ? q.chap || 12 : 12; const C = STORY_CHAPTERS[chap];
@@ -34863,7 +34957,6 @@ renderQuests = function (b) {
   b.append(row);
   for (let c = 1; c < chap; c++) { const K = STORY_CHAPTERS[c]; b.append(el('div', { class: 'q done' }, el('div', null, 'Chapitre ' + K.n + ' · ' + K.name, el('small', null, K.sum)))); }
   const wrap = el('div'); renderQuestsBeforeStory(wrap);
-  // le titre « Quêtes » de l'onglet est déjà remplacé par la Chronique
   const h = wrap.querySelector('h2'); if (h) h.remove();
   b.append(...wrap.childNodes);
 };
@@ -36969,7 +37062,7 @@ function lienProchaine() {
   if (!S || !S.story || !G.scene || G.scene.type !== 'region') return null;
   const here = G.scene.region ? G.scene.region.id : G.scene.id;
   for (const s of LIEN_SCENES) {
-    if (S.story.seen[s.id] || S.quest < s.q) continue;
+    if ((S.story.seen[s.id] && !(typeof storyChoixOuvert === 'function' && storyChoixOuvert(s) >= 0)) || S.quest < s.q) continue;
     if (s.region && (typeof s.region === 'function' ? s.region() : s.region) !== here) continue;
     if (s.apres && !S.story.seen[s.apres]) continue;
     if (s.cond && !s.cond()) continue;
@@ -36983,6 +37076,7 @@ function lienVerifier() {
   // Auto : pas de choix de lien (sauver / laisser / ensemble…). On marque vu, on ne choisit pas, on continue.
   if (S.settings && S.settings.auto) {
     if (S.story) S.story.seen[s.id] = 1;
+    if (typeof storyGarderChoix === 'function' && typeof storyChoixOuvert === 'function' && storyChoixOuvert(s) >= 0) storyGarderChoix(s.id);
     return;
   }
   playScene(s.id, true, () => { if (s.effet) s.effet(); const p = lienPalier(s.lien); toast('Lien · ' + storyFill(LIENS[s.lien].name) + ' : ' + p.nom, 'gold'); saveGame(); });
@@ -41889,14 +41983,12 @@ function rivierePeinte(pts0) {
 function eauIndex(lisse) {
   const cs = 320, g = new Map();
   for (let i = 1; i < lisse.length; i++) {
-    // [Claude] toutes les cases de la boîte englobante du segment, pas seulement celles de ses deux bouts : un trait long
-    // (jusqu'à 1 800 px entre deux points peints aux Plaines) traverse des cases où aucun bout ne tombe, et une pièce posée
-    // près de son milieu ne le voyait pas.
+    // Boîte du segment entier : un trait long traverse des cases où aucun bout ne tombe.
     const a = lisse[i - 1], b = lisse[i];
     const x0 = Math.floor(Math.min(a.x, b.x) / cs), x1 = Math.floor(Math.max(a.x, b.x) / cs);
     const y0 = Math.floor(Math.min(a.y, b.y) / cs), y1 = Math.floor(Math.max(a.y, b.y) / cs);
     for (let ix = x0; ix <= x1; ix++) for (let iy = y0; iy <= y1; iy++) {
-      const k = ix + ',' + iy; let l = g.get(k); if (!l) { l = []; g.set(k, l); } l.push(i);
+      const k = eauCle(ix, iy); let l = g.get(k); if (!l) { l = []; g.set(k, l); } l.push(i);
     }
   }
   return { cs, g };
@@ -41917,13 +42009,7 @@ function eauProche(riv, x, y) {
     }
   };
   const idx = riv.eauGrille;
-  if (idx) {
-    const cs = idx.cs, cx = Math.floor(x / cs), cy = Math.floor(y / cs), vu = new Set();
-    for (let ix = cx - 1; ix <= cx + 1; ix++) for (let iy = cy - 1; iy <= cy + 1; iy++) {
-      const a = idx.g.get(ix + ',' + iy); if (!a) continue;
-      for (const i of a) { if (vu.has(i)) continue; vu.add(i); voir(i); }
-    }
-  } else for (let i = 1; i < L.length; i++) voir(i);
+  if (idx) eauVoirCases(idx, x, y, voir); else for (let i = 1; i < L.length; i++) voir(i);
   return best;
 }
 // Trait bleu peint au sol : demi-largeur du pinceau (larg - 8). Les joints ronds ajoutent quelques pixels.
@@ -41939,18 +42025,26 @@ function eauPeinteProche(riv, x, y) {
     const px = a.x + t * dx, py = a.y + t * dy, d = Math.hypot(x - px, y - py);
     if (d < bestD) { const l = Math.sqrt(l2); bestD = d; best = { d, x: px, y: py, tx: dx / l, ty: dy / l, hw }; }
   };
-  // [Claude] même index par cases de 320 px que eauProche (points peints tous les ~28 px) : decorHorsEau, rejoué à chaque
-  // buildGrid (17 à 19 fois par région) sur 8 000 à 11 000 pièces, balayait les 330 à 400 points pour chacune (58 % du
-  // temps de génération). Tous les appelants comparent d à moins de 300 px : hors des cases voisines, null suffit.
+  // Index 320 px : hors des cases voisines, null (les appelants comparent d à moins de 300 px).
   const idx = riv.peinteGrille;
-  if (idx) {
-    const cs = idx.cs, cx = Math.floor(x / cs), cy = Math.floor(y / cs), vu = new Set();
-    for (let ix = cx - 1; ix <= cx + 1; ix++) for (let iy = cy - 1; iy <= cy + 1; iy++) {
-      const a = idx.g.get(ix + ',' + iy); if (!a) continue;
-      for (const i of a) { if (vu.has(i)) continue; vu.add(i); voir(i); }
-    }
-  } else for (let i = 1; i < L.length; i++) voir(i);
+  if (idx) eauVoirCases(idx, x, y, voir); else for (let i = 1; i < L.length; i++) voir(i);
   return best;
+}
+// Tampon réutilisé : pas de Set ni de chaîne par requête.
+let EAU_PAS = 1, EAU_VU = new Uint32Array(512);
+function eauCle(ix, iy) { return (ix + 8192) * 16384 + (iy + 8192); }
+function eauVoirCases(idx, x, y, voir) {
+  if (++EAU_PAS === 0xffffffff) { EAU_VU = new Uint32Array(EAU_VU.length); EAU_PAS = 1; }
+  const cs = idx.cs, cx = Math.floor(x / cs), cy = Math.floor(y / cs);
+  for (let ix = cx - 1; ix <= cx + 1; ix++) for (let iy = cy - 1; iy <= cy + 1; iy++) {
+    const a = idx.g.get(eauCle(ix, iy)); if (!a) continue;
+    for (let k = 0; k < a.length; k++) {
+      const i = a[k];
+      if (i >= EAU_VU.length) { const n = new Uint32Array(i * 2 + 1); n.set(EAU_VU); EAU_VU = n; }
+      if (EAU_VU[i] === EAU_PAS) continue;
+      EAU_VU[i] = EAU_PAS; voir(i);
+    }
+  }
 }
 function eauPousse(o, c, corps) {
   let nx = o.x - c.x, ny = o.y - c.y, l = Math.hypot(nx, ny);
@@ -53621,11 +53715,7 @@ netStop = function () {
   netStopVente();
 };
 
-// [Grogrok] Vie des villes : routines du jour des passants d'ambiance (PNJ « crowd » de 33_monde.js et 43_bourgs.js).
-// Logique seulement : on déplace n.x / n.y et on pose n.dort (rentré au logis : ni dessiné, ni bavard), n.cap (direction
-// de marche, null à l'arrêt) et n.pas (phase du pas). Les rendus 2D et 3D lisent ces champs, rien d'autre.
-// Données : JOURNEE et ROUTINES (02_monde.js). Coût : quelques opérations par passant et par image, aucune allocation
-// hors de l'initialisation (paresseuse, au premier passage dans la scène).
+// [Grogrok] Vie des villes : n.x/n.y, n.dort, n.cap, n.pas. Le rendu lit, il n'écrit pas. Données JOURNEE/ROUTINES.
 
 // Obscurité du monde, de 0 (plein jour) à JOURNEE.force (cœur de la nuit). G.nuitForce la fixe (tests, captures).
 // Les versions de test (window.__m) restent de jour, sauf window.__cycle : même règle que l'ancien nuitK du rendu 3D.
@@ -53769,6 +53859,7 @@ function vieMarche(n, b, dt) {
   n.cap = Math.atan2(dy, dx); n.pas = (n.pas || 0) + dt * 7;
   return false;
 }
+function vieAller(r, route, ou) { r.route = route; r.k = 0; r.ou = ou || null; }
 function vieTick(n, dt, nuit, loin) {
   const r = n.rt, sc = G.scene;
   const veutRentrer = r.rentre && nuit > r.seuil;
@@ -53789,18 +53880,17 @@ function vieTick(n, dt, nuit, loin) {
     if (vieMarche(n, r.route[r.k], dt) && ++r.k >= r.route.length) { r.route = null; r.attente = ROUTINES.pause[0] + Math.random() * (ROUTINES.pause[1] - ROUTINES.pause[0]); }
     return;
   }
-  const aille = (route, ou) => { r.route = route; r.k = 0; r.ou = ou || null; };
   n.cap = null;
   if (veille && r.ou === 'auberge') return; // on reste jusqu'à l'aube
   const auPoste = dist2(n.x, n.y, r.poste.x, r.poste.y) <= 4;
   if (r.flane || !auPoste) { r.attente -= dt; if (r.attente > 0 && !(veille && auPoste)) return; } // arrêt (au marché, en flânant, au logis le matin)
   // hors du poste : on y revient d'abord, par le chemin connu
-  if (!auPoste) { aille(r.ou === 'marche' ? r.etal.retour : r.ou === 'auberge' ? r.auberge.retour : [r.poste]); return; }
-  if (veille) { aille(r.auberge.aller, 'auberge'); return; }
+  if (!auPoste) { vieAller(r, r.ou === 'marche' ? r.etal.retour : r.ou === 'auberge' ? r.auberge.retour : [r.poste]); return; }
+  if (veille) { vieAller(r, r.auberge.aller, 'auberge'); return; }
   if (!r.flane) return;
-  if (r.etal && Math.random() < 0.6) { aille(r.etal.aller, 'marche'); return; }
+  if (r.etal && Math.random() < 0.6) { vieAller(r, r.etal.aller, 'marche'); return; }
   const p = viePoint(sc, r.poste, 20, ROUTINES.flane, Math.random());
-  if (p) aille([p]); else r.attente = ROUTINES.pause[0];
+  if (p) vieAller(r, [p]); else r.attente = ROUTINES.pause[0];
 }
 function vieVille(dt) {
   const sc = G.scene; if (!sc || sc.type !== 'region' || !sc.npcs) return;
@@ -55498,18 +55588,22 @@ function placeProtege(d) {
 }
 
 function placeEmprise(d) {
+  const rot = d.rot || 0, w = d.w || 0, h = d.h || 0, r = d.r || 0, elu = d.elu ? 1 : 0, c = d._emp;
+  if (c && c.t === d.type && c.rot === rot && c.w === w && c.h === h && c.r === r && c.e === elu) return c;
+  let hw, hh;
   if (d.type === 'house') {
-    const tourne = Math.abs(Math.sin(d.rot || 0)) > 0.5;
-    return tourne ? { hw: 42, hh: 65 } : { hw: 65, hh: 42 };
+    const tourne = Math.abs(Math.sin(rot)) > 0.5;
+    hw = tourne ? 42 : 65; hh = tourne ? 65 : 42;
+  } else if (w && h) {
+    const tourne = Math.abs(Math.sin(rot)) > 0.5;
+    hw = tourne ? h / 2 : w / 2; hh = tourne ? w / 2 : h / 2;
+  } else {
+    let rad = r || (typeof COLLIDE_R !== 'undefined' && COLLIDE_R[d.type]) || 0;
+    if (PLACE_ARBRES.has(d.type)) rad = Math.max(rad, 28);
+    if (d.type === 'statue' && !elu) rad = Math.max(rad, 28); // le corps gris dépasse le rayon de collision
+    hw = hh = rad;
   }
-  if (d.w && d.h) {
-    const tourne = Math.abs(Math.sin(d.rot || 0)) > 0.5;
-    return tourne ? { hw: d.h / 2, hh: d.w / 2 } : { hw: d.w / 2, hh: d.h / 2 };
-  }
-  let rad = d.r || (typeof COLLIDE_R !== 'undefined' && COLLIDE_R[d.type]) || 0;
-  if (PLACE_ARBRES.has(d.type)) rad = Math.max(rad, 28);
-  if (d.type === 'statue' && !d.elu) rad = Math.max(rad, 28); // le corps gris dépasse le rayon de collision
-  return { hw: rad, hh: rad };
+  return d._emp = { hw, hh, t: d.type, rot, w, h, r, e: elu };
 }
 
 function placeChevauche(a, b) {
@@ -60191,6 +60285,31 @@ if (typeof doInteract === 'function') {
     return avant(dt);
   };
 })();
+
+// [Grok] Parole : un PNJ à 2,6 m, strictement plus proche qu'une action de lieu, garde la conversation.
+// Lin et Nuo (50 px du spot) étaient injoignables : le bouton disait Pêcher ou Cueillir.
+// À égalité l'action reste. Fiche ouverte : ces actions ne couvrent plus le panneau.
+const PAROLE_CEDE = { activite: 1, halte: 1, landmark: 1, crieur: 1, secret: 1, panneau: 1 };
+const paroleAvant = findInteract;
+findInteract = function () {
+  const it = paroleAvant();
+  if (!P || P.dead || P.med) return it;
+  const cede = !!(it && PAROLE_CEDE[it.kind] && it.ref && it.ref.x != null);
+  if (typeof interactOccupe === 'function' && interactOccupe()) return cede ? null : it;
+  if (it && it.kind === 'npc') {
+    if (it.label === 'Forge' && it.ref && it.ref.role !== 'forgeron') it.label = 'Parler à ' + it.ref.name;
+    return it;
+  }
+  if (!cede) return it;
+  let b = null, bd = (2.6 * M) ** 2;
+  for (const n of (G.scene && G.scene.npcs) || []) {
+    if (!n || n.crowd || n.x == null) continue;
+    const d = dist2(n.x, n.y, P.x, P.y);
+    if (d < bd) { bd = d; b = n; }
+  }
+  if (!b || !(bd < dist2(it.ref.x, it.ref.y, P.x, P.y))) return it;
+  return { kind: 'npc', ref: b, label: b.role === 'marchand' ? 'Commerce' : 'Parler à ' + b.name };
+};
 
 // ───────────────────────── Boucle principale & démarrage ─────────────────────────
 function saveState() { if (!S || !P.st) return; S.qi = P.qi; saveGame(); }
