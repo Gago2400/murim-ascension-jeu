@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="84f9c585ceff">
+<meta name="murim-build" content="eed5fa07d1e5">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="84f9c585ceff" aria-label="Identifiant de version">Version générée : 84f9c585ceff</div>
+      <div class="meta" id="t-build" data-build="eed5fa07d1e5" aria-label="Identifiant de version">Version générée : eed5fa07d1e5</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -23568,8 +23568,12 @@ function R3init(T) {
     root.rotateX(-a * 0.48);
     root.position.x -= Math.cos(face) * a * 0.34;
     root.position.z -= Math.sin(face) * a * 0.34;
+    gardeCoup(m, a);
+  }
+  // [Claude] partie osseuse du coup reçu (héros, PNJ, ennemis humains) : buste cambré, tête, bras en garde devant le visage
+  function gardeCoup(m, a) {
     const o = osGeste(m); if (!o) return;
-    plierBuste(o, m, -a * 0.4, a * 0.45); brasDevant(o, m, a, 1.1, 0.35); // [Claude] bras en garde devant le visage
+    plierBuste(o, m, -a * 0.4, a * 0.45); brasDevant(o, m, a, 1.1, 0.35);
   }
   // [Claude] après mixeur : buste/tête (radians), bras devant (épaules −rx·a, écart rz·a)
   function plierBuste(o, m, sp, hd) {
@@ -25393,12 +25397,14 @@ function R3init(T) {
         const s0 = v.sc0 || 1; v.root.scale.setScalar(s0); // le coup reçu ne déforme plus le corps
         v.root.position.x += Math.cos(e.hitA || 0) * q * 0.62;
         v.root.position.z += Math.sin(e.hitA || 0) * q * 0.62;
-        v.root.rotation.z = -q * 0.5;
-        v.root.rotateX(-q * 0.28);
+        const hum = !!(v.md && v.md.m); // [Claude] figurine humaine : cambrure arrière et garde des bras (après le mixeur), pas de bascule latérale en planche
+        v.root.rotation.z = hum ? 0 : -q * 0.5;
+        v.root.rotateX(-q * (hum ? 0.5 : 0.28));
         v._geste = 'coup';
       }
       const wind = e.state === 'wind' || e.state === 'blink' ? 1 : 0;
       v.anim(t, wind, e.moving ? t * 10 : 0, e);
+      if (hk > 0 && !clipHit && v.md && v.md.m) gardeCoup(v.md.m, Math.min(1, hk * (e.isBoss ? 0.35 : 1)));
       // Phase annoncée : le corps se cabre ou se penche. La mort reprend la racine juste après.
       if (e.isBoss && !e.dead && typeof bossPosture === 'function') {
         const lean = bossPosture(e.phase) * (e.state === 'phase' ? 1.2 : 1);
