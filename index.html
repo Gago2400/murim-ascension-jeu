@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="eed5fa07d1e5">
+<meta name="murim-build" content="4e5f2c8cf7c1">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2302,7 +2302,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="eed5fa07d1e5" aria-label="Identifiant de version">Version générée : eed5fa07d1e5</div>
+      <div class="meta" id="t-build" data-build="4e5f2c8cf7c1" aria-label="Identifiant de version">Version générée : 4e5f2c8cf7c1</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -23087,7 +23087,7 @@ function R3init(T) {
     if (!MV) { const fe = { id: 'monture', d: ENEMIES[m.base] || ENEMIES.tigre, r: 0.75 * M, anim: 0, status: {}, rarePoi: { rare: { name: m.rare || 'monture_' + S.montures.active } } }; MV = { fe, id: S.montures.active, v: buildEnemyView(fe), t0: G.t }; }
     const v = MV.v, t = G.t, mv = P.moving ? P.anim * (8 + 6 * (P.run || 0)) * (m.allure || 1) : 0;
     poussiereMonture(m, t);
-    v.root.visible = true; v.root.position.set(W(P.x), hSol(P.x, P.y), W(P.y)); v.root.rotation.y = -P.face;
+    v.root.visible = true; v.root.position.set(W(P.x), hSol(P.x, P.y), W(P.y)); v.root.rotation.y = -(PV && PV._cap != null ? PV._cap : P.face);
     const pop = Math.min(1, (t - MV.t0) / 0.35);
     if (!v.cale) calibreMonture(v, m); // une fois : l'espace local ne dépend pas de l'apparition
     v.root.scale.setScalar((v.kTaille || 1) * (0.6 + 0.4 * (1 - (1 - pop) ** 3)));
@@ -23624,6 +23624,14 @@ function R3init(T) {
     obj.position.x += dx * c - dz * s;
     obj.position.z += dx * s + dz * c;
   }
+  // [Claude] cap visuel lissé : le cap logique (P.face, e.face, n.cap) saute à chaque changement de direction, la figurine
+  // pivotait d'un coup. Elle tourne à vitesse bornée (rad/s) ; visée et coups gardent le cap logique.
+  function lisserCap(o, cible, dt, vit) {
+    if (o._cap == null || !(dt > 0)) { o._cap = cible; return cible; }
+    const d = angDiff(o._cap, cible);
+    o._cap += Math.sign(d) * Math.min(Math.abs(d), vit * dt);
+    return o._cap;
+  }
   function updatePlayer3D() {
     const v = ensurePlayer(); const t = G.t;
     armesReposer(v.root); // chapitres XII–XIV : fourreau avant tout retour anticipé
@@ -23638,8 +23646,9 @@ function R3init(T) {
     v._sol = sol;
     const emo = typeof netPose === 'function' ? netPose() : '';
     if (v.m) { // modèle GLB animé (clips Quaternius) + couche procédurale
-      v.root.rotation.set(0, -P.face, 0);
       const tourDt = pasAnim(t, v._ft || t); v._ft = t;
+      const cap = lisserCap(v, P.face, tourDt, P.atk.ph === 'swing' || P.dodge.t > 0 ? 22 : 11);
+      v.root.rotation.set(0, -cap, 0);
       v.d._tour = tourDt > 1e-4 ? angDiff(v._fy || P.face, P.face) / tourDt : 0; v._fy = P.face;
       v.d._vit = sol;
       if (P.dead) { gaineArme(v.d, false, v.root); poseHumanModel(v.d, 'death', 1, false, t, 0.22); v._geste = 'mort'; v._souffle = 0; setAlpha(v.mats, 0.85); showModelInk(v.m, false); showInk(v.ink, false); v.shield.visible = false; return; }
@@ -23660,7 +23669,7 @@ function R3init(T) {
       } else spd = 0.55;
       poseHumanModel(v.d, cle, spd, restart, t, sw ? 0.1 : 0.22);
       if (roll && !emo) { sautEsquive(v.root, v.m, roll); v._geste = 'esquive'; v._glisse = null; }
-      else if (hit && !selle && !emo) { reculCoup(v.root, v.m, hit, P.face); v._geste = 'coup'; }
+      else if (hit && !selle && !emo) { reculCoup(v.root, v.m, hit, cap); v._geste = 'coup'; }
       else v._geste = cle;
       if (!selle && !sw && !roll && !hit) collerCheville(v.m, v.root);
       if (marche && !hit) {
@@ -23673,7 +23682,7 @@ function R3init(T) {
         const k = clamp(P.atk.t / (P.atk.dur || 0.36), 0, 1);
         const port = wpn === 'spear' || wpn === 'staff' ? 1.35 : wpn === 'dagger' ? 0.55 : wpn === 'hammer' ? 0.7 : 1;
         const elan = (k < 0.18 ? -0.08 * (k / 0.18) : k < 0.45 ? -0.08 + 0.22 * ((k - 0.18) / 0.27) ** 2 : k < 0.58 ? 0.14 : 0.14 * (1 - Math.min(1, (k - 0.58) / 0.42))) * port;
-        v.root.position.x += Math.cos(P.face) * elan; v.root.position.z += Math.sin(P.face) * elan;
+        v.root.position.x += Math.cos(cap) * elan; v.root.position.z += Math.sin(cap) * elan;
         if (k < 0.2) v.root.position.y -= 0.055 * (k / 0.2);
       }
       if (selle) {
@@ -23702,11 +23711,11 @@ function R3init(T) {
       else if (!P.dead) v._souffle = 0;
       const pa = P.iframes > 0 && P.dodge.t > 0 ? 0.5 : 1; setAlpha(v.mats, pa); showModelInk(v.m, pa > 0.99); showInk(v.ink, pa > 0.99);
     } else if (P.dead) {
-      v.root.rotation.set(0, -P.face, Math.PI / 2 * Math.min(1, P.deathT * 3)); v.root.position.y = 0.2;
+      v.root.rotation.set(0, -(v._cap != null ? v._cap : P.face), Math.PI / 2 * Math.min(1, P.deathT * 3)); v.root.position.y = 0.2;
       poseHuman(v.h, { walk: 0 }); setAlpha(v.mats, 0.85); showInk(v.ink, false); v.shield.visible = false; return;
     }
     if (!v.m) {
-    v.root.rotation.set(0, -P.face, 0);
+    v.root.rotation.set(0, -lisserCap(v, P.face, pasAnim(t, v._ft || t), 11), 0); v._ft = t;
     let swing = null;
     if (!selle && P.atk.ph === 'swing') {
       const k = clamp(P.atk.t / P.atk.dur, 0, 1); const dir = P.atk.idx === 1 ? -1 : 1;
@@ -25372,7 +25381,7 @@ function R3init(T) {
       let alpha = e.dead ? mp.alpha : 1;
       v.root.visible = alpha > 0.02; if (!v.root.visible) continue;
       v.root.position.set(W(e.x), hSol(e.x, e.y), W(e.y));
-      if (e.d.kind !== 'kraken') v.root.rotation.set(0, -e.face, 0); // x et z repartent de zéro : le saut ne s'accumule pas
+      if (e.d.kind !== 'kraken') { v.root.rotation.set(0, -lisserCap(v, e.face, pasAnim(t, v._ct || t), e.state === 'wind' ? 20 : 9), 0); v._ct = t; } // x et z repartent de zéro : le saut ne s'accumule pas
       // Cadence réduite seulement hors 16 m (ou déjà hors champ plus haut). 10–16 m dans le cadrage : chaque image.
       // Boss / coup / flash / mort : chaque image (démon / empereur inchangés).
       const d2e = (W(e.x) - cx) ** 2 + (W(e.y) - cz) ** 2;
@@ -25425,7 +25434,7 @@ function R3init(T) {
         const mort = !!e.dead;
         v.tombe = mort;
         const f = mort ? mp.chute : 0;
-        const yaw = e.d.kind === 'kraken' ? v.root.rotation.y : -e.face;
+        const yaw = e.d.kind === 'kraken' ? v.root.rotation.y : -(v._cap != null ? v._cap : e.face);
         // Le clip « death » porte la chute. Sans clip, le corps se couche (échelle uniforme, plus d'aplat).
         v.root.rotation.set(v.mortClip ? 0 : f * 1.48, yaw, 0);
         v.root.scale.setScalar(v.sc0 || 1);
@@ -25850,9 +25859,9 @@ function R3init(T) {
       if (md) { o.md = md; o.lod = lodDetail(md); const acc = mergeAccessories(md); if (acc) { o.acc = acc.meshes.length; o.lod = o.lod.filter((q) => q.layers.mask).concat(acc.lod); } o.update = (t) => {
         const parle = dialogueFourreau() && P && typeof storyNpc === 'function' && storyNpc() === n;
         if (n.geste) root.position.set(W(n.x), hSol(n.x, n.y), W(n.y));
-        if (parle) { const dx = P.x - n.x, dy = P.y - n.y; root.rotation.y = dx * dx + dy * dy > 4 ? Math.atan2(-dy, dx) : -(Math.PI / 2); }
-        else if (n.cap != null) root.rotation.y = -n.cap; // en marche (70_vie_ville.js)
-        else root.rotation.y = -(Math.PI / 2 + Math.sin(t * 0.35 + n.anim) * 0.18);
+        if (parle) { const dx = P.x - n.x, dy = P.y - n.y; root.rotation.y = dx * dx + dy * dy > 4 ? Math.atan2(-dy, dx) : -(Math.PI / 2); o._cap = -root.rotation.y; }
+        else if (n.cap != null) { root.rotation.y = -lisserCap(o, n.cap, pasAnim(t, o._ct || t), 7); o._ct = t; } // en marche (70_vie_ville.js)
+        else { root.rotation.y = -(Math.PI / 2 + Math.sin(t * 0.35 + n.anim) * 0.18); o._cap = -root.rotation.y; }
         if (n.geste === 'mort') {
           root.rotation.x = 0;
           poseHumanModel(md, 'death', 1, false, t, 0.12);
