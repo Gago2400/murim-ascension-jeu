@@ -2286,7 +2286,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="82866a1574e9" aria-label="Identifiant de version">Version générée : 82866a1574e9</div>
+      <div class="meta" id="t-build" data-build="ef386994f990" aria-label="Identifiant de version">Version générée : ef386994f990</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -20762,13 +20762,17 @@ function R3init(T) {
   }
   function matVoile(src) {
     const m = src.clone();
-    m.transparent = true; m.depthWrite = false; m.dithering = false; m.opacity = 1;
+    m.transparent = false; m.depthWrite = true; m.dithering = false; m.opacity = 1;
     if (m.alphaHash) m.alphaHash = false;
+    // [Claude] trame ordonnée (Bayer 4×4) au lieu d'un alpha à 22 % : plusieurs cartes de feuilles à 22 % s'empilaient en un
+    // brouillard vert sur le héros ; avec la trame, toutes les couches laissent passer les mêmes pixels (≈ 22 % de points
+    // opaques au voile plein), l'arbre reste lisible en filigrane et rien ne se cumule. Opaque : plus de tri ni de mélange.
     m.onBeforeCompile = (sh) => {
       sh.vertexShader = 'attribute float aVoile;\nvarying float vVoile;\n' + sh.vertexShader.replace('#include <project_vertex>',
         'vVoile = aVoile;\n#include <project_vertex>');
       sh.fragmentShader = 'varying float vVoile;\n' + sh.fragmentShader.replace('#include <dithering_fragment>',
-        '{ float va = mix(1.0, 0.22, smoothstep(0.05, 0.42, vVoile)); gl_FragColor.a *= va; if (gl_FragColor.a < 0.035) discard; }\n'); // l'arbre reste lisible en filigrane (22 %), il ne disparaît plus
+        '{ float k = smoothstep(0.05, 0.42, vVoile); if (k > 0.001) { vec2 p = floor(mod(gl_FragCoord.xy, 4.0)); vec2 q = floor(p * 0.5); vec2 r = mod(p, 2.0);\n'
+        + 'float b = 4.0 * (2.0 * q.x + 3.0 * q.y - 4.0 * q.x * q.y) + (2.0 * r.x + 3.0 * r.y - 4.0 * r.x * r.y); if ((b + 0.5) / 16.0 < k * 0.8) discard; } }\n');
     };
     m.customProgramCacheKey = () => 'voile-arbre';
     return m;
