@@ -2308,7 +2308,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="56cf0c917ef3" aria-label="Identifiant de version">Version générée : 56cf0c917ef3</div>
+      <div class="meta" id="t-build" data-build="dbc433d1fd15" aria-label="Identifiant de version">Version générée : dbc433d1fd15</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -23420,7 +23420,7 @@ function R3init(T) {
     for (const c of m.brasHero) {
       if (!c.up) continue;
       c.up.getWorldPosition(HB_A);
-      const ext = HB_R.clone().multiplyScalar(Math.sign(HB_A.dot(HB_R)) || 1);
+      const ext = HB_R.clone().multiplyScalar(Math.sign(HB_A.sub(m.obj.getWorldPosition(HB_B)).dot(HB_R)) || 1); 
       if (mode === 'break') {
         viser(c.up, c.lo, new T.Vector3(0, 0.92, 0).addScaledVector(ext, 0.26).addScaledVector(HB_F, 0.06 + breath));
         viser(c.lo, c.ha, new T.Vector3(0, 0.96, 0).addScaledVector(HB_F, 0.1));
@@ -23556,7 +23556,7 @@ function R3init(T) {
     if (!m.repos) m.repos = ['l', 'r'].map((sd) => ({ up: modelBone(m, new RegExp('^upperarm_' + sd + '$', 'i')), lo: modelBone(m, new RegExp('^lowerarm_' + sd + '$', 'i')), ha: modelBone(m, new RegExp('^hand_' + sd + '$', 'i')) }));
     const ry = root.rotation.y;
     PR_F.set(Math.cos(ry), 0, -Math.sin(ry));
-    PR_R.crossVectors(PR_T.set(0, 1, 0), PR_F).normalize();
+    PR_R.crossVectors(PR_F, PR_T.set(0, 1, 0)).normalize(); 
     const souffle = Math.sin((t + (phase || 0)) * 1.55) * 0.07; 
     const viser = (os, enf, dir) => {
       if (!os || !enf) return;
@@ -23570,8 +23570,8 @@ function R3init(T) {
     };
     m.repos.forEach((c, i) => {
       const sg = i === 0 ? -1 : 1;
-      viser(c.up, c.lo, PR_T.set(0, -0.92, 0).addScaledVector(PR_R, sg * 0.26).addScaledVector(PR_F, 0.14 + souffle).normalize());
-      viser(c.lo, c.ha, PR_T.set(0, -0.97, 0).addScaledVector(PR_R, sg * 0.08).addScaledVector(PR_F, 0.05).normalize());
+      viser(c.up, c.lo, PR_T.set(0, -0.95, 0).addScaledVector(PR_R, sg * 0.13).addScaledVector(PR_F, 0.08 + souffle).normalize());
+      viser(c.lo, c.ha, PR_T.set(0, -0.96, 0).addScaledVector(PR_R, sg * -0.05).addScaledVector(PR_F, 0.16).normalize());
     });
   }
   
@@ -23580,7 +23580,7 @@ function R3init(T) {
     if (!m.assis) m.assis = ['l', 'r'].map((sd) => ({ th: modelBone(m, new RegExp('^thigh_' + sd + '$', 'i')), ca: modelBone(m, new RegExp('^calf_' + sd + '$', 'i')), ft: modelBone(m, new RegExp('^foot_' + sd + '$', 'i')) }));
     const sol = root.position.y, ry = root.rotation.y;
     PR_F.set(Math.cos(ry), 0, -Math.sin(ry));
-    PR_R.crossVectors(PR_A.set(0, 1, 0), PR_F).normalize();
+    PR_R.crossVectors(PR_F, PR_A.set(0, 1, 0)).normalize(); 
     const viser = (os, enf, dir) => {
       if (!os || !enf) return;
       os.getWorldPosition(PR_A); enf.getWorldPosition(PR_B); PR_B.sub(PR_A);
@@ -23607,7 +23607,7 @@ function R3init(T) {
     if (!m.jambes) m.jambes = ['l', 'r'].map((sd) => ({ th: modelBone(m, new RegExp('^thigh_' + sd + '$', 'i')), ca: modelBone(m, new RegExp('^calf_' + sd + '$', 'i')), ft: modelBone(m, new RegExp('^foot_' + sd + '$', 'i')) }));
     const ry = root.rotation.y;
     PR_F.set(Math.cos(ry), 0, -Math.sin(ry));
-    PR_R.crossVectors(PR_A.set(0, 1, 0), PR_F).normalize();
+    PR_R.crossVectors(PR_F, PR_A.set(0, 1, 0)).normalize(); 
     const bal = moving ? Math.sin((t + (phase || 0)) * 6.4) : 0;
     const viser = (os, enf, dir) => {
       if (!os || !enf) return;
