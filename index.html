@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="dbc433d1fd15">
+<meta name="murim-build" content="24773c259406">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2324,7 +2324,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="dbc433d1fd15" aria-label="Identifiant de version">Version générée : dbc433d1fd15</div>
+      <div class="meta" id="t-build" data-build="24773c259406" aria-label="Identifiant de version">Version générée : 24773c259406</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -34780,6 +34780,22 @@ function storyChoixSaute() {
   }
   
   for (const id of ['q_moulin_fin', 'q_echo_fin', 'q_porte', 'q_trone', 'q_ciel', 'q_pavillon', 'q_chasse', 'q_prix', 'q_trahison', 'q_sang', 'q_dieu', 'q_tournoi_invite']) if (vu(id)) return id;
+  
+  
+  
+  if (S.story.seen['vallee:echo'] && !S.story.seen.q_echo_fin && STORY_SCENES.q_echo_fin && storyChoixOuvert(STORY_SCENES.q_echo_fin) >= 0) return 'q_echo_fin';
+  if (typeof MAIN_QUESTS !== 'undefined') {
+    for (let i = 0; i < S.quest && i < MAIN_QUESTS.length; i++) {
+      const id = MAIN_QUESTS[i] && MAIN_QUESTS[i].after;
+      if ((id !== 'q_faction' && id !== 'q_ruines') || S.story.seen[id]) continue;
+      if (STORY_SCENES[id] && storyChoixOuvert(STORY_SCENES[id]) >= 0) return id;
+    }
+    
+    
+    
+    const prev = MAIN_QUESTS[S.quest - 1], cur = MAIN_QUESTS[S.quest];
+    if (prev && prev.after === 'q_ruines' && S.story.seen.q_ruines && cur && cur.scene === 'q_ermite_avant' && !S.story.seen.q_ermite_avant && STORY_SCENES.q_ermite_avant && storyChoixOuvert(STORY_SCENES.q_ermite_avant) >= 0) return 'q_ermite_avant';
+  }
   return null;
 }
 function storyReprendreChoix() {
