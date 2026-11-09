@@ -2308,7 +2308,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="b7d445e9a1be" aria-label="Identifiant de version">Version générée : b7d445e9a1be</div>
+      <div class="meta" id="t-build" data-build="bf937c9de630" aria-label="Identifiant de version">Version générée : bf937c9de630</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -34706,7 +34706,14 @@ function storyChoixSaute() {
     if (vu(q.after)) return q.after;
     if (q.t !== 'talk' && vu(q.scene)) return q.scene;
   }
-  for (const map of [typeof CH6_SUITE !== 'undefined' && CH6_SUITE, typeof CH9_SUITE !== 'undefined' && CH9_SUITE]) if (map) for (const fil in map) if (S.story.seen[fil]) for (const k in map[fil]) if (vu(map[fil][k])) return map[fil][k];
+  for (const map of [typeof CH6_SUITE !== 'undefined' && CH6_SUITE, typeof CH9_SUITE !== 'undefined' && CH9_SUITE]) if (map) for (const fil in map) if (S.story.seen[fil]) for (const src in map[fil]) {
+    const nx = map[fil][src];
+    if (vu(nx)) return nx;
+    
+    if (S.story.seen[src] && !S.story.seen[nx] && STORY_SCENES[nx] && storyChoixOuvert(STORY_SCENES[nx]) >= 0) return nx;
+  }
+  
+  for (const id of ['q_moulin_fin', 'q_echo_fin', 'q_porte', 'q_trone', 'q_ciel', 'q_pavillon', 'q_chasse', 'q_prix', 'q_trahison', 'q_sang', 'q_dieu', 'q_tournoi_invite']) if (vu(id)) return id;
   return null;
 }
 function storyReprendreChoix() {
@@ -47947,11 +47954,10 @@ if (typeof completeQuest === 'function' && !completeQuest.ch6) {
   const completeQuestAvantCh6 = completeQuest;
   completeQuest = function (silent) {
     const q = typeof currentQuest === 'function' ? currentQuest() : null;
-    completeQuestAvantCh6(silent);
-    if (!q || !S || !S.story || !S.story.seen) return;
-    if (typeof storyAuto === 'function' && !storyAuto()) return;
+    
     const fil = { q_forge: 'forge:fil', q_nexus: 'nexus:fil', q_tang: 'tang:fil' };
-    if (q.after && fil[q.after]) S.story.seen[fil[q.after]] = 1;
+    if (q && q.after && fil[q.after] && S && S.story && S.story.seen && !(typeof storyAuto === 'function' && !storyAuto())) S.story.seen[fil[q.after]] = 1;
+    completeQuestAvantCh6(silent);
   };
   completeQuest.ch6 = true;
 }
@@ -48565,11 +48571,10 @@ if (typeof completeQuest === 'function' && !completeQuest.ch9) {
   const completeQuestAvantCh9 = completeQuest;
   completeQuest = function (silent) {
     const q = typeof currentQuest === 'function' ? currentQuest() : null;
-    completeQuestAvantCh9(silent);
-    if (!q || !S || !S.story || !S.story.seen) return;
-    if (typeof storyAuto === 'function' && !storyAuto()) return;
+    
     const fil = { q_voile: 'voile:fil', q_coeur: 'coeur:fil', q_ascension: 'ascension:fil' };
-    if (q.after && fil[q.after]) S.story.seen[fil[q.after]] = 1;
+    if (q && q.after && fil[q.after] && S && S.story && S.story.seen && !(typeof storyAuto === 'function' && !storyAuto())) S.story.seen[fil[q.after]] = 1;
+    completeQuestAvantCh9(silent);
   };
   completeQuest.ch9 = true;
 }
