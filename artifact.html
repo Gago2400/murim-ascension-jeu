@@ -2101,24 +2101,30 @@ body:has(#vcour) #net-parler { display: none !important; }
   #h-center.lv-moment .lv-touche { margin-top: 4px; }
 }
 @media (orientation: landscape) and (max-height: 500px) {
-  /* Cadre plus fin : les consignes tiennent en entier, la liste des régions défile. */
+  /* Cadre plus fin. La légende (~167 px) dépassait la colonne (211 px en 667×375,
+     15 px de liste en 844×390) : .regions en flex tombait à 0 et ne défilait plus.
+     Toute la fiche défile ; le canevas à gauche garde sa hauteur. */
   #panel .sheet { border-width: 8px; border-image-width: 8px; }
-  #panel[data-onglet="map"] #p-body { overflow-y: auto; }
+  #panel[data-onglet="map"] #p-body { overflow: hidden; }
   #panel[data-onglet="map"] #p-body > h3,
   #panel[data-onglet="map"] #p-body > p,
-  #panel[data-onglet="map"] #p-body > button { flex: 0 0 auto; }
+  #panel[data-onglet="map"] #p-body > button,
+  #panel[data-onglet="map"] .encre-carte > h3,
+  #panel[data-onglet="map"] .encre-carte > p,
+  #panel[data-onglet="map"] .encre-carte > button { flex: 0 0 auto; }
   #panel[data-onglet="map"] .encre-carte {
-    display: flex; flex-direction: column; overflow: hidden; gap: 4px;
+    display: flex; flex-direction: column; overflow: auto; gap: 4px;
+    -webkit-overflow-scrolling: touch;
   }
   #panel[data-onglet="map"] .carte-intro,
-  #panel[data-onglet="map"] .carte-outils { flex: none; overflow: visible; margin: 0; }
+  #panel[data-onglet="map"] .carte-outils { flex: 0 0 auto; overflow: visible; margin: 0; }
   #panel[data-onglet="map"] .carte-intro,
   #panel[data-onglet="map"] .carte-outils,
   #panel[data-onglet="map"] .carte-outils .hint,
   #panel[data-onglet="map"] .carte-legende { font-size: 10.5px; line-height: 1.2; }
   #panel[data-onglet="map"] .carte-legende { gap: 2px 8px; margin: 0 0 2px; }
   #panel[data-onglet="map"] .encre-carte .regions {
-    flex: 1 1 auto; min-height: 0; overflow: auto;
+    flex: 0 0 auto; min-height: auto; overflow: visible;
   }
 }
 #panel[data-onglet="map"] .carte-stage canvas { image-rendering: auto; }
@@ -2288,7 +2294,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="f6b82e165db1" aria-label="Identifiant de version">Version générée : f6b82e165db1</div>
+      <div class="meta" id="t-build" data-build="54ea3a47f626" aria-label="Identifiant de version">Version générée : 54ea3a47f626</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -36045,12 +36051,31 @@ renderMap = function (b, free) {
       const fiche = b.querySelector('.encre-carte');
       const intro = b.querySelector('.carte-intro');
       const h2 = b.querySelector('h2');
+      const page = b.querySelector('.carte-page');
+      const regions = fiche && fiche.querySelector('.regions');
+      
+      
+      const extras = [];
+      const garder = (el) => el === notice || el === intro || el === box || el === page
+        || (el.classList && (el.classList.contains('carte-intro') || el.classList.contains('carte-outils')
+          || el.classList.contains('monde-map') || el.classList.contains('regions') || el.classList.contains('carte-page')));
+      const prendre = (n) => {
+        while (n) {
+          const suivant = n.nextSibling;
+          if (n.nodeType === 1 && !garder(n)) extras.push(n);
+          n = suivant;
+        }
+      };
+      if (page) prendre(page.nextSibling);
+      if (regions) prendre(regions.nextSibling);
       if (pays.matches && fiche) {
         fiche.prepend(notice);
         if (intro) fiche.prepend(intro);
+        for (let i = 0; i < extras.length; i++) fiche.append(extras[i]);
       } else {
         if (h2 && intro) h2.after(intro);
         box.append(notice);
+        for (let i = 0; i < extras.length; i++) b.append(extras[i]);
       }
     };
     
