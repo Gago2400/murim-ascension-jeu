@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="54ea3a47f626">
+<meta name="murim-build" content="8005b6bc6c53">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2310,7 +2310,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="54ea3a47f626" aria-label="Identifiant de version">Version générée : 54ea3a47f626</div>
+      <div class="meta" id="t-build" data-build="8005b6bc6c53" aria-label="Identifiant de version">Version générée : 8005b6bc6c53</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -8424,8 +8424,11 @@ function sauverSiArrierePlan(doc, force) {
   const hidden = !d || d.hidden || d.visibilityState === 'hidden';
   if (!force && !hidden) return false;
   if (typeof G === 'undefined' || !G.running) return false;
-  if (typeof saveState === 'function') saveState();
-  else saveGame();
+  if (typeof saveState === 'function') saveState({ quitte: true });
+  else {
+    if (typeof conserverButinScene === 'function') conserverButinScene();
+    saveGame();
+  }
   return true;
 }
 function installerSauvegardeArrierePlan(doc, win) {
@@ -9895,6 +9898,8 @@ function setScene(sc) {
   qingheReperes(sc);
   if (typeof cohPnjLibres === 'function') cohPnjLibres(sc); 
   if (typeof placeArbresPnj === 'function') placeArbresPnj(sc); 
+  
+  const conserve = typeof conserverButinScene === 'function' ? conserverButinScene() : 0;
   G.scene = sc; G.enemies = []; G.projs = []; G.zones = []; G.fx = []; G.parts = []; G.loot = []; G.texts = []; G.boss = null;
   G.egrid = null; G._meleeAt = null;
   if (typeof mmInvalider === 'function') mmInvalider();
@@ -9904,6 +9909,7 @@ function setScene(sc) {
   initAmbient(sc);
   if (UI.onScene) UI.onScene(sc);
   music.setMood(sc.type === 'boss' || sc.isBoss ? 'boss' : (sc.pal.mood || 'calme'));
+  if (conserve && typeof saveGame === 'function') saveGame();
 }
 
 
@@ -11990,6 +11996,8 @@ function die() {
   const loss = Math.round(expReq(S.level) * 0.05); S.exp = Math.max(0, S.exp - loss);
   G.slowT = 0.8; sfx('death');
   setTimeout(() => UI.showDeath(loss), 1100);
+  
+  if (typeof conserverButinScene === 'function') conserverButinScene();
   saveGame();
   
   if (S.settings && S.settings.auto && !G.arena) {
@@ -12219,6 +12227,29 @@ function updateLoot(dt) {
     for (const l of extra) ramasserExpire(l);
     G.loot = G.loot.filter((l) => !l.picked);
   }
+}
+
+
+
+let BUTIN_CONSERVE = false;
+function conserverButinScene() {
+  if (BUTIN_CONSERVE || !S || !G) return 0;
+  BUTIN_CONSERVE = true;
+  try {
+    const lots = [];
+    for (const e of G.enemies || []) {
+      if (!e || !e.butin) continue;
+      for (const l of e.butin) if (l && !l.picked) lots.push(l);
+      e.butin = null;
+    }
+    for (const l of G.loot || []) if (l && !l.picked) lots.push(l);
+    if (!lots.length || typeof ramasserExpire !== 'function') return 0;
+    let n = 0;
+    for (const l of lots) {
+      try { ramasserExpire(l); n++; } catch (err) {   }
+    }
+    return n;
+  } finally { BUTIN_CONSERVE = false; }
 }
 function ramasserExpire(l) {
   if (!l || l.picked) return;
@@ -60337,7 +60368,13 @@ findInteract = function () {
 };
 
 
-function saveState() { if (!S || !P.st) return; S.qi = P.qi; saveGame(); }
+function saveState(opts) {
+  if (!S || !P.st) return;
+  S.qi = P.qi;
+  
+  if (opts && opts.quitte && typeof conserverButinScene === 'function') conserverButinScene();
+  saveGame();
+}
 
 function resetPlayerRuntime() {
   Object.assign(P, {
@@ -60362,6 +60399,9 @@ function startGame(save) {
   
   const aller = () => {
     G.running = true; G.paused = false; G.event = null; G.eventT = rand(300, 540);
+    
+    G.loot = [];
+    for (const e of G.enemies || []) if (e) e.butin = null;
     refreshAuto();
     applyColorblind();
     if (typeof audioVolumes === 'function') audioVolumes();
