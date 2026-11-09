@@ -1686,6 +1686,16 @@ body:has(#vcour) #net-parler { display: none !important; }
    (pas de grille flex qui écrasait .carte-stage à 0 px avec height:fit-content sur la feuille).
    L'ordre DOM (carte juste sous le h2) est corrigé dans 33_monde.js. */
 @media (orientation: landscape) and (max-height: 500px) {
+  /* Forge / boutique : la feuille est déjà bornée ; le corps prend le reste et défile au doigt
+     jusqu'à la grille et au démontage. Le 180 px magique laissait ~220 px et collait le dernier bouton. */
+  #npc .p-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
   #npc .carte-stage {
     height: min(200px, 48dvh); min-height: 140px; flex: none;
   }
@@ -2294,7 +2304,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="bfe30c15531f" aria-label="Identifiant de version">Version générée : bfe30c15531f</div>
+      <div class="meta" id="t-build" data-build="50af882890e4" aria-label="Identifiant de version">Version générée : 50af882890e4</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -31220,12 +31230,17 @@ function npcForge(b) {
   else {
     const U = UPGRADE[it.plus + 1];
     const cout = upgradeCost(it.plus + 1, it.ilvl);
-    const failTxt = U.fail === 'none' ? 'aucune perte' : U.fail === 'mats' ? 'matériaux perdus' : U.fail === 'destroy' ? 'retour à +12, 5 % de destruction' : 'retour à +' + U.fail;
-    b.append(el('div', { class: 'q' }, el('div', null, el('b', null, '+' + it.plus + ' → +' + (it.plus + 1)), el('small', null, 'Succès ' + Math.round(U.rate * 100) + ' % · ' + fmt(cout) + ' or · ' + U.ore + ' minerai' + (U.ore > 1 ? 's' : '') + ' · échec : ' + failTxt + ' · stats principales +' + Math.round(U.bonus * 100) + ' %')),
-      el('button', { class: 'btn primary sm', disabled: S.gold < cout || S.mats.minerai < U.ore, onclick: () => { doUpgrade(it); renderNpc(); } }, 'Forger')));
     
-    const au = apercuGain('Après forge : ', typeof upgradePreview === 'function' ? upgradePreview(it) : []);
-    if (au) b.append(au);
+    const apercu = typeof upgradePreview === 'function' ? upgradePreview(it) : [];
+    if (!apercu.length) {
+      b.append(el('p', { class: 'hint' }, 'Les stats de cet objet sont en pourcentage : la forge ne les augmente pas. Rien n\'est dépensé.'));
+    } else {
+      const failTxt = U.fail === 'none' ? 'aucune perte' : U.fail === 'mats' ? 'matériaux perdus' : U.fail === 'destroy' ? 'retour à +12, 5 % de destruction' : 'retour à +' + U.fail;
+      b.append(el('div', { class: 'q' }, el('div', null, el('b', null, '+' + it.plus + ' → +' + (it.plus + 1)), el('small', null, 'Succès ' + Math.round(U.rate * 100) + ' % · ' + fmt(cout) + ' or · ' + U.ore + ' minerai' + (U.ore > 1 ? 's' : '') + ' · échec : ' + failTxt + ' · stats principales +' + Math.round(U.bonus * 100) + ' %')),
+        el('button', { class: 'btn primary sm', disabled: S.gold < cout || S.mats.minerai < U.ore, onclick: () => { doUpgrade(it); renderNpc(); } }, 'Forger')));
+      const au = apercuGain('Après forge : ', apercu);
+      if (au) b.append(au);
+    }
   }
   if (typeof forgeLire === 'function' && (it.slot === 'arme' || it.slot === 'armure')) {
     const f = forgeLire(it);
@@ -31279,20 +31294,34 @@ function npcForge(b) {
   }
 }
 function doUpgrade(it) {
-  const U = UPGRADE[it.plus + 1];
-  const cout = upgradeCost(it.plus + 1, it.ilvl);
+  if (!it || !S) return false;
+  const plus = it.plus | 0;
+  if (plus >= 15) return false;
+  const U = UPGRADE[plus + 1];
+  if (!U) return false;
+  
+  if (typeof upgradePreview === 'function' && upgradePreview(it).length === 0) return false;
+  const cout = upgradeCost(plus + 1, it.ilvl);
+  if (!(S.gold >= cout) || (S.mats.minerai | 0) < U.ore) return false;
   S.gold -= cout; S.mats.minerai -= U.ore; sfx('upgrade'); questEvent('upgrade');
   if (Math.random() < U.rate) { it.plus++; if (it.plus >= 15) grantTitle('forge15', 'Main de fer'); toast('Succès : ' + it.name + ' +' + it.plus, it.plus >= 10 ? 'r4' : 'gold'); sfx('loot3'); }
   else {
     if (U.fail === 'destroy') {
       if (Math.random() < 0.05) {
-        if (S.equip[it.slot] === it) delete S.equip[it.slot]; else S.bag.splice(S.bag.indexOf(it), 1);
+        
+        let retire = false;
+        if (S.equip) for (const k in S.equip) if (S.equip[k] === it) { delete S.equip[k]; retire = true; }
+        if (!retire && Array.isArray(S.bag)) {
+          const i = S.bag.indexOf(it);
+          if (i >= 0) S.bag.splice(i, 1);
+        }
         toast('L\'objet se brise sous le marteau : ' + it.name + ' détruit', 'warn'); UI.forgeSel = null; sfx('btfail');
       } else { it.plus = 12; toast('Échec : retour à +12', 'warn'); }
     } else if (typeof U.fail === 'number') { it.plus = U.fail; toast('Échec : retour à +' + U.fail, 'warn'); }
     else toast('Échec' + (U.fail === 'mats' ? ' : matériaux perdus' : ''), 'warn');
   }
   recomputeStats(); saveState();
+  return true;
 }
 function npcAltar(b, n) {
   b.append(el('p', null, 'Assieds-toi et laisse le Qi circuler. Bouger ou être frappé interrompt la méditation.'));
@@ -31533,11 +31562,14 @@ function npcMarket(b) {
       for (const l of Mk.listings) b.append(el('div', { class: 'q' }, el('div', null, el('b', { style: 'color:' + RARITIES[l.it.rar].color }, l.it.name), el('small', null, fmt(l.price) + ' or · expire dans ' + fmtTime((l.expires - now()) / 1000))), el('span', { class: 'hint' }, 'En vente')));
     }
     b.append(el('h3', null, 'Mettre en vente'));
+    const estQuete = (piece) => typeof objetEstQuete === 'function' && objetEstQuete(piece);
+    const vendables = S.bag.filter((piece) => piece && !estQuete(piece));
+    if (S.bag.some(estQuete)) b.append(el('p', { class: 'hint' }, 'Les objets de quête ne se mettent pas en vente.'));
     const bag = el('div', { class: 'bag' });
-    for (const it of S.bag.slice().sort((a, c) => c.rar - a.rar)) { const t = itemTile(it, () => { UI.mkSel = it; renderNpc(); }); if (UI.mkSel === it) t.classList.add('sel'); bag.append(t); }
-    if (!S.bag.length) bag.append(el('p', null, 'Ton sac est vide.'));
+    for (const it of vendables.slice().sort((a, c) => c.rar - a.rar)) { const t = itemTile(it, () => { UI.mkSel = it; renderNpc(); }); if (UI.mkSel === it) t.classList.add('sel'); bag.append(t); }
+    if (!vendables.length) bag.append(el('p', null, S.bag.length ? 'Rien d\'autre à mettre en vente.' : 'Ton sac est vide.'));
     b.append(bag);
-    const it = UI.mkSel && S.bag.includes(UI.mkSel) ? UI.mkSel : null;
+    const it = UI.mkSel && vendables.includes(UI.mkSel) ? UI.mkSel : null;
     if (it) {
       const V = marketValue(it); const pm = UI.mkPm || 1; const price = Math.round(V * pm); const hi = UI.mkDur != null ? UI.mkDur : 2;
       b.append(itemCard(it, S.equip[it.slot]));
@@ -32066,6 +32098,12 @@ function marketProcess(silent) {
   const Mk = ensureMarket(); const t = now(); let sold = 0;
   for (const l of Mk.listings) {
     if (l.done) continue;
+    
+    if (l.it && typeof objetEstQuete === 'function' && objetEstQuete(l.it)) {
+      l.done = true;
+      Mk.mail.push({ kind: 'item', it: l.it, txt: l.it.name + ' : objet de quête, renvoyé au courrier' });
+      continue;
+    }
     if (l.sellAt < l.expires && t >= l.sellAt) { l.done = true; sold++; Mk.mail.push({ kind: 'gold', v: Math.round(l.price * 0.95), txt: l.it.name + ' vendu ' + fmt(l.price) + ' or (taxe 5 %)' }); }
     else if (t >= l.expires) { l.done = true; Mk.mail.push({ kind: 'item', it: l.it, txt: l.it.name + ' invendu' }); }
   }
@@ -32074,6 +32112,8 @@ function marketProcess(silent) {
 }
 function marketList(it, price, hours) {
   const Mk = ensureMarket();
+  
+  if (!it || (typeof objetEstQuete === 'function' && objetEstQuete(it))) return false;
   const fee = Math.ceil(price * 0.01);
   if (S.gold < fee || Mk.listings.length >= 10) return false;
   const i = S.bag.indexOf(it); if (i < 0) return false;
@@ -32548,9 +32588,14 @@ function salvageYield(it) {
   return { ore, scrollChance };
 }
 function salvageItem(it) {
+  if (!it || !S) return false;
+  if (typeof objetEstQuete === 'function' && objetEstQuete(it)) {
+    if (typeof toast === 'function') toast('Objet de quête : il ne se démonte pas.', 'warn');
+    return false;
+  }
   const i = S.bag.indexOf(it);
-  if (i < 0) return;
-  for (const slot in S.equip) if (S.equip[slot] === it) return;
+  if (i < 0) return false;
+  for (const slot in S.equip) if (S.equip[slot] === it) return false;
   S.bag.splice(i, 1);
   if (it.sockets) for (let s = 0; s < it.sockets.length; s++) if (it.sockets[s]) S.gems.push(it.sockets[s]);
   const y = salvageYield(it);
@@ -32571,7 +32616,12 @@ npcForge = function (b, n) {
   b.append(el('h3', null, 'Démontage'));
   b.append(el('p', null, 'Je démonte un objet du sac : du minerai, parfois un parchemin, et les gemmes serties te reviennent. Pas d\'or. Ce que tu portes ne se démonte pas.'));
   if (!S.bag.length) { b.append(el('p', null, 'Rien à démonter.')); return; }
-  const list = S.bag.slice().sort((a, c) => salvageYield(a).ore - salvageYield(c).ore || a.rar - c.rar);
+  const estQuete = (piece) => typeof objetEstQuete === 'function' && objetEstQuete(piece);
+  const proteges = S.bag.filter(estQuete);
+  if (proteges.length === 1) b.append(el('p', { class: 'hint' }, proteges[0].name + ' : objet de quête, il ne se démonte pas.'));
+  else if (proteges.length) b.append(el('p', { class: 'hint' }, 'Objets de quête : ils ne se démontent pas.'));
+  const list = S.bag.filter((piece) => !estQuete(piece)).sort((a, c) => salvageYield(a).ore - salvageYield(c).ore || a.rar - c.rar);
+  if (!list.length) { b.append(el('p', null, 'Rien d\'autre à démonter.')); return; }
   for (const it of list) {
     const y = salvageYield(it);
     const plus = it.plus ? ' +' + it.plus : '';
