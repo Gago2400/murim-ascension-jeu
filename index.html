@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="4deec84d36bf">
+<meta name="murim-build" content="b7d445e9a1be">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2324,7 +2324,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="4deec84d36bf" aria-label="Identifiant de version">Version générée : 4deec84d36bf</div>
+      <div class="meta" id="t-build" data-build="b7d445e9a1be" aria-label="Identifiant de version">Version générée : b7d445e9a1be</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -8290,6 +8290,9 @@ function newSave(o) {
     
     secteVie: { aff: {}, jour: '', corvee: null, exoJour: '', leconJour: '', cadeaux: {} },
     allieRoute: null,
+    
+    
+    lieu: null, mort: false,
   };
   S = s;
   
@@ -8320,8 +8323,62 @@ function memeCorpsSauvegarde(a, b) {
     return JSON.stringify(pa) === JSON.stringify(pb);
   } catch (e) { return false; }
 }
+
+
+function memoriserQi() {
+  if (typeof G === 'undefined' || !G || !G.running) return;
+  if (typeof P === 'undefined' || !P || !P.st || !Number.isFinite(+P.qi)) return;
+  S.qi = Math.max(0, +P.qi);
+}
+
+let gelLieu = false;
+function memoriserLieu() {
+  if (gelLieu || !S || typeof G === 'undefined' || !G || !G.scene) return;
+  const sc = G.scene;
+  if (sc.groupe) { S.lieu = null; return; }
+  if (sc.type === 'dungeon' && typeof sc.dungeon === 'string' && typeof DUNGEONS !== 'undefined' && DUNGEONS[sc.dungeon]) {
+    const D = DUNGEONS[sc.dungeon];
+    const room = Math.max(1, Math.min(D.rooms || 1, sc.room | 0));
+    const lieu = { t: 'donjon', id: sc.dungeon, room };
+    const tier = sc.tier || (G.donjonRun && G.donjonRun.id === sc.dungeon && G.donjonRun.tier);
+    if (typeof tier === 'string' && (typeof DONJON_PALIERS === 'undefined' || DONJON_PALIERS[tier])) lieu.tier = tier;
+    S.lieu = lieu;
+    return;
+  }
+  if (sc.type === 'boss') {
+    const id = sc.bossId || sc.id;
+    const region = sc.region && sc.region.id;
+    if (typeof id === 'string' && typeof region === 'string' && typeof BOSSES !== 'undefined' && BOSSES[id] && typeof REGION_BY_ID !== 'undefined' && REGION_BY_ID[region]) {
+      S.lieu = { t: 'boss', id, region };
+      return;
+    }
+  }
+  if (sc.type === 'region' || sc.type === 'interior' || sc.type === 'arena') S.lieu = null;
+}
+function normaliserLieu(s) {
+  if (!s) return;
+  s.mort = s.mort === true;
+  const l = s.lieu;
+  if (l == null) { s.lieu = null; return; }
+  if (!isObj(l)) { s.lieu = null; return; }
+  const palierOk = (t) => typeof t === 'string' && (typeof DONJON_PALIERS === 'undefined' ? (t === 'normal' || t === 'eprouvant' || t === 'ascese') : !!DONJON_PALIERS[t]);
+  if (l.t === 'donjon' && typeof l.id === 'string' && typeof DUNGEONS !== 'undefined' && DUNGEONS[l.id]) {
+    const D = DUNGEONS[l.id];
+    const out = { t: 'donjon', id: l.id, room: Math.max(1, Math.min(D.rooms || 1, l.room | 0)) };
+    if (palierOk(l.tier)) out.tier = l.tier;
+    s.lieu = out;
+    return;
+  }
+  if (l.t === 'boss' && typeof l.id === 'string' && typeof l.region === 'string' && typeof BOSSES !== 'undefined' && BOSSES[l.id] && typeof REGION_BY_ID !== 'undefined' && REGION_BY_ID[l.region]) {
+    s.lieu = { t: 'boss', id: l.id, region: l.region };
+    return;
+  }
+  s.lieu = null;
+}
 function saveGame() {
   if (!S) return;
+  memoriserQi();
+  memoriserLieu();
   if (typeof elaguerSauvegarde === 'function') elaguerSauvegarde(S);
   S.savedAt = Date.now();
   try {
@@ -8596,6 +8653,7 @@ function migrate(s) {
   for (const k in d.settings) if (s.settings[k] === undefined) s.settings[k] = d.settings[k];
   for (const k in d.stats) if (s.stats[k] === undefined) s.stats[k] = d.stats[k];
   for (const k in d.mats) if (s.mats[k] === undefined) s.mats[k] = d.mats[k];
+  normaliserLieu(s);
   return s;
 }
 const isObj = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
@@ -12008,6 +12066,8 @@ function die() {
   P.pending = []; 
   S.stats.deaths++;
   const loss = Math.round(expReq(S.level) * 0.05); S.exp = Math.max(0, S.exp - loss);
+  
+  S.mort = true;
   G.slowT = 0.8; sfx('death');
   setTimeout(() => UI.showDeath(loss), 1100);
   
@@ -12065,6 +12125,7 @@ function autoApresRespawn() {
   AUTO_NAV.cible = null; AUTO_NAV.tProg = 0; AUTO_NAV.d0 = 0; AUTO_NAV.x0 = P.x; AUTO_NAV.y0 = P.y;
 }
 function respawn() {
+  if (S) S.mort = false;
   P.dead = false; P.status = { stun: 0, slow: 0, burn: 0, burnDps: 0 }; P.shield = 0;
   recomputeStats(); P.hp = P.st.hp * 0.5; P.qi = Math.max(P.qi, P.st.qimax * 0.5); P.stam = feel('stamMax', 100);
   P.atk.ph = 'idle'; P.iframes = 1.5;
@@ -55293,7 +55354,8 @@ if (typeof enterDungeon === 'function') {
   enterDungeon = function (did, room) {
     if (did !== CRYPTE_ID) return enterDungeonAvant(did, room);
     const tier = (G.donjonRun && G.donjonRun.id === CRYPTE_ID && G.donjonRun.tier) || 'normal';
-    entrerCrypte(room || 1, tier, false);
+    
+    entrerCrypte(room || 1, tier, !!(G && G.repriseMort));
   };
 }
 if (typeof startBossAttack === 'function') {
@@ -55344,6 +55406,7 @@ if (typeof checkRoomClear === 'function') {
 if (typeof respawn === 'function') {
   const respawnAvant = respawn;
   respawn = function () {
+    if (S) S.mort = false;
     const run = G.donjonRun;
     if (run && run.id === CRYPTE_ID && G.scene && G.scene.dungeon === CRYPTE_ID) {
       P.dead = false;
@@ -60458,6 +60521,64 @@ function saveState(opts) {
   saveGame();
 }
 
+
+function reprendreLieu(lieu) {
+  if (!lieu || !S || typeof G === 'undefined' || !G) return false;
+  if (lieu.t === 'donjon' && typeof DUNGEONS !== 'undefined' && DUNGEONS[lieu.id]) {
+    const D = DUNGEONS[lieu.id];
+    if (D.region !== S.region) return false;
+    const room = Math.max(1, Math.min(D.rooms || 1, lieu.room | 0));
+    if (lieu.tier) G.donjonRun = { id: lieu.id, tier: lieu.tier, room };
+    else if (G.donjonRun && G.donjonRun.id === lieu.id) G.donjonRun.room = room;
+    if (typeof enterDungeon === 'function') enterDungeon(lieu.id, room);
+    return !!(G.scene && G.scene.type === 'dungeon' && G.scene.dungeon === lieu.id && (G.scene.room | 0) === room);
+  }
+  if (lieu.t === 'boss' && typeof BOSSES !== 'undefined' && BOSSES[lieu.id] && typeof REGION_BY_ID !== 'undefined' && REGION_BY_ID[lieu.region] && lieu.region === S.region) {
+    if (typeof enterBoss === 'function') enterBoss(lieu.id, lieu.region);
+    return !!(G.scene && G.scene.type === 'boss' && (G.scene.bossId || G.scene.id) === lieu.id);
+  }
+  return false;
+}
+function solderMortReprise(crypteDeja) {
+  if (S) S.mort = false;
+  if (crypteDeja || !P || !P.st) return;
+  P.dead = false;
+  P.hp = P.st.hp * 0.5;
+  P.qi = Math.max(P.qi || 0, P.st.qimax * 0.5);
+  P.iframes = 1.5;
+}
+function repriseApresEntree(interior) {
+  const avait = !!(S && S.lieu);
+  const mort = !!(S && S.mort);
+  G.repriseMort = mort;
+  let repris = false;
+  try {
+    if (S && S.lieu) repris = reprendreLieu(S.lieu);
+    if (!repris && S) S.lieu = null;
+    if (!repris && interior && typeof validInteriorLocation === 'function' && validInteriorLocation(interior, S.region) && typeof enterInterior === 'function') {
+      enterInterior(interior.id, interior);
+    }
+    if (mort) solderMortReprise(!!(repris && G.scene && G.scene.dungeon === 'crypte_sceau'));
+  } finally { G.repriseMort = false; }
+  return avait || mort;
+}
+
+function relancerDepuisDisque() {
+  const lu = typeof loadGame === 'function' ? loadGame() : null;
+  if (!lu) return false;
+  S = lu;
+  resetPlayerRuntime();
+  recomputeStats();
+  P.hp = P.st.hp;
+  P.qi = S.qi >= 0 ? Math.min(S.qi, P.st.qimax) : P.st.qimax;
+  G.running = true;
+  gelLieu = true;
+  let sauver = false;
+  try { sauver = repriseApresEntree(null); }
+  finally { gelLieu = false; }
+  if (sauver && typeof saveGame === 'function') saveGame();
+  return true;
+}
 function resetPlayerRuntime() {
   Object.assign(P, {
     dead: false, deathT: 0, med: null, cast: null, dash: null, pending: [], shield: 0, shieldT: 0, ult: 0, iframes: 0, lock: null, combatT: 99,
@@ -60487,8 +60608,14 @@ function startGame(save) {
     refreshAuto();
     applyColorblind();
     if (typeof audioVolumes === 'function') audioVolumes();
-    enterRegion(S.unlocked.includes(S.region) ? S.region : S.start);
-    if (validInteriorLocation(interiorAtStart, S.region)) enterInterior(interiorAtStart.id, interiorAtStart);
+    
+    gelLieu = true;
+    let sauver = false;
+    try {
+      enterRegion(S.unlocked.includes(S.region) ? S.region : S.start);
+      sauver = repriseApresEntree(interiorAtStart);
+    } finally { gelLieu = false; }
+    if (sauver) saveGame();
     G.cam.x = P.x; G.cam.y = P.y;
     UI.heroT = S.level <= 1 && !S.quest ? 10 : 4; 
     layoutActions();
