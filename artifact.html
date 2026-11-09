@@ -1571,6 +1571,10 @@ body:has(#vcour) #net-parler { display: none !important; }
   #hud-tr:not(.menu-open) #h-menu {
     width: 44px; top: calc(var(--sat) + 86px); right: calc(var(--sar) + 122px);
   }
+  /* Menu ouvert : #b-auto (z-index 4, après #hud-tr dans le DOM) peignait sur le haut
+     de Sac, Tech. et Qi (844×390, 667×375). Le glyphe ne recevait plus le doigt.
+     Le bloc de droite passe au-dessus tant que le menu est déplié. */
+  #hud-tr.menu-open { z-index: 6; }
   #h-center b { font-size: 22px; line-height: 1.15; }
   #hud:has(#h-banner) #h-quest, #hud:has(#h-banner) #toasts { opacity: .18; }
   #hud:has(#h-center) #h-quest, #hud:has(#h-center) #toasts { opacity: 1; }
@@ -2304,7 +2308,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="50af882890e4" aria-label="Identifiant de version">Version générée : 50af882890e4</div>
+      <div class="meta" id="t-build" data-build="4deec84d36bf" aria-label="Identifiant de version">Version générée : 4deec84d36bf</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
