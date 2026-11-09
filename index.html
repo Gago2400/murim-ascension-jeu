@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="28c2e1fdf2b5">
+<meta name="murim-build" content="a50005d509d9">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2337,7 +2337,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="28c2e1fdf2b5" aria-label="Identifiant de version">Version générée : 28c2e1fdf2b5</div>
+      <div class="meta" id="t-build" data-build="a50005d509d9" aria-label="Identifiant de version">Version générée : a50005d509d9</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -34795,6 +34795,31 @@ function storySuiteChoix(id) {
     }
   } finally { STORY.enSuite = 0; }
 }
+
+
+
+function storyFilCoupe(fil, liens) {
+  if ((fil !== 'tour:fil' && fil !== 'forge:fil') || !liens || !S || !S.story) return null;
+  const clef = fil === 'tour:fil' ? 'ch5:destin' : 'ch6:forge';
+  if (S.voie && S.voie.choix && S.voie.choix[clef]) return null;
+  
+  
+  
+  const apres = fil === 'tour:fil' ? 'q_tour' : 'q_forge';
+  let faite = false;
+  if (typeof MAIN_QUESTS !== 'undefined') {
+    for (let i = 0; i < MAIN_QUESTS.length; i++) {
+      if (MAIN_QUESTS[i] && MAIN_QUESTS[i].after === apres && S.quest > i) { faite = true; break; }
+    }
+  }
+  const dest = Object.values(liens);
+  for (const src in liens) {
+    if (dest.indexOf(src) < 0 && !S.story.seen[src] && STORY_SCENES[src] && faite) return src;
+    const nx = liens[src];
+    if (S.story.seen[src] && nx && !S.story.seen[nx] && STORY_SCENES[nx]) return nx;
+  }
+  return null;
+}
 function storyChoixSaute() {
   const vu = (id) => !!(id && S.story.seen[id] && STORY_SCENES[id] && storyChoixOuvert(STORY_SCENES[id]) >= 0);
   if (typeof MAIN_QUESTS !== 'undefined') for (let i = 0; i < S.quest + 1 && i < MAIN_QUESTS.length; i++) {
@@ -34802,14 +34827,20 @@ function storyChoixSaute() {
     if (vu(q.after)) return q.after;
     if (q.t !== 'talk' && vu(q.scene)) return q.scene;
   }
-  for (const map of [typeof CH6_SUITE !== 'undefined' && CH6_SUITE, typeof CH9_SUITE !== 'undefined' && CH9_SUITE]) if (map) for (const fil in map) if (S.story.seen[fil]) for (const src in map[fil]) {
-    const nx = map[fil][src];
-    if (vu(nx)) return nx;
-    
-    if (S.story.seen[src] && !S.story.seen[nx] && STORY_SCENES[nx] && storyChoixOuvert(STORY_SCENES[nx]) >= 0) return nx;
+  for (const map of [typeof CH6_SUITE !== 'undefined' && CH6_SUITE, typeof CH9_SUITE !== 'undefined' && CH9_SUITE]) if (map) for (const fil in map) if (S.story.seen[fil]) {
+    const liens = map[fil];
+    for (const src in liens) {
+      const nx = liens[src];
+      if (vu(nx)) return nx;
+      
+      if (S.story.seen[src] && !S.story.seen[nx] && STORY_SCENES[nx] && storyChoixOuvert(STORY_SCENES[nx]) >= 0) return nx;
+    }
+    const coupe = storyFilCoupe(fil, liens);
+    if (coupe) return coupe;
   }
   
   for (const id of ['q_moulin_fin', 'q_echo_fin', 'q_porte', 'q_trone', 'q_ciel', 'q_pavillon', 'q_chasse', 'q_prix', 'q_trahison', 'q_sang', 'q_dieu', 'q_tournoi_invite']) if (vu(id)) return id;
+  
   
   
   
@@ -34817,7 +34848,8 @@ function storyChoixSaute() {
   if (typeof MAIN_QUESTS !== 'undefined') {
     for (let i = 0; i < S.quest && i < MAIN_QUESTS.length; i++) {
       const id = MAIN_QUESTS[i] && MAIN_QUESTS[i].after;
-      if ((id !== 'q_faction' && id !== 'q_ruines') || S.story.seen[id]) continue;
+      
+      if ((id !== 'q_faction' && id !== 'q_ruines' && id !== 'q_ermite' && id !== 'q_foret') || S.story.seen[id]) continue;
       if (STORY_SCENES[id] && storyChoixOuvert(STORY_SCENES[id]) >= 0) return id;
     }
     
