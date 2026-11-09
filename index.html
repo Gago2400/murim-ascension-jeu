@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="24773c259406">
+<meta name="murim-build" content="28c2e1fdf2b5">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -727,6 +727,8 @@ html { overscroll-behavior: none; overflow: hidden; touch-action: manipulation; 
   #hud-tr:not(.menu-open) #h-menu > button[data-tab] { display: none; }
   #hud-tr.menu-open #h-menu { display: grid; grid-template-columns: repeat(4, 44px); gap: 16px 4px; }
   #hud-tr.menu-open #m-toggle { filter: brightness(1.35); }
+  /* Le journal (z-index 5) passait sur 菜 Menu. Le menu déplié reste au-dessus, dans #hud. */
+  #hud-tr.menu-open { z-index: 7; }
   /* menu replié : la quête et le journal remontent sous la barre de vie */
   #h-quest { top: calc(var(--sat) + 96px); max-width: min(64vw, calc(100vw - 24px)); overflow-wrap: anywhere; }
   #toasts { top: calc(var(--sat) + 80px + var(--qh, 0px)); }
@@ -1598,6 +1600,17 @@ body:has(#vcour) #net-parler { display: none !important; }
   #h-region { max-width: 104px; overflow-wrap: break-word; }
   #h-menu { right: calc(var(--sar) + 128px); }
   #hud-tr:not(.menu-open) #h-menu { right: calc(var(--sar) + 128px); }
+  /* 667×375 : « Méditation : 4:59 · interrompre » centré recouvrait le bord
+     gauche d'Esquive. Le bouton tient dans la bande joystick / éventail. */
+  #b-interact {
+    left: calc((var(--sal) + 32px + var(--u) * 2.1 + 100vw - var(--sar) - 24px - var(--u) * 4.6) / 2);
+    right: auto;
+    width: max-content;
+    max-width: calc(100vw - var(--sal) - var(--sar) - var(--u) * 6.7 - 56px);
+    transform: translateX(-50%);
+    bottom: calc(var(--sab) + 18px);
+    white-space: normal;
+  }
 }
 /* Journal sous le suivi, écart compris, sans rogner la ligne (hauteur réelle : --qbot, 09_ui.js). */
 #hud #toasts,
@@ -2324,7 +2337,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="24773c259406" aria-label="Identifiant de version">Version générée : 24773c259406</div>
+      <div class="meta" id="t-build" data-build="28c2e1fdf2b5" aria-label="Identifiant de version">Version générée : 28c2e1fdf2b5</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -29606,21 +29619,38 @@ function notesEviteHud() {
       kids0[i].style.maxHeight = '';
       kids0[i].style.overflow = 'visible';
     }
+    
+    
+    {
+      const r0 = el.getBoundingClientRect();
+      let bordD = innerWidth;
+      const prend = (id) => {
+        const n = document.getElementById(id);
+        if (!n || n.hidden) return;
+        const cs = getComputedStyle(n);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.05) return;
+        const rr = n.getBoundingClientRect();
+        if (rr.width < 8 || rr.height < 8 || rr.left < r0.left + 64) return;
+        bordD = Math.min(bordD, rr.left);
+      };
+      prend('h-menu');
+      prend('minimap');
+      prend('b-auto');
+      if (bordD < innerWidth - 4) {
+        const jusqua = Math.floor(bordD - r0.left - 18);
+        if (jusqua > 120) {
+          el.style.setProperty('max-width', jusqua + 'px', 'important');
+          for (let i = 0; i < kids0.length; i++) kids0[i].style.setProperty('max-width', jusqua + 'px', 'important');
+        }
+      }
+    }
     if (!hero) return;
     const gap = 12;
     let r2 = el.getBoundingClientRect();
-    
-    
-    const mm = document.getElementById('minimap');
-    const mmR = mm && !mm.hidden ? mm.getBoundingClientRect() : null;
-    if (mmR && mmR.width > 8) {
-      const jusqua = Math.floor(mmR.left - r2.left - 8);
-      if (jusqua > 120) el.style.setProperty('max-width', jusqua + 'px', 'important');
-    }
-    r2 = el.getBoundingClientRect();
     if (r2.bottom > hero.top + 4 && r2.left < hero.left && rectsSeCoupe(r2, hero, 4)) {
       const maxW = Math.floor(hero.left - r2.left - gap);
-      if (maxW > 80) el.style.setProperty('max-width', maxW + 'px', 'important');
+      const cur = parseFloat(el.style.maxWidth) || 1e9;
+      if (maxW > 80 && maxW < cur) el.style.setProperty('max-width', maxW + 'px', 'important');
     }
     r2 = el.getBoundingClientRect();
     if (rectsSeCoupe(r2, hero, 4)) {
@@ -30357,7 +30387,7 @@ function refreshQuest() {
 UI.refreshQuest = refreshQuest;
 UI.refreshSkills = () => { if (!$('#panel').hidden && UI.tab === 'techs') renderPanel(); };
 
-function menuFold(open) { const tr = $('#hud-tr'); tr.classList.toggle('menu-open', open); $('#m-toggle').setAttribute('aria-expanded', open ? 'true' : 'false'); menuFlag(); }
+function menuFold(open) { const tr = $('#hud-tr'); tr.classList.toggle('menu-open', open); $('#m-toggle').setAttribute('aria-expanded', open ? 'true' : 'false'); menuFlag(); notesEviteHud(); }
 function menuFlag() { $('#m-toggle').classList.toggle('flag', !!document.querySelector('#h-menu button[data-tab].flag')); }
 UI.flagBag = () => { $('#m-equip').classList.add('flag'); menuFlag(); };
 UI.onScene = () => { UI.rk = null; $('#h-boss').hidden = true; };
