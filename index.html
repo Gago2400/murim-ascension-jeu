@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="7a76fa8bdd55">
+<meta name="murim-build" content="56cf0c917ef3">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2324,7 +2324,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="7a76fa8bdd55" aria-label="Identifiant de version">Version générée : 7a76fa8bdd55</div>
+      <div class="meta" id="t-build" data-build="56cf0c917ef3" aria-label="Identifiant de version">Version générée : 56cf0c917ef3</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -9213,7 +9213,10 @@ function attemptBreakthrough() {
     recomputeStats(); P.hp = P.st.hp;
     if (S.rank === 8 && !S.elu) { S.elu = true; grantTitle('elu', 'Élu du Murim'); }
     const spare = Object.keys(S.techs).filter((id) => !S.slots.includes(id)).sort((a, c) => TECHS[c].rar - TECHS[a].rar);
-    for (let i = 0; i < RANKS[S.rank].slots; i++) if (!S.slots[i] && spare.length) S.slots[i] = spare.shift();
+    for (let i = 0; i < RANKS[S.rank].slots; i++) if (!S.slots[i] && spare.length) {
+      const nid = spare.shift();
+      if (!(typeof poserTechnique === 'function' && poserTechnique(i, nid))) S.slots[i] = nid;
+    }
     questEvent('rank');
     if (typeof cultOnSuccess === 'function') cultOnSuccess(res);
     setTimeout(processLevels, 2600);
@@ -9377,7 +9380,7 @@ function learnTech(id, announce) {
   }
   S.techs[id] = { lvl: 1, xp: 0 };
   const free = S.slots.findIndex((s, i) => !s && i < RANKS[S.rank].slots);
-  if (free >= 0) S.slots[free] = id;
+  if (free >= 0 && !(typeof poserTechnique === 'function' && poserTechnique(free, id))) S.slots[free] = id;
   if (announce) { toast('Technique apprise : ' + TECHS[id].name, 'r' + TECHS[id].rar); sfx('loot' + Math.min(4, TECHS[id].rar)); }
   if (UI.refreshSkills) UI.refreshSkills();
   return true;
@@ -10363,7 +10366,7 @@ const P = {
   buffs: { atk: { v: 0, t: 0 }, def: { v: 0, t: 0 }, counter: 0 }, status: { stun: 0, slow: 0, burn: 0, burnDps: 0 },
   atk: { ph: 'idle', t: 0, idx: 0, dur: 0.36, queued: false, hit: false, perfect: false },
   dodge: { t: 0, cd: 0, start: -9, sx: 0, sy: 0, dx: 0, dy: 0, perfectDone: false },
-  iframes: 0, cast: null, cds: [0, 0, 0, 0], pot: { hp: 0, qi: 0 }, lock: null, combatT: 99, dead: false, deathT: 0,
+  iframes: 0, cast: null, cds: [0, 0, 0, 0], cdTech: {}, pot: { hp: 0, qi: 0 }, lock: null, combatT: 99, dead: false, deathT: 0,
   med: null, pending: [], dash: null, perfectFlash: 0, hurtT: 0, st: null, toxicT: 0, swing: 0,
 };
 
@@ -10548,6 +10551,19 @@ function updatePlayer(dt) {
   }
   P.perfectFlash = Math.max(0, P.perfectFlash - dt); P.hurtT = Math.max(0, P.hurtT - dt); P.swing = Math.max(0, P.swing - dt);
   for (let i = 0; i < 4; i++) P.cds[i] = Math.max(0, P.cds[i] - dt);
+  
+  
+  if (P.cdTech && S && S.slots) {
+    const ou = {};
+    for (let i = 0; i < S.slots.length && i < 4; i++) if (S.slots[i]) ou[S.slots[i]] = i;
+    const fin = [];
+    for (const id in P.cdTech) {
+      if (ou[id] != null) P.cdTech[id] = P.cds[ou[id]] || 0;
+      else P.cdTech[id] = Math.max(0, P.cdTech[id] - dt);
+      if (!(P.cdTech[id] > 0)) fin.push(id);
+    }
+    for (let n = 0; n < fin.length; n++) delete P.cdTech[fin[n]];
+  }
   P.pot.hp = Math.max(0, P.pot.hp - dt); P.pot.qi = Math.max(0, P.pot.qi - dt);
   P.combatT += dt; P.anim += dt;
   let rec = false;
@@ -11610,6 +11626,40 @@ function techRaw(T, mult) {
   if (T.dmg === 'hybrid') return (phys * 0.5 + st.qipwr * 0.5) * mult;
   return phys * mult;
 }
+
+
+function poserTechnique(i, id) {
+  if (!S || !Array.isArray(S.slots) || i < 0 || i > 3) return false;
+  if (id && typeof RANKS !== 'undefined' && RANKS[S.rank] && i >= RANKS[S.rank].slots) return false;
+  if (id && typeof TECHS !== 'undefined' && !TECHS[id]) return false;
+  if (!P.cdTech) P.cdTech = {};
+  if (!P.cds) P.cds = [0, 0, 0, 0];
+  for (let k = 0; k < 4; k++) {
+    const cur = S.slots[k];
+    if (!cur) continue;
+    if ((P.cds[k] || 0) > 0) P.cdTech[cur] = P.cds[k];
+    else delete P.cdTech[cur];
+  }
+  if (!id) {
+    S.slots[i] = null;
+    P.cds[i] = 0;
+    return true;
+  }
+  const j = S.slots.indexOf(id);
+  if (j === i) return true;
+  const reste = (k) => (k && P.cdTech[k] > 0 ? P.cdTech[k] : 0);
+  if (j >= 0) {
+    const autre = S.slots[i] || null;
+    S.slots[j] = autre;
+    S.slots[i] = id;
+    P.cds[j] = reste(autre);
+    P.cds[i] = reste(id);
+    return true;
+  }
+  S.slots[i] = id;
+  P.cds[i] = reste(id);
+  return true;
+}
 function useSkill(i) {
   if (P.cast || P.dash || P.dead) return;
   if (i >= RANKS[S.rank].slots) { toast('Emplacement verrouillé : rang supérieur requis', 'warn'); return; }
@@ -11617,7 +11667,12 @@ function useSkill(i) {
   const T = TECHS[id]; if (P.cds[i] > 0) return;
   const cost = T.qi * (1 - P.st.qicost);
   if (P.qi < cost) { if (G.t - (P.nqT || -9) > 0.9) { P.nqT = G.t; floatText(P.x, P.y - 40, 'Qi insuffisant', '#4fc6ea', 0.85); sfx('deny'); } return; }
-  P.qi -= cost; P.cds[i] = T.cd * (1 - P.st.cdr); P.serial = (P.serial || 0) + 1;
+  P.qi -= cost;
+  const cd = T.cd * (1 - P.st.cdr);
+  P.cds[i] = cd;
+  if (!P.cdTech) P.cdTech = {};
+  P.cdTech[id] = cd;
+  P.serial = (P.serial || 0) + 1;
   const range = T.range || T.len || (T.speed ? T.range : 0) || 8;
   const tgt = aimTarget(Math.max(6, range + 3), combatManuel());
   if (tgt) P.face = angTo(P.x, P.y, tgt.x, tgt.y);
@@ -12508,6 +12563,10 @@ function impactFx(z) {
 function updateZones(dt) {
   for (const z of G.zones) {
     if (z.dead) continue;
+    
+    
+    
+    if (z.owner && z.owner.dead && z.follow) { z.dead = true; continue; }
     z.t += dt;
     if (z.follow && z.owner && !z.owner.dead) { z.x = z.owner.x; z.y = z.owner.y; }
     if (z.kind === 'tele') {
@@ -30751,8 +30810,8 @@ function renderTechs(b) {
     const T = id && TECHS[id];
     sl.append(el('button', { class: 'slotb' + (locked ? ' locked' : '') + (UI.pickTech && !locked ? ' pick' : ''), style: T ? '--rc:' + RARITIES[T.rar].color : '', onclick: () => {
       if (locked) { toast('Débloqué au rang ' + RANKS[RANKS.findIndex((r) => r.slots > i)].name, 'warn'); return; }
-      if (UI.pickTech) { const j = S.slots.indexOf(UI.pickTech); if (j >= 0) S.slots[j] = S.slots[i]; S.slots[i] = UI.pickTech; UI.pickTech = null; sfx('ui'); renderPanel(); }
-      else if (id) { S.slots[i] = null; renderPanel(); }
+      if (UI.pickTech) { poserTechnique(i, UI.pickTech); UI.pickTech = null; sfx('ui'); renderPanel(); }
+      else if (id) { poserTechnique(i, null); renderPanel(); }
     } }, el('span', { class: 'han', style: T ? 'color:' + RARITIES[T.rar].color : '' }, T ? icone(iconeTechnique(id)) : icone(locked ? 'cadenas' : 'vide')), el('span', null, T ? coupeLong(T.name) : locked ? 'Verrouillé' : 'Libre'), el('span', { class: 'hint' }, 'Touche ' + (i + 1))));
   }
   b.append(sl);
@@ -46118,7 +46177,10 @@ function socialOublierTechs(garder) {
   for (const id in SOCIAL_TECHS) {
     if (id === garder) continue;
     delete S.techs[id];
-    if (Array.isArray(S.slots)) for (let i = 0; i < S.slots.length; i++) if (S.slots[i] === id) S.slots[i] = null;
+    if (Array.isArray(S.slots)) for (let i = 0; i < S.slots.length; i++) if (S.slots[i] === id) {
+      if (typeof poserTechnique === 'function') poserTechnique(i, null);
+      else S.slots[i] = null;
+    }
   }
 }
 function socialTechnique() {
