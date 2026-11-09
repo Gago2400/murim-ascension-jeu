@@ -2294,7 +2294,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="8005b6bc6c53" aria-label="Identifiant de version">Version générée : 8005b6bc6c53</div>
+      <div class="meta" id="t-build" data-build="bfe30c15531f" aria-label="Identifiant de version">Version générée : bfe30c15531f</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -39940,8 +39940,9 @@ updatePlayer = function (dt) {
   }
   const c = S.commerces;
   if (c && c.longwan && c.longwan.delivery && !c.longwan.delivery.visited && G.scene && G.scene.id === c.longwan.delivery.scene) {
+    reparerCibleSel();
     const t = c.longwan.delivery.target;
-    if (dist2(P.x, P.y, t.x, t.y) < 120 * 120) c.longwan.delivery.visited = true;
+    if (t && dist2(P.x, P.y, t.x, t.y) < 120 * 120) c.longwan.delivery.visited = true;
   }
   if (c && c.meishan && c.meishan.delivery && !c.meishan.delivery.visited && G.scene && G.scene.id === c.meishan.delivery.scene) {
     const t = c.meishan.delivery.target;
@@ -39961,16 +39962,43 @@ function buyFish() {
   return true;
 }
 
+
+
+
+function ciblePoissonnerie() {
+  const sc = (typeof G !== 'undefined' && G && G.scene) || null;
+  if (!sc || sc.id !== 'longwan') return null;
+  if (sc.decor) {
+    for (const d of sc.decor) {
+      if (d && d.nom && String(d.nom).indexOf('Poissonnerie') >= 0 && typeof d.x === 'number' && typeof d.y === 'number') return { x: d.x, y: d.y };
+    }
+  }
+  if (sc.safe && typeof sc.safe.x === 'number' && typeof sc.safe.y === 'number') return { x: sc.safe.x + 690, y: sc.safe.y - 262 };
+  return null;
+}
+function reparerCibleSel() {
+  const c = S && S.commerces && S.commerces.longwan;
+  const d = c && c.delivery;
+  if (!d || d.visited || d.type !== 'sel') return;
+  const t = d.target;
+  if (!t || t.x !== 690 || t.y !== -262) return;
+  const bon = ciblePoissonnerie();
+  if (!bon) return;
+  d.target = { x: bon.x, y: bon.y };
+}
 function startNaval(type) {
   const c = ensureCommerces();
   if (c.longwan.delivery) { toast('Une livraison est déjà en cours', 'info'); return false; }
   if (commerceJourCompte(c.longwan.deliveryDay)) { toast("Livraison déjà faite aujourd'hui", 'info'); return false; }
   if (!G.scene || !G.scene.bourg) { toast('Pas de bourg ici', 'info'); return false; }
   let target;
-  if (typeof HORS_MURS !== 'undefined' && HORS_MURS.longwan && type !== 'sel') {
+  if (type === 'sel') {
+    reparerCibleSel();
+    target = ciblePoissonnerie();
+    if (!target) { toast('La Poissonnerie de la Jetée est introuvable', 'info'); return false; }
+  } else if (typeof HORS_MURS !== 'undefined' && HORS_MURS.longwan) {
     target = { x: HORS_MURS.longwan.x, y: HORS_MURS.longwan.y };
   } else {
-    
     target = { x: 690, y: -262 };
   }
   c.longwan.delivery = { target, scene: G.scene.id, started: now(), visited: false, type: type || 'bois' };
