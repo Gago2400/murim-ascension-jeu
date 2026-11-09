@@ -2308,7 +2308,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="bf937c9de630" aria-label="Identifiant de version">Version générée : bf937c9de630</div>
+      <div class="meta" id="t-build" data-build="7a76fa8bdd55" aria-label="Identifiant de version">Version générée : 7a76fa8bdd55</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -12184,6 +12184,15 @@ function rariteButin(L, elite) {
 function killEnemy(e) {
   if (e.dead) return;
   if (e.arenaRival) { e.hp = 0; arenaRoundEnd(true); return; }
+  
+  
+  if (e.ch1) {
+    e.dead = true; e.hp = 0; e.deathT = 0;
+    for (const z of G.zones) if (z.owner === e && z.kind === 'tele') z.dead = true;
+    if (P.lock === e) P.lock = null;
+    if (P.soft === e) P.soft = null;
+    return;
+  }
   e.dead = true; e.deathT = 0; e.hp = 0;
   for (const z of G.zones) if (z.owner === e && z.kind === 'tele') z.dead = true;
   if (P.lock === e) P.lock = null;
@@ -31823,7 +31832,7 @@ const prevKillEnemy = killEnemy;
 killEnemy = function (e) {
   const wasDead = !!(e && e.dead); 
   prevKillEnemy(e);
-  if (wasDead || !e || !e.dead || e.minion || e.arenaRival || e.coopSilence) return;
+  if (wasDead || !e || !e.dead || e.minion || e.arenaRival || e.coopSilence || e.ch1) return;
   const region = sideRegion();
   if (e.isBoss && e.id) bumpSide('boss', e.id, region);
   else if (e.id && region) {
@@ -32915,7 +32924,7 @@ const prevKillEnemyHunt = killEnemy;
 killEnemy = function (e) {
   const wasDead = !!(e && e.dead);
   prevKillEnemyHunt(e);
-  if (wasDead) return;
+  if (wasDead || (e && e.ch1)) return;
   const h = S.hunt;
   if (!h || h.prog >= h.need) return;
   const sc = G.scene;
