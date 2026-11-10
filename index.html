@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="a78f0be4d097">
+<meta name="murim-build" content="fee414722449">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2337,7 +2337,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="a78f0be4d097" aria-label="Identifiant de version">Version générée : a78f0be4d097</div>
+      <div class="meta" id="t-build" data-build="fee414722449" aria-label="Identifiant de version">Version générée : fee414722449</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -34868,6 +34868,12 @@ function storyChoixSaute() {
   const choix = S.voie && S.voie.choix;
   if (choix && choix['ch11:monde'] && !S.story.seen.q_lendemain && !S.story.seen['tournoi:fil'] && !S.story.seen.q_tournoi_invite && !choix['tournoi:entree'] && STORY_SCENES.q_lendemain) return 'q_lendemain';
   if (S.story.seen['tournoi:fil'] && !(choix && choix['tournoi:entree']) && !S.story.seen.q_tournoi_invite && STORY_SCENES.q_tournoi_invite && storyChoixOuvert(STORY_SCENES.q_tournoi_invite) >= 0) return 'q_tournoi_invite';
+  
+  
+  if (typeof tournoiEtapeCoupee === 'function') {
+    const et = tournoiEtapeCoupee();
+    if (et && et.scene) return et.scene;
+  }
   return null;
 }
 function storyReprendreChoix() {
@@ -34879,6 +34885,17 @@ function storyReprendreChoix() {
     const t = (G && G.t) || 0;
     if (STORY.repriseT != null && t - STORY.repriseT < 1) return;
     STORY.repriseT = t; id = storyChoixSaute();
+    
+    
+    
+    if (!id && typeof tournoiEtapeCoupee === 'function') {
+      const et = tournoiEtapeCoupee();
+      if (et && et.duel && !(G && G.arena)) {
+        if (typeof storyDuel === 'function' && storyDuel(et.duel)) return;
+        const puis = typeof TOURNOI_DUELS !== 'undefined' && TOURNOI_DUELS[et.duel] && TOURNOI_DUELS[et.duel].puis;
+        if (puis) id = puis;
+      }
+    }
   }
   if (id) playScene(id, true, it && it.onEnd);
 }
@@ -49876,6 +49893,30 @@ if (typeof arenaFinish === 'function' && !arenaFinish.tournoi) {
   arenaFinish.tournoi = true;
 }
 
+
+
+
+
+function tournoiEtapeCoupee() {
+  if (!S || !S.story || !S.story.seen || !S.story.seen['tournoi:fil']) return null;
+  const c = (S.voie && S.voie.choix) || {};
+  if (!c['tournoi:entree'] || c['tournoi:su']) return null;
+  const fin = STORY_SCENES.q_tournoi_final;
+  if (fin && storyChoixOuvert(fin) >= 0 && (S.story.seen.q_tournoi_final || S.story.seen.q_tournoi_xue)) return { scene: 'q_tournoi_final' };
+  const pas = [
+    ['q_tournoi_invite', 'tang', 'q_tournoi_tang'],
+    ['q_tournoi_tang', 'fu', 'q_tournoi_fu'],
+    ['q_tournoi_fu', 'gao', 'q_tournoi_gao'],
+    ['q_tournoi_gao', 'xue', 'q_tournoi_xue'],
+  ];
+  for (let i = 0; i < pas.length; i++) {
+    const src = pas[i][0], duel = pas[i][1], puis = pas[i][2];
+    if (!S.story.seen[src]) continue;
+    if (!c['tournoi:' + duel] && !S.story.seen[puis]) return { duel: duel };
+    if (c['tournoi:' + duel] && !S.story.seen[puis] && STORY_SCENES[puis]) return { scene: puis };
+  }
+  return null;
+}
 function tournoiApres(id) {
   if (!id || !S || !S.story || !S.story.seen) return;
   if (typeof storyAuto === 'function' && !storyAuto()) return;
