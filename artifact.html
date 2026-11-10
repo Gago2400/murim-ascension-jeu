@@ -2321,7 +2321,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="e7d6d5bf8999" aria-label="Identifiant de version">Version générée : e7d6d5bf8999</div>
+      <div class="meta" id="t-build" data-build="f3463ffce676" aria-label="Identifiant de version">Version générée : f3463ffce676</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -10637,14 +10637,20 @@ function updatePlayer(dt) {
     }
     const pupD = enDuelDash && typeof duelPuppet === 'function' ? duelPuppet() : null;
     if (pupD && !pupD.dead && !(pupD.hp <= 0) && !d.hit.has(pupD) && dist(pupD.x, pupD.y, P.x, P.y) < pupD.r + 1.2 * M) { d.hit.add(pupD); hitEnemy(pupD, d.raw, d.opts); }
-    if (Math.random() < 0.8) G.fx.push({ type: 'after', x: P.x, y: P.y, face: P.face, t: 0, dur: 0.25, color: d.color });
+    if (Math.random() < 0.8) G.fx.push({ type: 'after', x: P.x, y: P.y, face: P.face, t: 0, dur: 0.25, color: d.color, esq: true });
+    if (!d.fx) d.fx = elanFx(d.x0, d.y0, d.color, d.dur);
+    elanSuivre(d.fx);
     if (k >= 1 || bloque) P.dash = null;
     return;
   }
   if (P.dodge.t > 0) {
     const sp = (P.dodge.dist || 3 * M) / (P.dodge.dur || 0.18);
     pasHero(P.dodge.dx * sp * dt, P.dodge.dy * sp * dt); P.dodge.t -= dt;
-    if (Math.random() < 0.9) G.fx.push({ type: 'after', x: P.x, y: P.y, face: P.face, t: 0, dur: 0.22, color: '#cfe8ff' });
+    
+    if (Math.random() < 0.9) G.fx.push({ type: 'after', x: P.x, y: P.y, face: P.face, t: 0, dur: 0.22, color: '#cfe8ff', esq: true });
+    elanSuivre(P.dodge.fx);
+    
+    if (P.dodge.t <= 0) P.dodge.fin = G.t;
     if (I.atkPress) P.atk.queued = true;
     return;
   }
@@ -11623,8 +11629,17 @@ function tryDodge() {
   const dur = feel('dodgeTime', 0.18);
   P.dodge = { t: dur, dur, cd: P.st.dodgecd, start: G.t, sx: P.x, sy: P.y, dx, dy, dist: feel('dodgeDist', 3) * M, perfectDone: false };
   P.iframes = feel('iframe', 0.4); P.atk.ph = 'idle'; P.atk.idx = 0; P.face = Math.atan2(dy, dx);
+  P.dodge.fx = elanFx(P.x, P.y, '#bfe2ff', dur);
   sfx('dodge');
 }
+
+
+function elanFx(x, y, color, vie) {
+  const f = { type: 'elan', x, y, x1: x, y1: y, color, t: 0, dur: vie + 0.2, vie };
+  G.fx.push(f);
+  return f;
+}
+function elanSuivre(f) { if (f) { f.x1 = P.x; f.y1 = P.y; } }
 function perfectDodge() {
   P.dodge.perfectDone = true;
   P.buffs.counter = 1.5; S.stats.perfectDodges++; questEvent('perfectdodge');
@@ -23870,6 +23885,39 @@ function R3init(T) {
     return a;
   }
   
+  
+  function retombeeEsquive(root, m, c) {
+    if (!(c > 0.01)) return;
+    const pieds = m && piedsHumain(m);
+    if (pieds) {
+      const ry = root.rotation.y, pli = 0.52 * c;
+      PR_F.set(Math.cos(ry), 0, -Math.sin(ry));
+      for (const p of pieds) {
+        viserOs(p.haut, p.genou, PR_T.set(0, -Math.cos(pli), 0).addScaledVector(PR_F, Math.sin(pli)).normalize());
+        viserOs(p.genou, p.pied, PR_T.set(0, -Math.cos(pli), 0).addScaledVector(PR_F, -Math.sin(pli)).normalize());
+      }
+      root.position.y -= 0.8 * (1 - Math.cos(pli));
+    }
+    const og = m && osGeste(m);
+    if (og) plierBuste(og, m, c * 0.3, -c * 0.18);
+  }
+  
+  function receptionEsquive() {
+    const d = P.dodge; if (!d || d.fin == null || d.t > 0) return 0;
+    const u = (G.t - d.fin) / 0.17;
+    if (!(u >= 0) || u >= 1) return 0;
+    return u < 0.3 ? u / 0.3 : 1 - (u - 0.3) / 0.7;
+  }
+  
+  
+  function alphaEsquive() {
+    if (!(P.iframes > 0)) return 1;
+    const d = P.dodge; if (!d) return 1;
+    if (d.t > 0) return 0.5;
+    if (d.fin == null || G.t - d.fin > 0.6 || G.t < d.fin) return 1;
+    return 1 - 0.42 * clamp(P.iframes / 0.22, 0, 1);
+  }
+  
   function reculCoup(root, m, k, face) {
     const a = clamp(k, 0, 1);
     root.rotateX(-a * 0.48);
@@ -24005,6 +24053,7 @@ function R3init(T) {
       if (roll && !emo) { sautEsquive(v.root, v.m, roll); v._geste = 'esquive'; v._glisse = null; }
       else if (hit && !selle && !emo) { reculCoup(v.root, v.m, hit, cap); v._geste = 'coup'; }
       else v._geste = cle;
+      const recep = !roll && !selle && !emo && !sw ? receptionEsquive() : 0;
       if (!selle && !sw && !roll && !hit) collerCheville(v.m, v.root);
       if (marche && !hit) {
         const g = planterPieds(v.m, v.root, true, tourDt || 0.016);
@@ -24043,10 +24092,11 @@ function R3init(T) {
         poserBuste(v.m, 0.2 * (1 - k), v.root.rotation.y);
         poseBrasHero(v.m, 'frappe', v.root.rotation.y, t, -0.7 * (1 - k));
       }
+      if (recep) retombeeEsquive(v.root, v.m, recep); 
       if (!selle && !roll) semelleHero(v);
       if (!roll && !hit && !sw && !selle && cle === 'idle') v._souffle = souffleIdle(v.m, t, 0.16);
       else if (!P.dead) v._souffle = 0;
-      const pa = P.iframes > 0 && P.dodge.t > 0 ? 0.5 : 1; setAlpha(v.mats, pa); showModelInk(v.m, pa > 0.99); showInk(v.ink, pa > 0.99);
+      const pa = alphaEsquive(); setAlpha(v.mats, pa); showModelInk(v.m, pa > 0.99); showInk(v.ink, pa > 0.99);
     } else if (P.dead) {
       v.root.rotation.set(0, -(v._cap != null ? v._cap : P.face), Math.PI / 2 * Math.min(1, P.deathT * 3)); v.root.position.y = 0.2;
       poseHuman(v.h, { walk: 0 }); setAlpha(v.mats, 0.85); showInk(v.ink, false); v.shield.visible = false; return;
@@ -26806,10 +26856,41 @@ function R3init(T) {
       }
     }
   }
+  
+  
+  
+  const ribElan = [makeRibbon(8), makeRibbon(8)];
+  function showSillage(rib, x, y, ux, uy, t0, t1, cote, color, alpha) {
+    const n = rib.segs + 1, c = pc(color), pos = rib.pos, col = rib.colA;
+    rib.mesh.visible = true;
+    for (let i = 0; i < n; i++) {
+      const u = i / (n - 1), t = t0 + (t1 - t0) * u;
+      const w = 0.42 * M * Math.pow(u, 0.7) * cote, h = 0.6 + 0.35 * u;
+      const cx = x + ux * t, cy = y + uy * t;
+      const va = alpha * (0.2 + 0.8 * u);
+      const o = i * 2;
+      
+      pos[o * 3] = W(cx + uy * w * 0.12); pos[o * 3 + 1] = h; pos[o * 3 + 2] = W(cy - ux * w * 0.12);
+      pos[o * 3 + 3] = W(cx - uy * w); pos[o * 3 + 4] = h - 0.04; pos[o * 3 + 5] = W(cy + ux * w);
+      col[o * 4] = c.r; col[o * 4 + 1] = c.g; col[o * 4 + 2] = c.b; col[o * 4 + 3] = va;
+      col[o * 4 + 4] = c.r; col[o * 4 + 5] = c.g; col[o * 4 + 6] = c.b; col[o * 4 + 7] = va;
+    }
+    rib.g.setDrawRange(0, (n - 1) * 6);
+    rib.g.attributes.position.needsUpdate = true;
+    rib.g.attributes.aCol.needsUpdate = true;
+  }
+  
+  function poussiereAppui(x, y, ang, ouv, kd, n) {
+    const c = pc('#d9cbb6');
+    for (let i = 0; i < n; i++) {
+      const a = ang + (i / Math.max(1, n - 1) - 0.5) * ouv, rad = 0.16 + kd * (0.42 + (i % 2) * 0.22);
+      glows.add(W(x) + Math.cos(a) * rad, 0.12 + Math.sin(kd * Math.PI) * (0.16 + (i % 3) * 0.07), W(y) + Math.sin(a) * rad, 0.3 + kd * 0.12, c, (1 - kd) * 0.46);
+    }
+  }
   function updateFx3D(dt) {
     updateTrails(dt);
     const rich = fxRich();
-    let arcI = 0;
+    let arcI = 0, elanI = 0;
     for (const f of G.fx) {
       const k = clamp(f.t / f.dur, 0, 1);
       switch (f.type) {
@@ -26871,7 +26952,32 @@ function R3init(T) {
           }
           break;
         }
+        
+        
+        case 'elan': {
+          const dx = f.x1 - f.x, dy = f.y1 - f.y, L = Math.hypot(dx, dy);
+          
+          const a = Math.pow(1 - k, 1.2) * (rich ? 2.6 : 1.7);
+          const vie = f.vie || 0.18;
+          if (L > 6) {
+            const ux = dx / L, uy = dy / L;
+            
+            const q = clamp((f.t - vie * 0.7) / Math.max(0.05, f.dur - vie * 0.7), 0, 1), qq = q * q * (3 - 2 * q);
+            const tete = Math.max(0, L - 0.15 * M);
+            if (elanI < ribElan.length - 1 && tete * (1 - qq) > 4) {
+              showSillage(ribElan[elanI++], f.x, f.y, ux, uy, qq * tete, tete, 1, f.color, a);
+              showSillage(ribElan[elanI++], f.x, f.y, ux, uy, qq * tete, tete, -1, f.color, a);
+            }
+            const kd = f.t / 0.24;
+            if (kd < 1) poussiereAppui(f.x, f.y, Math.atan2(-uy, -ux), 1.5, kd, rich ? 5 : 3);
+            
+            const kr = (f.t - vie) / 0.2;
+            if (kr >= 0 && kr < 1) poussiereAppui(f.x1, f.y1, Math.atan2(uy, ux), 2.4, kr, rich ? 5 : 3);
+          }
+          break;
+        }
         case 'after': {
+          if (f.esq) break; 
           
           
           const a = (1 - k) * (1 - k) * 0.42; const face = f.face || 0;
@@ -26921,6 +27027,7 @@ function R3init(T) {
       }
     }
     for (let i = arcI; i < ribArc.length; i++) ribArc[i].mesh.visible = false;
+    for (let i = elanI; i < ribElan.length; i++) ribElan[i].mesh.visible = false;
     
     for (const p of G.projs) {
       const c = pc(p.color && p.color[0] === '#' ? p.color : (p.color || '#ff6a4a'));
