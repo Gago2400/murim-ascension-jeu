@@ -2321,7 +2321,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="fc530c925ee8" aria-label="Identifiant de version">Version générée : fc530c925ee8</div>
+      <div class="meta" id="t-build" data-build="758294629dfc" aria-label="Identifiant de version">Version générée : 758294629dfc</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -10410,7 +10410,8 @@ function spark(x, y, color, speed = 120, life = 0.6, size = 2.2) {
   else G.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, life, max: life, size: sz, color });
 }
 function burstRing(x, y, color, radius, dur = 0.5, width = 3) { G.fx.push({ type: 'ring', x, y, r: radius, color, t: 0, dur, width }); }
-function slashFx(x, y, ang, r, half, color, dur = 0.22, width = 10, power = 0) { G.fx.push({ type: 'slash', x, y, ang, r, half, color, t: 0, dur, width, power }); }
+
+function slashFx(x, y, ang, r, half, color, dur = 0.22, width = 10, power = 0, sens = 0) { G.fx.push({ type: 'slash', x, y, ang, r, half, color, t: 0, dur, width, power, sens }); }
 function beamFx(x1, y1, x2, y2, w, color, dur = 0.3) { G.fx.push({ type: 'beam', x1, y1, x2, y2, w, color, t: 0, dur }); }
 
 function mortPhase(t) {
@@ -11586,7 +11587,7 @@ function doBasicHit(idx, perfect) {
   const mul = [1, 1.1, 1.3][idx] * (perfect ? [1, 1.05, 1.1][idx] : 1);
   const raw = P.st.atk * (1 + P.st.sword / 100) * mul;
   const col = perfect ? '#ffe08a' : (P.st.weaponElem ? ELEMS[P.st.weaponElem].color : '#eef4ff');
-  slashFx(P.x, P.y - 8, P.face + (idx === 1 ? 0.2 : idx === 2 ? 0 : -0.2), range * 0.95, half, col, 0.2, idx === 2 ? 14 : 10, idx === 2 ? 1 : 0);
+  slashFx(P.x, P.y - 8, P.face + (idx === 1 ? 0.2 : idx === 2 ? 0 : -0.2), range * 0.95, half, col, idx === 2 ? 0.26 : 0.22, idx === 2 ? 14 : 10, idx === 2 ? 1 : 0, idx === 1 ? 1 : idx === 2 ? 0 : -1);
   let hits = 0;
   const enDuelBas = typeof duelCombat === 'function' && duelCombat();
   if (!enDuelBas) for (const e of G.enemies) {
@@ -11738,7 +11739,7 @@ function executeTech(id, tgt) {
     case 'spin': case 'nova': {
       const R = T.r * M;
       res = hitsIn((e) => dist(e.x, e.y, P.x, P.y) < R + e.r, raw, opts);
-      if (T.shape === 'spin') { for (let k = 0; k < 3; k++) slashFx(P.x, P.y - 8, f + k * 2.1, R, 1.1, ecol, 0.35, 14 + pw * 4, pw); }
+      if (T.shape === 'spin') { for (let k = 0; k < 3; k++) slashFx(P.x, P.y - 8, f + k * 2.1, R, 1.1, ecol, 0.35, 14 + pw * 4, pw, 1); }
       burstRing(P.x, P.y, ecol, R, 0.4 + pw * 0.05, 4 + pw * 2);
       if (pw >= 3) burstRing(P.x, P.y, '#ffffff', R * 0.6, 0.3, 2);
       for (let i = 0; i < 18 + pw * 10; i++) spark(P.x, P.y, ecol, R * 2.2, 0.5);
@@ -11758,7 +11759,7 @@ function executeTech(id, tgt) {
         P.pending.push({ t: k * step, fn: () => {
           const tg = aimTarget(T.range + 2, combatManuel()); const a = tg ? angTo(P.x, P.y, tg.x, tg.y) : P.face; P.face = a;
           const r = hitsIn((e) => pointInCone(e.x, e.y, P.x, P.y, a, T.range * M, T.half, e.r), raw, opts);
-          slashFx(P.x, P.y - 8, a + rand(-0.5, 0.5), T.range * M, Math.min(1.3, T.half), ecol, 0.18, 10 + pw * 3, pw);
+          slashFx(P.x, P.y - 8, a + rand(-0.5, 0.5), T.range * M, Math.min(1.3, T.half), ecol, 0.18, 10 + pw * 3, pw, k % 2 ? 1 : -1);
           if (r.n) sfx('hit');
         } });
       }
@@ -24034,6 +24035,7 @@ function R3init(T) {
       if (sw && !brk && P.atk.ph === 'swing') {
         const k = clamp(P.atk.t / (P.atk.dur || 0.36), 0, 1);
         const kk = coupPortee(k) * (P.atk.idx === 1 ? -1 : 1);
+        if (cle === 'attack') balayerLame(v, k, t); 
         poserBuste(v.m, k, v.root.rotation.y);
         if (cle === 'attack') { poseBrasHero(v.m, 'frappe', v.root.rotation.y, t, kk); v.root.rotateY(kk * 0.16); } 
       } else if (sw && !brk && P.cast) {
@@ -26394,15 +26396,21 @@ function R3init(T) {
   
   
   
+  
   const RIB_VS = 'attribute vec4 aCol; attribute float aSide; varying vec4 vCol; varying float vSide; void main(){ vCol = aCol; vSide = aSide; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
-  const RIB_FS = 'varying vec4 vCol; varying float vSide; void main(){ float bord = smoothstep(1.0, 0.2, abs(vSide)); gl_FragColor = vec4(vCol.rgb, vCol.a * bord); }';
-  const RIB_UP = new T.Vector3(0, 1, 0), RIB_DIR = new T.Vector3(), RIB_SIDE = new T.Vector3(), RIB_TIP = new T.Vector3();
+  const RIB_FS = 'varying vec4 vCol; varying float vSide; void main(){ float s = clamp(vSide * 0.5 + 0.5, 0.0, 1.0); float corps = smoothstep(0.0, 0.9, s); float fil = smoothstep(0.62, 0.92, s); float bord = smoothstep(1.0, 0.95, s); gl_FragColor = vec4(mix(vCol.rgb, vec3(1.0), fil * 0.7), vCol.a * (corps * 0.5 + fil * 0.5) * bord); }';
+  const RIB_TIP = new T.Vector3(), RIB_BASE = new T.Vector3(), RIB_A = new T.Vector3(), RIB_B = new T.Vector3();
   const SPARK_A = [0.3, 1.2, 2.1, 3.0, 4.0, 5.1];
+  
+  
+  const RIB_VIE = 0.14, RIB_ECH = 24, RIB_SUB = 3;
+  
+  const RIB_K0 = 0.17, RIB_K1 = 0.64;
   function makeRibbon(segs) {
     const g = new T.BufferGeometry();
     const vcount = (segs + 1) * 2;
     const pos = new Float32Array(vcount * 3), colA = new Float32Array(vcount * 4), side = new Float32Array(vcount), idx = new Uint16Array(segs * 6);
-    for (let i = 0; i <= segs; i++) { side[i * 2] = -1; side[i * 2 + 1] = 1; }
+    for (let i = 0; i <= segs; i++) { side[i * 2] = 1; side[i * 2 + 1] = -1; }
     for (let i = 0; i < segs; i++) {
       const a = i * 2, o = i * 6;
       idx[o] = a; idx[o + 1] = a + 1; idx[o + 2] = a + 2; idx[o + 3] = a + 1; idx[o + 4] = a + 3; idx[o + 5] = a + 2;
@@ -26414,13 +26422,19 @@ function R3init(T) {
     
     const mat = new T.ShaderMaterial({ vertexShader: RIB_VS, fragmentShader: RIB_FS, transparent: true, depthWrite: false, depthTest: false, dithering: false, blending: T.AdditiveBlending, toneMapped: false, side: T.DoubleSide });
     const mesh = new T.Mesh(g, mat); mesh.frustumCulled = false; mesh.renderOrder = 4; mesh.visible = false; dyn.add(mesh);
-    const hist = []; for (let i = 0; i < segs + 1; i++) hist.push(new T.Vector3());
-    return { mesh, g, pos, colA, segs, hist, n: 0, head: 0, a: 0, hot: false };
+    return { mesh, g, pos, colA, segs };
   }
-  const ribHero = makeRibbon(16), ribFoe = makeRibbon(12);
-  ribHero.large = 1.15;
-  const ribArc = [makeRibbon(12), makeRibbon(12), makeRibbon(12), makeRibbon(12)];
-  for (const r of ribArc) r.large = 1.2;
+  
+  
+  function makeTrail() {
+    const rib = makeRibbon(72);
+    rib.tip = []; rib.base = []; rib.piv = []; rib.ts = new Float32Array(RIB_ECH); rib.vf = new Float32Array(RIB_ECH);
+    for (let i = 0; i < RIB_ECH; i++) { rib.tip.push(new T.Vector3()); rib.base.push(new T.Vector3()); rib.piv.push(new T.Vector3()); }
+    rib.n = 0; rib.head = 0; rib.hot = false;
+    return rib;
+  }
+  const ribHero = makeTrail(), ribFoe = makeTrail();
+  const ribArc = [makeRibbon(20), makeRibbon(20), makeRibbon(20), makeRibbon(20)];
   
   function lameCouleur() {
     const fx = G.fx;
@@ -26437,17 +26451,34 @@ function R3init(T) {
     return '#f3efe4';
   }
   
-  function showArc(rib, x, z, ang, radius, half, color, alpha, h0) {
-    const n = rib.hist.length;
-    rib.n = n; rib.head = 0;
-    const haut = fxRich() ? 1.55 : 1.05;
+  
+  
+  function showArc(rib, x, z, ang, radius, half, color, alpha, h0, k, sens) {
+    const n = Math.min(rib.segs, fxRich() ? 20 : 10) + 1;
+    if (alpha < 0.03 || radius < 0.05) { rib.mesh.visible = false; return; }
+    rib.mesh.visible = true;
+    const c = pc(color), pos = rib.pos, col = rib.colA;
+    const sg = sens < 0 ? -1 : 1;
+    const penche = sens ? Math.min(0.5, radius * 0.2) : 0;
+    const large = Math.min(0.95, Math.max(0.34, radius * 0.3)) * (1 - 0.35 * (k || 0));
+    const queue = (k || 0) * 0.85; 
     for (let i = 0; i < n; i++) {
-      const u = i / (n - 1);
+      const u = i / (n - 1), ud = sg > 0 ? u : 1 - u; 
       const a = ang - half + u * half * 2;
-      const bow = Math.sin(u * Math.PI);
-      rib.hist[i].set(x + Math.cos(a) * radius, h0 + bow * haut, z + Math.sin(a) * radius);
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const fuseau = Math.pow(Math.sin(u * Math.PI), 0.7);
+      const w = large * fuseau;
+      const y = h0 + penche * (0.5 - ud) * 2 * 0.5 + fuseau * 0.12;
+      const va = alpha * clamp((ud - queue) / 0.3 + 0.12, 0, 1) * (0.55 + 0.45 * fuseau);
+      const o = i * 2;
+      pos[o * 3] = x + ca * radius; pos[o * 3 + 1] = y; pos[o * 3 + 2] = z + sa * radius;
+      pos[o * 3 + 3] = x + ca * (radius - w); pos[o * 3 + 4] = y - w * 0.1; pos[o * 3 + 5] = z + sa * (radius - w);
+      col[o * 4] = c.r; col[o * 4 + 1] = c.g; col[o * 4 + 2] = c.b; col[o * 4 + 3] = va;
+      col[o * 4 + 4] = c.r; col[o * 4 + 5] = c.g; col[o * 4 + 6] = c.b; col[o * 4 + 7] = va;
     }
-    paintRibbon(rib, color, alpha);
+    rib.g.setDrawRange(0, (n - 1) * 6);
+    rib.g.attributes.position.needsUpdate = true;
+    rib.g.attributes.aCol.needsUpdate = true;
   }
   function bladeTip(blade, out) {
     let y = blade.userData.tipY;
@@ -26456,16 +26487,20 @@ function R3init(T) {
       if (geoB && !geoB.boundingBox) geoB.computeBoundingBox();
       y = geoB && geoB.boundingBox ? geoB.boundingBox.min.y : -0.9;
       blade.userData.tipY = y;
+      blade.userData.baseY = geoB && geoB.boundingBox ? geoB.boundingBox.max.y : 0;
     }
     out.set(0, y, 0);
     blade.updateWorldMatrix(true, false);
     return out.applyMatrix4(blade.matrixWorld);
   }
-  function heroTip(out) {
+  
+  function bladeBase(blade, out) { return out.set(0, blade.userData.baseY || 0, 0).applyMatrix4(blade.matrixWorld); }
+  function heroTip(out, base) {
     const v = ensurePlayer();
     const blade = v && v.h && v.h.blade;
-    if (blade) return bladeTip(blade, out);
+    if (blade) { bladeTip(blade, out); if (base) bladeBase(blade, base); return out; }
     const reach = v && (v.weapon === 'spear' || v.weapon === 'staff') ? 1.35 : 0.72;
+    if (base) base.set(W(P.x), 1.05, W(P.y));
     return out.set(W(P.x) + Math.cos(P.face) * reach, 1.05, W(P.y) + Math.sin(P.face) * reach);
   }
   function foeBlade(e) {
@@ -26474,56 +26509,132 @@ function R3init(T) {
     if (v.md && v.md.blade) return v.md.blade;
     return null;
   }
-  function paintRibbon(rib, colr, alpha) {
-    const n = Math.min(rib.n, (fxRich() ? rib.segs : 8) + 1);
-    if (n < 2 || alpha < 0.03) { rib.mesh.visible = false; return; }
-    rib.mesh.visible = true;
-    const c = pc(colr), len = rib.hist.length, pos = rib.pos, col = rib.colA;
-    for (let i = 0; i < n; i++) {
-      const p = rib.hist[(rib.head - n + i + len) % len];
-      const p1 = rib.hist[(rib.head - n + Math.min(n - 1, i + 1) + len) % len];
-      const p0 = rib.hist[(rib.head - n + Math.max(0, i - 1) + len) % len];
-      RIB_DIR.copy(p1).sub(p0);
-      RIB_SIDE.crossVectors(RIB_DIR, RIB_UP);
-      if (RIB_SIDE.lengthSq() < 1e-8) RIB_SIDE.set(0, 0, 1);
-      const k = i / (n - 1);
+  
+  function ribArcPt(a, b, t, out) {
+    const la = a.length(), lb = b.length();
+    if (la < 1e-4 || lb < 1e-4) return out.copy(a).lerp(b, t);
+    const c = clamp(a.dot(b) / (la * lb), -1, 1), th = Math.acos(c);
+    if (th < 0.02 || th > 3.1) return out.copy(a).lerp(b, t);
+    const sn = Math.sin(th), ka = Math.sin((1 - t) * th) / (sn * la), kb = Math.sin(t * th) / (sn * lb);
+    const l = la + (lb - la) * t;
+    return out.set((a.x * ka + b.x * kb) * l, (a.y * ka + b.y * kb) * l, (a.z * ka + b.z * kb) * l);
+  }
+  
+  
+  
+  function paintRibbon(rib, colr, now) {
+    const len = RIB_ECH;
+    
+    while (rib.n > 0) { const q = (rib.head - rib.n + len) % len; const age = now - rib.ts[q]; if (age > RIB_VIE || age < -0.05) rib.n--; else break; }
+    const n = rib.n;
+    if (n < 2) { rib.mesh.visible = false; return; }
+    const riche = fxRich();
+    const c = pc(colr), pos = rib.pos, col = rib.colA;
+    let v = 0, vu = 0;
+    for (let s = 0; s < n - 1; s++) {
+      const i1 = (rib.head - n + s + len) % len, i2 = (i1 + 1) % len;
+      const t1 = rib.tip[i1], t2 = rib.tip[i2];
+      const ang = t1.angleTo(t2);
       
-      
-      const large = rib.large || 1;
-      RIB_SIDE.normalize().multiplyScalar((fxRich() ? 0.42 : 0.22) * large * (0.55 + 0.45 * k));
-      const milieu = Math.max(0, 1 - Math.abs(k - 0.55) * 1.35);
-      const a = alpha * (0.42 + 0.58 * milieu);
-      const o = i * 2;
-      pos[o * 3] = p.x + RIB_SIDE.x; pos[o * 3 + 1] = p.y + RIB_SIDE.y; pos[o * 3 + 2] = p.z + RIB_SIDE.z;
-      pos[o * 3 + 3] = p.x - RIB_SIDE.x; pos[o * 3 + 4] = p.y - RIB_SIDE.y; pos[o * 3 + 5] = p.z - RIB_SIDE.z;
-      col[o * 4] = c.r; col[o * 4 + 1] = c.g; col[o * 4 + 2] = c.b; col[o * 4 + 3] = a;
-      col[o * 4 + 4] = c.r * 0.35 + 0.65; col[o * 4 + 5] = c.g * 0.35 + 0.65; col[o * 4 + 6] = c.b * 0.35 + 0.65; col[o * 4 + 7] = a;
+      const coupe = ang > 2.5 ? 0 : 1;
+      const sub = Math.min(clamp(Math.ceil(ang / (riche ? 0.2 : 0.4)), 1, RIB_SUB), Math.max(1, rib.segs - v - (n - 2 - s)));
+      const fin = s === n - 2 ? sub : sub - 1;
+      for (let j = 0; j <= fin; j++) {
+        const t = j / sub;
+        ribArcPt(t1, t2, t, RIB_A); ribArcPt(rib.base[i1], rib.base[i2], t, RIB_B);
+        const px = rib.piv[i1].x + (rib.piv[i2].x - rib.piv[i1].x) * t, py = rib.piv[i1].y + (rib.piv[i2].y - rib.piv[i1].y) * t, pz = rib.piv[i1].z + (rib.piv[i2].z - rib.piv[i1].z) * t;
+        const frais = clamp(1 - (now - (rib.ts[i1] + (rib.ts[i2] - rib.ts[i1]) * t)) / RIB_VIE, 0, 1);
+        const a = coupe * frais * Math.sqrt(frais) * (rib.vf[i1] + (rib.vf[i2] - rib.vf[i1]) * t);
+        if (a > 0.03) vu = 1;
+        const rac = 0.2 + 0.42 * frais; 
+        const o = v * 2;
+        pos[o * 3] = px + RIB_A.x; pos[o * 3 + 1] = py + RIB_A.y; pos[o * 3 + 2] = pz + RIB_A.z;
+        pos[o * 3 + 3] = px + RIB_A.x + (RIB_B.x - RIB_A.x) * rac; pos[o * 3 + 4] = py + RIB_A.y + (RIB_B.y - RIB_A.y) * rac; pos[o * 3 + 5] = pz + RIB_A.z + (RIB_B.z - RIB_A.z) * rac;
+        col[o * 4] = c.r; col[o * 4 + 1] = c.g; col[o * 4 + 2] = c.b; col[o * 4 + 3] = a;
+        col[o * 4 + 4] = c.r; col[o * 4 + 5] = c.g; col[o * 4 + 6] = c.b; col[o * 4 + 7] = a;
+        v++;
+      }
     }
-    rib.g.setDrawRange(0, (n - 1) * 6);
+    if (!vu || v < 2) { rib.mesh.visible = false; return; }
+    rib.mesh.visible = true;
+    rib.g.setDrawRange(0, (v - 1) * 6);
     rib.g.attributes.position.needsUpdate = true;
     rib.g.attributes.aCol.needsUpdate = true;
   }
-  function feedRibbon(rib, emit, tip, colr, dt) {
+  
+  
+  function ribPush(rib, tip, base, px, py, pz, ts) {
+    const len = RIB_ECH, li = (rib.head - 1 + len) % len, h = rib.head;
+    const d2 = rib.n ? RIB_B.copy(rib.tip[li]).add(rib.piv[li]).distanceToSquared(tip) : 1;
+    if (rib.n && d2 <= 0.0009) return;
+    const dts = rib.n ? ts - rib.ts[li] : 0;
+    const vit = rib.n && dts > 1e-4 ? Math.sqrt(d2) / dts : 0;
+    rib.tip[h].set(tip.x - px, tip.y - py, tip.z - pz); rib.base[h].set(base.x - px, base.y - py, base.z - pz); rib.piv[h].set(px, py, pz); rib.ts[h] = ts;
+    rib.vf[h] = clamp((vit - 2.5) / 5, 0, 1);
+    
+    if (rib.n === 1) rib.vf[li] = rib.vf[h];
+    rib.head = (h + 1) % len;
+    if (rib.n < len) rib.n++;
+  }
+  function feedRibbon(rib, emit, tip, base, px, py, pz, colr, now) {
     if (emit) {
       if (!rib.hot) { rib.n = 0; rib.head = 0; }
-      rib.hot = true; rib.a = 1;
-      const last = rib.n ? rib.hist[(rib.head - 1 + rib.hist.length) % rib.hist.length] : null;
-      if (!last || last.distanceToSquared(tip) > 0.0009) {
-        rib.hist[rib.head].copy(tip);
-        rib.head = (rib.head + 1) % rib.hist.length;
-        if (rib.n < rib.hist.length) rib.n++;
-      }
-    } else {
-      rib.hot = false;
-      rib.a = Math.max(0, rib.a - dt * 2.8);
-      if (rib.a <= 0) rib.n = 0;
+      rib.hot = true;
+      ribPush(rib, tip, base, px, py, pz, now);
+    } else rib.hot = false;
+    paintRibbon(rib, colr, now);
+  }
+  
+  
+  
+  
+  const BAL_Q = [new T.Quaternion(), new T.Quaternion(), new T.Quaternion(), new T.Quaternion(), new T.Quaternion()];
+  function balayerLame(v, k, now) {
+    const ser = P.serial || 0, suite = v._balS === ser;
+    const k0 = suite ? v._balK : k, t0 = suite ? v._balT : now;
+    v._balS = ser; v._balK = k; v._balT = now;
+    const m = v.m, blade = v.h && v.h.blade;
+    if (!m || !blade || !ribHero.hot || !(k > k0) || k0 < RIB_K0 || k > RIB_K1) return;
+    if (window.__m && window.__balOff) return; 
+    
+    
+    const kkA = coupPortee(k0), kkB = coupPortee(k), dir = kkB > kkA ? 1 : -1;
+    if (Math.abs(kkB - kkA) < 0.2) return;
+    if (!m.balOs) {
+      poseBrasHero(m, 'frappe', v.root.rotation.y, now, kkA); 
+      const b = m.brasHero || [];
+      m.balOs = [modelBone(m, /^spine_01$/i), b[0] && b[0].up, b[0] && b[0].lo, b[1] && b[1].up, b[1] && b[1].lo];
     }
-    paintRibbon(rib, colr, rib.a);
+    const os = m.balOs, sg = P.atk.idx === 1 ? -1 : 1, ry = v.root.rotation.y;
+    for (let i = 0; i < os.length; i++) if (os[i]) BAL_Q[i].copy(os[i].quaternion);
+    const px = v.root.position.x, pz = v.root.position.z, py = hSol(P.x, P.y) + 1.25;
+    let kkj = kkA;
+    for (let j = 0; j < 9; j++) {
+      kkj += dir * (Math.abs(kkj) < 0.45 ? 0.13 : 0.3);
+      if ((kkB - kkj) * dir < 0.07) break;
+      
+      const km = clamp(0.18 + 0.24 * Math.sqrt(Math.max(0, (kkj + 0.9) / 2.55)), k0, k), kkm = kkj * sg, fk = (km - k0) / (k - k0);
+      for (let i = 0; i < os.length; i++) if (os[i]) os[i].quaternion.copy(BAL_Q[i]);
+      poserBuste(m, km, ry); poseBrasHero(m, 'frappe', ry, now, kkm);
+      bladeTip(blade, RIB_TIP); bladeBase(blade, RIB_BASE);
+      
+      const a = kkm * 0.16, ca = Math.cos(a), sa = Math.sin(a);
+      let dx = RIB_TIP.x - px, dz = RIB_TIP.z - pz; RIB_TIP.x = px + dx * ca + dz * sa; RIB_TIP.z = pz - dx * sa + dz * ca;
+      dx = RIB_BASE.x - px; dz = RIB_BASE.z - pz; RIB_BASE.x = px + dx * ca + dz * sa; RIB_BASE.z = pz - dx * sa + dz * ca;
+      ribPush(ribHero, RIB_TIP, RIB_BASE, px, py, pz, t0 + (now - t0) * fk);
+    }
+    for (let i = 0; i < os.length; i++) if (os[i]) os[i].quaternion.copy(BAL_Q[i]);
   }
   function updateTrails(dt) {
-    const emit = !P.dead && (P.atk.ph === 'swing' || (P.dodge && P.dodge.t > 0) || !!P.dash);
-    feedRibbon(ribHero, emit, heroTip(RIB_TIP), lameCouleur(), dt);
-    if (window.__m) window.__lame = { x: +RIB_TIP.x.toFixed(3), y: +RIB_TIP.y.toFixed(3), z: +RIB_TIP.z.toFixed(3), col: lameCouleur(), emit: !!emit };
+    
+    
+    const A = P.atk, ka = A.ph === 'swing' ? A.t / (A.dur || 0.36) : -1;
+    const emit = !P.dead && ka >= RIB_K0 && ka <= RIB_K1;
+    const hv = ensurePlayer();
+    heroTip(RIB_TIP, RIB_BASE);
+    feedRibbon(ribHero, emit, RIB_TIP, RIB_BASE, hv.root.position.x, hSol(P.x, P.y) + 1.25, hv.root.position.z, lameCouleur(), G.t);
+    if (window.__m && window.__trDbg) { const L = []; for (let q = 0; q < ribHero.n; q++) { const i = (ribHero.head - ribHero.n + q + RIB_ECH) % RIB_ECH; L.push([+(ribHero.tip[i].x).toFixed(2), +(ribHero.tip[i].y).toFixed(2), +(ribHero.tip[i].z).toFixed(2), +(G.t - ribHero.ts[i]).toFixed(3), +ribHero.vf[i].toFixed(2)]); } window.__trail = L; }
+    if (window.__m) window.__lame = { x: +RIB_TIP.x.toFixed(3), y: +RIB_TIP.y.toFixed(3), z: +RIB_TIP.z.toFixed(3), col: lameCouleur(), emit: !!emit, n: ribHero.n, vu: ribHero.mesh.visible };
     let foe = null, bd = (8 * M) * (8 * M), blade = null;
     if (fxRich()) {
       for (const e of G.enemies) {
@@ -26534,8 +26645,8 @@ function R3init(T) {
         bd = d2; foe = e; blade = b;
       }
     }
-    if (foe) feedRibbon(ribFoe, true, bladeTip(blade, RIB_TIP), '#e7eef4', dt);
-    else feedRibbon(ribFoe, false, RIB_TIP, '#e7eef4', dt);
+    if (foe) { bladeTip(blade, RIB_TIP); bladeBase(blade, RIB_BASE); feedRibbon(ribFoe, true, RIB_TIP, RIB_BASE, W(foe.x), hSol(foe.x, foe.y) + 1.25, W(foe.y), '#e7eef4', G.t); }
+    else feedRibbon(ribFoe, false, RIB_TIP, RIB_BASE, 0, 0, 0, '#e7eef4', G.t);
   }
   function beam(x1, y1, h1, x2, y2, h2, w, colr, a) {
     const m = beamP.get(); V1.set(W(x1), h1, W(y1)); V2.set(W(x2), h2, W(y2));
@@ -26705,10 +26816,12 @@ function R3init(T) {
         case 'tscene': techScene3D(f, k, rich); break;
         case 'slash': {
           if (arcI < ribArc.length) {
-            const rr = W(f.r) * (0.7 + 0.3 * k);
-            const half = f.half * (0.42 + 0.58 * k);
-            const aSlash = Math.pow(1 - k, 0.55) * (rich ? 1 : 0.62);
-            showArc(ribArc[arcI++], W(f.x), W(f.y), f.ang || 0, rr, half, f.color, aSlash, 0.85);
+            
+            const e = 1 - (1 - k) * (1 - k);
+            const rr = W(f.r) * (0.62 + 0.38 * e);
+            const half = f.half * (0.7 + 0.3 * e);
+            const aSlash = Math.pow(1 - k, 0.6) * (rich ? 1 : 0.62);
+            showArc(ribArc[arcI++], W(f.x), W(f.y), f.ang || 0, rr, half, f.color, aSlash, 0.95, k, f.sens || 0);
           }
           
           
