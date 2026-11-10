@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="13a7db27db65">
+<meta name="murim-build" content="9c98fc3dc7ef">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -151,7 +151,10 @@ html[data-cb="tritan"] #cv, html[data-cb="tritan"] #cv3, html[data-cb="tritan"] 
 #joy { position: absolute; left: 0; bottom: 0; width: 46%; height: 62%; touch-action: none; }
 #joy-base { position: absolute; width: calc(var(--u) * 2.1); height: calc(var(--u) * 2.1); border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.04), rgba(255,255,255,.1)); box-shadow: 0 0 0 1.5px rgba(217,180,94,.35); left: calc(var(--sal) + 6vmin); bottom: calc(var(--sab) + 7vmin); opacity: .55; transition: opacity .2s; }
 #joy-knob { position: absolute; left: 50%; top: 50%; width: 42%; height: 42%; margin: -21% 0 0 -21%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #f1e9d6, #9a8a6a); box-shadow: 0 2px 8px rgba(0,0,0,.6); }
-#joy.active #joy-base { opacity: 1; }
+#joy.active #joy-base { opacity: 1; box-shadow: 0 0 0 1.5px rgba(217,180,94,.62), inset 0 0 calc(var(--u) * .3) rgba(217,180,94,.14); }
+#joy.active #joy-knob { box-shadow: 0 2px 10px rgba(0,0,0,.65), 0 0 0 2px rgba(241,233,214,.3); }
+/* Pouce levé : le bouton revient au centre en glissant. Pouce posé : il suit le doigt sans retard. */
+#joy:not(.active) #joy-knob { transition: transform .12s cubic-bezier(.2,.8,.2,1); }
 .no-touch #joy { display: none; }
 
 /* actions */
@@ -2337,7 +2340,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="13a7db27db65" aria-label="Identifiant de version">Version générée : 13a7db27db65</div>
+      <div class="meta" id="t-build" data-build="9c98fc3dc7ef" aria-label="Identifiant de version">Version générée : 9c98fc3dc7ef</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -30271,7 +30274,7 @@ function lockPageScroll() {
 const KEYS = new Set();
 function setupInput() {
   const joy = $('#joy'), base = $('#joy-base'), knob = $('#joy-knob');
-  let jid = null, jx = 0, jy = 0;
+  let jid = null, jx = 0, jy = 0, jr = null;
   
   const defPos = () => {
     joy.classList.remove('active');
@@ -30283,7 +30286,7 @@ function setupInput() {
     if (jid !== null) return; e.preventDefault(); initAudio();
     jid = e.pointerId; try { joy.setPointerCapture(jid); } catch (_) { }
     const r = joy.getBoundingClientRect(); const bs = base.offsetWidth;
-    jx = e.clientX; jy = e.clientY;
+    jx = e.clientX; jy = e.clientY; jr = r;
     base.style.left = (e.clientX - r.left - bs / 2) + 'px'; base.style.top = (e.clientY - r.top - bs / 2) + 'px'; base.style.bottom = 'auto';
     joy.classList.add('active');
   });
@@ -30296,6 +30299,12 @@ function setupInput() {
     
     const norm = Math.max(Math.min(l, R), 0.001);
     UI.joyX = l ? dx / norm * k : 0; UI.joyY = l ? dy / norm * k : 0;
+    
+    
+    if (l > R) {
+      const g = (l - R) / l; jx += (e.clientX - jx) * g; jy += (e.clientY - jy) * g;
+      if (jr) { const bs = base.offsetWidth; base.style.left = (jx - jr.left - bs / 2) + 'px'; base.style.top = (jy - jr.top - bs / 2) + 'px'; }
+    }
   });
   const jend = (e) => {
     if (e && e.pointerId != null && jid !== null && e.pointerId !== jid) return;
