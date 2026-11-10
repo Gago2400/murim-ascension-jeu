@@ -2321,7 +2321,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="aa5670808898" aria-label="Identifiant de version">Version générée : aa5670808898</div>
+      <div class="meta" id="t-build" data-build="fc530c925ee8" aria-label="Identifiant de version">Version générée : fc530c925ee8</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -16488,7 +16488,44 @@ function R3init(T) {
         s.closePath();
         g = new T.ExtrudeGeometry(s, { depth: 1, bevelEnabled: false }).translate(0, 0, -0.5); break;
       }
-      case 'pinCone': g = new T.ConeGeometry(1, 1.2, 9); g.translate(0, 0.6, 0); break; 
+      
+      
+      
+      case 'buisson': {
+        const lobes = [[0, 0.3, 0, 0.5, 0.42, 1], [0.36, 0.24, 0.14, 0.34, 0.3, 1.1], [-0.3, 0.22, -0.2, 0.36, 0.3, 0.86], [-0.06, 0.52, 0.1, 0.3, 0.27, 1.16]];
+        const pos = [], nor = [], colr = [], idx = [];
+        lobes.forEach((L, k) => {
+          const sg = new T.SphereGeometry(1, 14, 9), p = sg.attributes.position, c = Math.cos(k * 1.9), si = Math.sin(k * 1.9), b0 = pos.length / 3;
+          for (let i = 0; i < p.count; i++) {
+            const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+            const f = 1 + Math.sin(x * 3.1 + 0.7) * Math.cos(z * 2.7 - 0.3) * Math.sin(y * 2.2 + 0.5) * 0.2 + Math.cos(x * 5.2 + z * 4.1) * 0.05;
+            p.setXYZ(i, (x * c + z * si) * f * L[3], y * f * L[4], (z * c - x * si) * f * L[3]);
+          }
+          sg.computeVertexNormals();
+          const n = sg.attributes.normal;
+          for (let i = 0; i < p.count; i++) { pos.push(p.getX(i) + L[0], p.getY(i) + L[1], p.getZ(i) + L[2]); nor.push(n.getX(i), n.getY(i), n.getZ(i)); colr.push(L[5], L[5], L[5]); }
+          for (let i = 0; i < sg.index.count; i++) idx.push(sg.index.getX(i) + b0);
+          sg.dispose();
+        });
+        g = new T.BufferGeometry();
+        g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
+        g.setAttribute('color', new T.Float32BufferAttribute(colr, 3)); g.setIndex(idx);
+        break;
+      }
+      
+      case 'pinEtage': {
+        g = new T.ConeGeometry(1, 1.2, 20, 2); g.translate(0, 0.6, 0);
+        const p = g.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+          const x = p.getX(i), y = p.getY(i), z = p.getZ(i), r = Math.hypot(x, z);
+          if (r < 1e-4) continue;
+          const a = Math.atan2(z, x), bas = 1 - y / 1.2;
+          const k = 1 + Math.sin(a * 5 + 0.6) * 0.1 * bas;
+          p.setXYZ(i, x * k, y - Math.max(0, Math.sin(a * 5 + 0.6)) * 0.1 * bas * bas, z * k);
+        }
+        g.computeVertexNormals();
+        break;
+      }
       case 'toit': { 
         const HW = 2.88, HD = 1.88, rise = 1.42, nx = 14, nz = 8;
         const hAt = (x, z) => {
@@ -16810,8 +16847,8 @@ function R3init(T) {
     if (sc.dungeon === 'grotte' || id === 'grotte') return ['dalles', 2];
     if (sc.type === 'dungeon' || sc.type === 'arena') return ['pierre', 6];
     if (pal.paved || id === 'domaine') return ['dalles', 2];
-    if (id === 'desert') return ['terre', 1];
-    if (id === 'abysses') return ['pierre', 2];
+    
+    if (id === 'desert' || id === 'abysses') return ['terre', 1];
     return ['herbe', 0];
   }
   function groundMaterial(sc, map) {
@@ -18362,7 +18399,7 @@ function R3init(T) {
     if (d.type === 'statue_dragon' && P.tete_dragon) return ['tete_dragon', echelleHeros('statue_dragon')]; 
     
     if (d.type === 'bambou' && P.bambou_a) return d.v > 0.5 && P.bambou_b ? ['bambou_b', 0.17] : ['bambou_a', 0.21];
-    if (d.type === 'rocher_mousse' && P.rocher_mousse) return ['rocher_mousse', 0.95];
+    if (d.type === 'rocher_mousse' && P.rocher_mousse) return variantesRoche() ? null : ['rocher_mousse', 0.95]; 
     if (d.type === 'falaise' && P.falaise_a) return d.v < 0.4 ? ['falaise_a', 0.55] : d.v < 0.75 && P.falaise_b ? ['falaise_b', 0.6] : ['falaise_c', 0.8];
     if (d.type === 'mannequin' && P.mannequin) return ['mannequin', 0.85];
     if (d.type === 'lingots' && P.lingots) return ['lingots', 0.16];
@@ -18378,48 +18415,74 @@ function R3init(T) {
   
   
   
-  
   const ROC_MOUSSE = { ok: false, geos: [], mat: null, sec: null };
+  
+  const REPLI_C = {
+    domaine: ['#5f9c84', '#74ac94', '#8cbca4'], desert: ['#5c6234', '#6c7040', '#7c7e4c'],
+    abysses: ['#3c2c50', '#4a3862', '#584474'], marecages: ['#2e4a34', '#3a583e', '#466648'],
+  };
+  const BUISSON_C = {
+    qinghe: '#335a28', longwan: '#46582a', meishan: '#33503c', vallee: '#3c6230', plaines: '#45602a', col: '#34483a', foret: '#22382a',
+    desert: '#525a2a', montagnes: '#34503e', marecages: '#58703e', citadelle: '#33503e', abysses: '#5a3c72', domaine: '#6fa488',
+  };
   function variantesRoche() {
     if (ROC_MOUSSE.ok) return true;
     const parts = ASIE.parts && ASIE.parts.rocher_mousse;
     if (!parts || !parts[0] || !parts[0].geo || !parts[0].geo.attributes.normal) return false;
     const src = parts[0];
-    ROC_MOUSSE.mat = src.mat;
-    const sec = src.mat.clone();
     const srcCompile = src.mat.onBeforeCompile, srcCle = src.mat.customProgramCacheKey;
     
-    sec.onBeforeCompile = (sh) => {
-      if (srcCompile) srcCompile(sh);
-      sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n'
-        + 'float ecart = diffuseColor.r - diffuseColor.g;\n'
-        + 'float secM = 1.0 - smoothstep(0.006, 0.022, ecart);\n'
-        + 'diffuseColor.g *= mix(1.0, 0.72, secM);\n');
+    
+    
+    const copie = (secM) => {
+      const m = src.mat.clone();
+      m.onBeforeCompile = (sh) => {
+        if (srcCompile) srcCompile(sh);
+        sh.fragmentShader = sh.fragmentShader.replace('vOccW.y - uHero.y > 0.28', 'vOccW.y - uHero.y > 1.0');
+        if (secM) sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n'
+          + 'float ecart = diffuseColor.r - diffuseColor.g;\n'
+          + 'float secM = 1.0 - smoothstep(0.006, 0.022, ecart);\n'
+          + 'diffuseColor.g *= mix(1.0, 0.72, secM);\n');
+      };
+      m.customProgramCacheKey = () => (srcCle ? srcCle() : 'occultation') + (secM ? '-sec' : '-roc');
+      m.userData.keep = true;
+      return m;
     };
-    sec.customProgramCacheKey = () => (srcCle ? srcCle() : 'occultation') + '-sec';
-    sec.userData.keep = true;
-    ROC_MOUSSE.sec = sec;
+    ROC_MOUSSE.mat = copie(false);
+    ROC_MOUSSE.sec = copie(true);
+    
+    
+    
     const graines = [1.7, 4.2, 7.9, 11.3];
-    const elargi = [1.0, 1.06, 1.1, 1.04];
-    const aplati = [1.0, 0.97, 0.94, 0.98];
-    const amp = [0.05, 0.09, 0.12, 0.07];
-    const n = new T.Vector3(), v = new T.Vector3();
+    const elargi = [1.0, 1.1, 1.16, 0.94];
+    const aplati = [1.0, 0.86, 0.74, 1.12];
+    const rond = [0.8, 0.72, 0.76, 0.68];
+    const n = new T.Vector3(), v = new T.Vector3(), nE = new T.Vector3();
+    src.geo.computeBoundingBox();
+    const b0 = src.geo.boundingBox, c0 = b0.getCenter(new T.Vector3());
+    const hx = (b0.max.x - b0.min.x) / 2 || 1, hy = (b0.max.y - b0.min.y) / 2 || 1, hz = (b0.max.z - b0.min.z) / 2 || 1;
     for (let k = 0; k < 4; k++) {
-      const g = src.geo.clone();
+      const g = src.geo.clone(), gr = graines[k];
       const pos = g.attributes.position, nr = g.attributes.normal;
       for (let i = 0; i < pos.count; i++) {
-        v.fromBufferAttribute(pos, i);
+        v.fromBufferAttribute(pos, i).sub(c0);
         n.fromBufferAttribute(nr, i);
-        const b1 = v3(v.x * 0.9 + graines[k], v.y * 0.75 + graines[k] * 0.37, v.z * 0.9) - 0.5;
-        const b2 = v3(v.x * 1.7 + 2.1, v.y * 1.4 + graines[k], v.z * 1.7) - 0.5;
-        v.addScaledVector(n, b1 * amp[k] + b2 * amp[k] * 0.35);
+        const ux = v.x / hx, uy = v.y / hy, uz = v.z / hz;
+        const L = Math.hypot(ux, uy, uz) || 1;
+        const dx = ux / L, dy = uy / L, dz = uz / L;
+        const bosse = 0.94 + (v3(dx * 1.5 + gr, dy * 1.5 + gr * 0.37, dz * 1.5) - 0.5) * 0.52 + (v3(dx * 3.6 + 2.1, dy * 3.6 + gr, dz * 3.6) - 0.5) * 0.18;
+        const e = bosse / Math.max(L, 0.3), t = rond[k];
+        v.multiplyScalar(1 - t + t * e);
+        nE.set(dx / hx, dy / hy, dz / hz).normalize();
+        n.lerp(nE, t * 0.85).normalize();
         v.x *= elargi[k]; v.z *= elargi[k]; v.y *= aplati[k];
-        pos.setXYZ(i, v.x, v.y, v.z);
+        v.add(c0);
+        pos.setXYZ(i, v.x, v.y, v.z); nr.setXYZ(i, n.x, n.y, n.z);
       }
-      pos.needsUpdate = true;
+      pos.needsUpdate = true; nr.needsUpdate = true;
       g.computeBoundingBox();
       const bb = g.boundingBox, h = Math.max(0.2, bb.max.y - bb.min.y);
-      g.translate(0, -bb.min.y - h * 0.08, 0);
+      g.translate(0, -bb.min.y - h * 0.2, 0);
       g.computeBoundingBox(); g.computeBoundingSphere(); g.userData.keep = true;
       ROC_MOUSSE.geos.push(g);
     }
@@ -18556,6 +18619,21 @@ function R3init(T) {
       if (!oasisMat.userData.posed) { mesh.userData.ownMat = true; oasisMat.userData.posed = 1; }
       root.add(mesh);
     }
+    
+    
+    
+    function pinRepli(kp, neige) {
+      const cp = neige || REPLI_C[id] || ['#1e3a24', '#264a2e', '#30583a'];
+      paint = 'wood';
+      put('cyl', 't', id === 'domaine' ? '#cdbfa6' : '#3a2a1c', 0, 0.65 * kp, 0, 0.13 * kp, 1.3 * kp, 0.13 * kp);
+      marqueArbre = true; paint = 'houppe';
+      for (let i = 0; i < 4; i++) {
+        const e = (1.05 - i * 0.18) * kp;
+        put('pinEtage', 't', cp[i % 3], 0, (0.85 + i * 0.52) * kp, 0, e, e, e, 0, i * 0.7, 0);
+      }
+      if (neige) put('pinEtage', 't', '#eef3f8', 0, 2.95 * kp, 0, 0.28 * kp, 0.28 * kp, 0.28 * kp);
+      marqueArbre = false; paint = '';
+    }
     function poserTouffes(baseCol, spots, seed) {
       const cols = [baseCol, shade(baseCol, 0.14), shade(baseCol, -0.1), shade(baseCol, 0.24), shade(baseCol, 0.06)];
       paint = 'houppe';
@@ -18571,6 +18649,7 @@ function R3init(T) {
       if (b.surf === 'arete') return areteMat();
       if (b.surf === 'houppe') return matFeuillage(false);
       if (b.surf === 'canopy') return matFeuillage(true);
+      if (b.surf === 'buisson') return matFeuillage(true); 
       if (b.surf && SURF[b.surf]) return surfacedToon(b.surf);
       return whiteToon;
     }
@@ -18924,33 +19003,27 @@ function R3init(T) {
         }
         case 'pine': {
           const snow = id === 'meishan' || id === 'montagnes';
-          const c = snow ? ['#1f3a30', '#28463a', '#33554a'] : ['#1e3a24', '#264a2e', '#30583a'];
           
           if (arbreVrai(id, 'pine', d.v, X, hSol(d.x, d.y), Z, d.v * TAU, s)) { if (window.__m) window.__pins = (window.__pins || 0) + 1; break; }
           if (window.__m) window.__cones = (window.__cones || 0) + 1;
-          const kp = [0.9, 1, 1.12][Math.floor(d.v * 3) % 3];
-          paint = 'wood';
-          uni('cyl', 't', '#3a2a1c', 0, 0.65 * kp, 0, 0.13 * kp, 1.3 * kp, 0.13 * kp);
-          marqueArbre = true;
-          for (let i = 0; i < 4; i++) {
-            const sc = (1.05 - i * 0.18) * kp;
-            put('pinCone', 't', c[i % 3], 0, (0.85 + i * 0.52) * kp, 0, sc, sc, sc);
-          }
-          marqueArbre = false;
-          if (snow) put('pinCone', 't', '#eef3f8', 0, 2.95 * kp, 0, 0.28 * kp, 0.28 * kp, 0.28 * kp);
+          pinRepli([0.9, 1, 1.12][Math.floor(d.v * 3) % 3], snow ? ['#1f3a30', '#28463a', '#33554a'] : null);
           break;
         }
-        case 'bush':
-          if (DM) {
-            dput('buisson', '', shade(pal.g2, -0.22), 0.9 + d.v * 0.25);
-            if (d.route && d.v > 0.62 && pal.mood !== 'corrompu') {
-              paint = '';
-              const cols = ['#e6c85a', '#d24a42', '#f4f0e4', '#6a9a40'];
-              for (let k = 0; k < 3; k++) put('sph', 't', cols[(k + (d.v * 8 | 0)) % 4], (k - 1) * 0.28, 0.14, 0.4, 0.09, 0.12, 0.09, 0, 0, 0, false);
-            }
-            break;
+        case 'bush': {
+          
+          
+          
+          
+          const kb = 0.9 + d.v * 0.25;
+          paint = 'buisson';
+          put('buisson', 't', shade(BUISSON_C[id] || '#2f5226', (d.v - 0.5) * 0.14), 0, 0, 0, kb, kb, kb);
+          if (d.route && d.v > 0.62 && pal.mood !== 'corrompu') {
+            paint = '';
+            const cols = ['#e6c85a', '#d24a42', '#f4f0e4', '#6a9a40'];
+            for (let k = 0; k < 3; k++) put('sph', 't', cols[(k + (d.v * 8 | 0)) % 4], (k - 1) * 0.26 * kb, (0.56 - Math.abs(k - 1) * 0.14) * kb, 0.36 * kb, 0.07, 0.07, 0.07, 0, 0, 0, false);
           }
-          paint = 'leaf'; put('touffe', 't', shade(pal.g2, -0.15), 0, 0.35, 0, 0.6, 0.45, 0.6); put('touffe', 't', shade(pal.g2, -0.05), 0.3, 0.5, 0.15, 0.38, 0.32, 0.38, 0.6); break;
+          break;
+        }
         case 'rock': case 'boulder': {
           poserRocher(d.x, d.y, d.v || 0, d.type === 'boulder' ? 1.02 : 0.62);
           break;
@@ -19650,7 +19723,7 @@ function R3init(T) {
         
         case 'statue_dragon': paint = 'stone'; put('box', 't', '#6c6a66', 0, 0.4, 0, 1.2, 0.8, 2.4); put('cyl', 't', '#3a6a4a', 0, 2.0, 0, 0.35, 2.4, 0.35); break;
         case 'bambou': paint = 'wood'; for (let i = 0; i < 5; i++) put('cyl', 't', '#6a8a3a', Math.cos(i * 1.3) * 0.5, 3.5, Math.sin(i * 1.3) * 0.5, 0.07, 7, 0.07); paint = 'leaf'; put('ico', 't', '#5a8a3a', 0, 6.2, 0, 1.6, 1.8, 1.6); break;
-        case 'rocher_mousse': paint = 'stone'; put('dode', 't', '#6a7a5a', 0, 0.5, 0, 1.3, 0.8, 0.9, 0.2, 0.5, 0); break;
+        case 'rocher_mousse': if (AM && variantesRoche()) { poserRocher(d.x, d.y, d.v || 0, 0.95); break; } paint = 'stone'; put('dode', 't', '#6a7a5a', 0, 0.5, 0, 1.3, 0.8, 0.9, 0.2, 0.5, 0); break;
         case 'falaise': paint = 'stone'; put('dode', 't', '#7a766e', 0, 3.5, 0, 5, 7, 4, 0.1, 0.3, 0); put('dode', 't', '#6a665e', 2.5, 2, 1.5, 3, 4, 3, 0.4, 0, 0.2); break;
         case 'table_the': paint = 'wood'; put('box', 't', '#6a4a30', 0, 0.45, 0, 1.0, 0.08, 0.7); for (const sx of [-1, 1]) for (const sz of [-1, 1]) put('cyl', 't', '#3a2418', sx * 0.40, 0.21, sz * 0.26, 0.09, 0.42, 0.09); break;
         case 'mannequin': paint = 'wood'; put('cyl', 't', '#7a5434', 0, 0.9, 0, 0.16, 1.8, 0.16); for (const y of [1.2, 1.45]) put('cyl', 't', '#6a4a2c', 0.25, y, 0, 0.03, 0.5, 0.03, 0, 0, Math.PI / 2); break;
@@ -20023,8 +20096,7 @@ function R3init(T) {
         at(x, y, a);
         if (i % 2 === 0) {
           if (!arbreVrai(id, 'tree', 0.4 + i * 0.05, W(x), 0, W(y), a, 0.85)) {
-            paint = 'wood'; put('cyl', 't', '#4a3424', 0, 0.4, 0, 0.1, 0.8, 0.1);
-            paint = 'leaf'; put('cone', 't', shade(pal.g2, -0.08), 0, 1.35, 0, 0.7, 1.3, 0.7);
+            pinRepli(0.68);
           }
         } else {
           paint = 'wood'; put('box', 't', '#6a4a30', 0, 0.38, 0, 1.35, 0.72, 0.52);
@@ -20041,7 +20113,7 @@ function R3init(T) {
         if (!horsArbre(x, y)) continue;
         at(x, y, a);
         if (arbreVrai(id, 'pine', 0.45 + i * 0.08, W(x), 0, W(y), a, 0.9)) {   }
-        else { paint = 'wood'; put('cyl', 't', '#3a2a1c', 0, 0.4, 0, 0.1, 0.8, 0.1); paint = ''; put('cone', 't', '#2a5234', 0, 1.5, 0, 0.7, 1.6, 0.7); }
+        else pinRepli(0.8);
       }
       
       if (!sc.bourg) for (let i = 0; i < 18; i++) {
@@ -20107,8 +20179,8 @@ function R3init(T) {
         const h = Math.min(4.2, 3.1 + (i % 3) * 0.55);
         if (i % 4 === 2) { poserRocher(x, y, 0.35 + (i % 5) * 0.1, 0.7); continue; }
         if (arbreVrai(id, i % 3 === 0 ? 'tree' : 'pine', 0.35 + (i % 5) * 0.1, W(x), 0, W(y), a, 1, h)) continue;
-        if (i % 3 === 0 && DM && GEO['d:arbre_rond:feuillage']) dput('arbre_rond', '#3a2a1c', '#3a6234', h, a);
-        else { paint = 'wood'; put('cyl', 't', '#3a2a1c', 0, 0.55, 0, 0.16, 1.1, 0.16); paint = ''; put('cone', 't', '#24462c', 0, 2.1, 0, 1.15, 2.4, 1.15); }
+        if (i % 3 === 0 && DM && GEO['d:arbre_rond:feuillage']) dput('arbre_rond', '#3a2a1c', REPLI_C[id] ? REPLI_C[id][1] : '#3a6234', h, a);
+        else pinRepli(1.1);
       }
       
       if (sc.bourg) at(sc.safe.x + 335, sc.safe.y - 140, Math.PI / 2); else at(sc.safe.x + 390, sc.safe.y, Math.PI / 2); 
@@ -20162,8 +20234,8 @@ function R3init(T) {
         if (surVoie(t.x, t.y)) continue;
         const kind = t.i % 2 ? 'pine' : 'tree';
         if (arbreVrai(id, kind, 0.25 + (t.i % 4) * 0.12, W(t.x), hSol(t.x, t.y), W(t.y), t.a, kind === 'pine' ? 1 : 0.62, kind === 'pine' ? 2.6 : 0)) {   }
-        else if (kind !== 'pine' && DM && GEO['d:arbre_rond:feuillage']) dput('arbre_rond', '#3a2a1c', '#3a6234', 2.1, t.a);
-        else { paint = ''; put('cone', 't', '#24462c', 0, 1.1, 0, 0.65, 1.7, 0.65); }
+        else if (kind !== 'pine' && DM && GEO['d:arbre_rond:feuillage']) dput('arbre_rond', '#3a2a1c', REPLI_C[id] ? REPLI_C[id][1] : '#3a6234', 2.1, t.a);
+        else pinRepli(0.65);
       }
       if (id === 'qinghe' || id === 'plaines' || id === 'vallee') {
         pose(bassin[0], bassin[1], 0.2);
