@@ -2321,7 +2321,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="13df1d459fd2" aria-label="Identifiant de version">Version générée : 13df1d459fd2</div>
+      <div class="meta" id="t-build" data-build="aa5670808898" aria-label="Identifiant de version">Version générée : aa5670808898</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -19712,7 +19712,7 @@ function R3init(T) {
           const w = W(d.w), dd = W(d.h), riz = d.type === 'champ' && d.v > 0.5;
           
           
-          if (d.terrasse) {
+          if (d.terrasse || riz) { 
             
             
             
@@ -19733,7 +19733,8 @@ function R3init(T) {
               const f = hsh(k), f2 = hsh(k + 17), f3 = hsh(k + 31);
               const rx = 0.68 + f * 0.42, rz = 0.52 + f2 * 0.36, h = 0.24 + f3 * 0.12;
               const ox = (f - 0.5) * 0.42, oz = (f2 - 0.5) * 0.36;
-              put('hemiL', 't', terres[k % 5], x + ox, 0, z + oz, rx, h, rz, 0, f * 2.4, 0, false);
+              if (d.terrasse) put('hemiL', 't', terres[k % 5], x + ox, 0, z + oz, rx, h, rz, 0, f * 2.4, 0, false);
+              else put('hemi', 't', terres[k % 5], x + ox, 0, z + oz, rx, h, rz, 0, f * 2.4, 0, false); 
               put('tuft', 't', verts[k % 4], x + ox * 0.2, h * 0.95, z + oz * 0.2, 1.15, 0.42 + f * 0.14, 1.15, 0, k * 0.73, 0, false);
               put('tuft', 't', verts[(k + 2) % 4], x + ox * 0.55 + 0.1, h * 0.82, z + oz * 0.2 - 0.08, 0.95, 0.36, 0.95, 0, k * 1.1, 0, false);
             };
@@ -19752,12 +19753,12 @@ function R3init(T) {
             digueLigne(x0, z0 + ed, x0 + ew, z0 + ed, 11);
             digueLigne(x0, z0, x0, z0 + ed, 21);
             digueLigne(x0 + ew, z0, x0 + ew, z0 + ed, 31);
-            digueLigne(x0 + 0.5, 0, x0 + ew - 0.5, 0, 41);
+            if (d.terrasse) digueLigne(x0 + 0.5, 0, x0 + ew - 0.5, 0, 41);
             const rows = Math.max(7, Math.floor((ed - 1.2) / 0.58));
             const cols = Math.max(12, Math.floor((ew - 1.2) / 0.5));
             for (let r = 0; r < rows; r++) {
               const z = -ed / 2 + 0.62 + (r + 0.5) * (ed - 1.24) / rows;
-              if (Math.abs(z) < 0.46) continue;
+              if (d.terrasse && Math.abs(z) < 0.46) continue;
               for (let c = 0; c < cols; c++) {
                 const x = -ew / 2 + 0.58 + (c + 0.5) * (ew - 1.16) / cols;
                 const f = hsh(r * 29 + c * 7);
@@ -19778,7 +19779,7 @@ function R3init(T) {
           const terresP = ['#6a5844', '#7a6854', '#5a4836', '#8a7660', '#6e5c48'];
           const vertsP = ['#3a8a28', '#4a9e32', '#2f7a22', '#56a838'];
           paint = '';
-          put('quad', 't', riz ? '#2a3224' : '#5a4838', 0, 0.02, 0, w * 0.5, 1, dd * 0.5, 0, 0, 0, false);
+          put('quad', 't', '#5a4838', 0, 0.02, 0, w * 0.5, 1, dd * 0.5, 0, 0, 0, false);
           const berm = (x, z, k) => {
             const f = hshP(k), f2 = hshP(k + 9);
             put('hemiL', 't', terresP[k % 5], x + (f - 0.5) * 0.16, 0, z + (f2 - 0.5) * 0.1, 0.42 + f * 0.18, 0.12 + f2 * 0.05, 0.28 + f * 0.1, 0, f * 2.1, 0, false);
@@ -19787,15 +19788,12 @@ function R3init(T) {
           const cols = Math.max(4, Math.min(16, Math.floor((w - 0.5) / (d.type === 'champ' ? 0.48 : 0.36))));
           for (let r = 0; r < rows; r++) {
             const z = -dd / 2 + 0.28 + (r + 0.5) * (dd - 0.56) / rows;
-            if (!riz) {
-              const nB = Math.max(3, Math.round((w - 0.5) / 0.48));
-              for (let i = 0; i <= nB; i++) berm(-w / 2 + 0.28 + i * (w - 0.56) / nB, z, r * 17 + i);
-            }
+            const nB = Math.max(3, Math.round((w - 0.5) / 0.48));
+            for (let i = 0; i <= nB; i++) berm(-w / 2 + 0.28 + i * (w - 0.56) / nB, z, r * 17 + i);
             for (let c = 0; c < cols; c++) {
               const x = -w / 2 + 0.28 + (c + 0.5) * (w - 0.56) / cols;
               const f = hshP(r * 29 + c * 7);
-              if (riz) put('tuft', 't', vertsP[(r + c) % 4], x + (f - 0.5) * 0.05, 0.03, z, 1.05, 0.55 + f * 0.14, 1.05, 0, (r * 5 + c) * 0.41, 0, false);
-              else if ((r + Math.floor((d.v || 0) * 10) + c) % 4 === 0) put('sph', 't', '#7aa04a', x, 0.22 + f * 0.06, z, 0.12, 0.1, 0.12, 0, 0, 0, false);
+              if ((r + Math.floor((d.v || 0) * 10) + c) % 4 === 0) put('sph', 't', '#7aa04a', x, 0.22 + f * 0.06, z, 0.12, 0.1, 0.12, 0, 0, 0, false);
               else put('tuft', 't', vertsP[(r + c) % 4], x + (f - 0.5) * 0.04, 0.02, z, 0.85, 0.38 + f * 0.1, 0.85, 0, (r * 3 + c) * 0.6, 0, false);
             }
           }
