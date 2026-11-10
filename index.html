@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="a50005d509d9">
+<meta name="murim-build" content="a78f0be4d097">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2337,7 +2337,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="a50005d509d9" aria-label="Identifiant de version">Version générée : a50005d509d9</div>
+      <div class="meta" id="t-build" data-build="a78f0be4d097" aria-label="Identifiant de version">Version générée : a78f0be4d097</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -34798,23 +34798,27 @@ function storySuiteChoix(id) {
 
 
 
+
 function storyFilCoupe(fil, liens) {
-  if ((fil !== 'tour:fil' && fil !== 'forge:fil') || !liens || !S || !S.story) return null;
-  const clef = fil === 'tour:fil' ? 'ch5:destin' : 'ch6:forge';
+  const clefs = {
+    'tour:fil': 'ch5:destin', 'forge:fil': 'ch6:forge',
+    'nexus:fil': 'ch7:graine', 'tang:fil': 'ch8:tang', 'voile:fil': 'ch9:voile',
+    'coeur:fil': 'ch10:front', 'ascension:fil': 'ch11:monde',
+  };
+  const clef = clefs[fil];
+  if (!clef || !liens || !S || !S.story) return null;
   if (S.voie && S.voie.choix && S.voie.choix[clef]) return null;
-  
-  
-  
-  const apres = fil === 'tour:fil' ? 'q_tour' : 'q_forge';
+  const dest = Object.values(liens);
+  let premiere = null;
+  for (const src in liens) if (dest.indexOf(src) < 0) { premiere = src; break; }
   let faite = false;
-  if (typeof MAIN_QUESTS !== 'undefined') {
+  if (premiere && typeof MAIN_QUESTS !== 'undefined') {
     for (let i = 0; i < MAIN_QUESTS.length; i++) {
-      if (MAIN_QUESTS[i] && MAIN_QUESTS[i].after === apres && S.quest > i) { faite = true; break; }
+      if (MAIN_QUESTS[i] && MAIN_QUESTS[i].after === premiere && S.quest > i) { faite = true; break; }
     }
   }
-  const dest = Object.values(liens);
   for (const src in liens) {
-    if (dest.indexOf(src) < 0 && !S.story.seen[src] && STORY_SCENES[src] && faite) return src;
+    if (src === premiere && !S.story.seen[src] && STORY_SCENES[src] && faite) return src;
     const nx = liens[src];
     if (S.story.seen[src] && nx && !S.story.seen[nx] && STORY_SCENES[nx]) return nx;
   }
@@ -34858,6 +34862,12 @@ function storyChoixSaute() {
     const prev = MAIN_QUESTS[S.quest - 1], cur = MAIN_QUESTS[S.quest];
     if (prev && prev.after === 'q_ruines' && S.story.seen.q_ruines && cur && cur.scene === 'q_ermite_avant' && !S.story.seen.q_ermite_avant && STORY_SCENES.q_ermite_avant && storyChoixOuvert(STORY_SCENES.q_ermite_avant) >= 0) return 'q_ermite_avant';
   }
+  
+  
+  
+  const choix = S.voie && S.voie.choix;
+  if (choix && choix['ch11:monde'] && !S.story.seen.q_lendemain && !S.story.seen['tournoi:fil'] && !S.story.seen.q_tournoi_invite && !choix['tournoi:entree'] && STORY_SCENES.q_lendemain) return 'q_lendemain';
+  if (S.story.seen['tournoi:fil'] && !(choix && choix['tournoi:entree']) && !S.story.seen.q_tournoi_invite && STORY_SCENES.q_tournoi_invite && storyChoixOuvert(STORY_SCENES.q_tournoi_invite) >= 0) return 'q_tournoi_invite';
   return null;
 }
 function storyReprendreChoix() {
