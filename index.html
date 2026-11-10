@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="758294629dfc">
+<meta name="murim-build" content="e7d6d5bf8999">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2337,7 +2337,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="758294629dfc" aria-label="Identifiant de version">Version générée : 758294629dfc</div>
+      <div class="meta" id="t-build" data-build="e7d6d5bf8999" aria-label="Identifiant de version">Version générée : e7d6d5bf8999</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -54330,7 +54330,12 @@ function vieLibre(sc, x, y) {
   if (v === undefined) { v = vieLibreCalc(sc, X, Y); m.set(k, v); }
   return v;
 }
+
+
+let VIE_COUT = 0;
+const VIE_INIT_LOURDE = 24;
 function vieLibreCalc(sc, x, y) {
+  VIE_COUT++;
   if (x < 40 || y < 40 || x > sc.w - 40 || y > (sc.seaY || sc.h) - 40) return false;
   if (typeof eauRepousse === 'function') { const q = { x, y }; eauRepousse(q, 14); if (q.x !== x || q.y !== y) return false; } 
   if (!sc.grid) return true;
@@ -54483,10 +54488,14 @@ function vieVille(dt) {
   const sc = G.scene; if (!sc || sc.type !== 'region' || !sc.npcs) return;
   const nuit = nuitMonde(), L2 = (16 * M) ** 2;
   
-  const horloge = typeof performance !== 'undefined' ? () => performance.now() : () => 0, t0 = horloge(); let budget = 2;
+  
+  
+  
+  
+  let budget = 2;
   for (const n of sc.npcs) {
     if (!n.crowd || n.voyageur) continue; 
-    if (!n.rt) { if (budget-- <= 0 || horloge() - t0 > 1.5) continue; vieInit(sc, n); }
+    if (!n.rt) { if (budget <= 0) continue; const c0 = VIE_COUT; vieInit(sc, n); budget = VIE_COUT - c0 > VIE_INIT_LOURDE ? 0 : budget - 1; }
     vieTick(n, Math.min(dt, 0.1), nuit, dist2(n.x, n.y, P.x, P.y) > L2 && !n.rt.route);
   }
 }
