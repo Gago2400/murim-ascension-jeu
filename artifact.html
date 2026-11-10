@@ -2321,7 +2321,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="43406a532919" aria-label="Identifiant de version">Version générée : 43406a532919</div>
+      <div class="meta" id="t-build" data-build="13a7db27db65" aria-label="Identifiant de version">Version générée : 13a7db27db65</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -16548,6 +16548,34 @@ function R3init(T) {
         break;
       }
       
+      
+      case 'cristaux': {
+        const pos = [], nor = [], colr = [];
+        const A = new T.Vector3(), B = new T.Vector3(), C = new T.Vector3(), N = new T.Vector3(), Mx = new T.Matrix4(), Eu = new T.Euler();
+        const face = (a, b, c, ton) => {
+          N.subVectors(b, a).cross(C.subVectors(c, a)).normalize();
+          for (const v of [a, b, c]) { pos.push(v.x, v.y, v.z); nor.push(N.x, N.y, N.z); colr.push(ton, ton, ton); }
+        };
+        
+        const eclats = [[0, 0, 1.9, 0.27, 0.06, -0.08, 0.2], [0.3, 0.1, 1.25, 0.2, 0.22, -0.4, 1.1], [-0.28, -0.08, 1.02, 0.17, -0.3, 0.34, 2.3], [0.06, -0.3, 0.72, 0.15, -0.5, -0.1, 0.7], [-0.1, 0.3, 0.56, 0.13, 0.52, 0.16, 1.7]];
+        eclats.forEach((e, k) => {
+          Mx.makeRotationFromEuler(Eu.set(e[4], e[6], e[5])).setPosition(e[0], 0, e[1]);
+          const pt = (i, r, y) => new T.Vector3(Math.cos(i * Math.PI / 3) * r, y, Math.sin(i * Math.PI / 3) * r).applyMatrix4(Mx);
+          const cime = new T.Vector3(0, e[2], 0).applyMatrix4(Mx);
+          for (let i = 0; i < 6; i++) {
+            const ton = 0.8 + ((i * 7 + k * 3) % 5) * 0.09;
+            A.copy(pt(i, e[3], -0.2)); B.copy(pt(i + 1, e[3], -0.2));
+            const a2 = pt(i, e[3] * 0.86, e[2] * 0.7), b2 = pt(i + 1, e[3] * 0.86, e[2] * 0.7);
+            face(A.clone(), a2, B.clone(), ton); face(B.clone(), a2, b2, ton);
+            face(a2, cime, b2, Math.min(1.25, ton + 0.14));
+          }
+        });
+        g = new T.BufferGeometry();
+        g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
+        g.setAttribute('color', new T.Float32BufferAttribute(colr, 3));
+        break;
+      }
+      
       case 'pinEtage': {
         g = new T.ConeGeometry(1, 1.2, 20, 2); g.translate(0, 0.6, 0);
         const p = g.attributes.position;
@@ -16660,6 +16688,20 @@ function R3init(T) {
     return m;
   }
   const whiteBasic = new T.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+  
+  
+  let cristalM = null;
+  function matCristal() {
+    if (!cristalM) {
+      cristalM = new T.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
+      cristalM.onBeforeCompile = (sh) => {
+        sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * 0.34;');
+      };
+      cristalM.customProgramCacheKey = () => 'cristal-propre';
+      cristalM.userData.keep = true;
+    }
+    return cristalM;
+  }
 
   function mesh(parent, g, m, px = 0, py = 0, pz = 0, sx = 1, sy = sx, sz = sx, rx = 0, ry = 0, rz = 0, shadow = true) {
     const o = new T.Mesh(geo(g), m); o.position.set(px, py, pz); o.scale.set(sx, sy, sz);
@@ -17629,10 +17671,14 @@ function R3init(T) {
         + ' d *= (1.0 - orn * 0.18) * (1.0 + smoothstep(0.3, 0.0, a) * 0.1);\n'
         
         
-        + ' d *= mix(1.0, 0.88, smoothstep(0.78, 0.98, a));\n'
-        + ' gl_FragColor = vec4(d, 1.0 - smoothstep(0.98, 1.12, a)); }');
+        
+        
+        
+        + ' float bord = 0.91 + 0.13 * rBv(vRW * 0.55) - 0.08 * rBv(vRW * 1.9 + 7.3);\n'
+        + ' d *= mix(1.0, 0.88, smoothstep(bord - 0.22, bord - 0.02, a));\n'
+        + ' gl_FragColor = vec4(d, 1.0 - smoothstep(bord - 0.03, bord + 0.06, a)); }');
     };
-    mat.customProgramCacheKey = () => 'route-lisiere2';
+    mat.customProgramCacheKey = () => 'route-lisiere3';
     const m = new T.Mesh(geo, mat);
     m.position.y = 0.03; m.receiveShadow = true; m.renderOrder = -1;
     m.userData.ownGeo = true; m.userData.ownMat = true;
@@ -18684,6 +18730,7 @@ function R3init(T) {
       if (b.surf === 'arete') return areteMat();
       if (b.surf === 'houppe') return matFeuillage(false);
       if (b.surf === 'canopy') return matFeuillage(true);
+      if (b.surf === 'cristal') return matCristal();
       if (b.surf === 'buisson') return matFeuillage(true); 
       if (b.surf && SURF[b.surf]) return surfacedToon(b.surf);
       return whiteToon;
@@ -19297,6 +19344,11 @@ function R3init(T) {
         }
         case 'crystal': case 'voidcrystal': {
           
+          
+          const cc = d.type === 'voidcrystal' ? '#8a3ad0' : id === 'domaine' ? '#e8c878' : '#5cb4e0';
+          const kc = 0.62 + d.v * 0.36;
+          paint = 'cristal';
+          put('cristaux', 't', shade(cc, (((d.v * 37) % 1) - 0.5) * 0.24), 0, 0, 0, kc, kc * (0.82 + ((d.v * 13) % 1) * 0.3), kc);
           break;
         }
         case 'shrine': {
