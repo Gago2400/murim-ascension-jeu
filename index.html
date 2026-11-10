@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="fee414722449">
+<meta name="murim-build" content="13df1d459fd2">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2337,7 +2337,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="fee414722449" aria-label="Identifiant de version">Version générée : fee414722449</div>
+      <div class="meta" id="t-build" data-build="13df1d459fd2" aria-label="Identifiant de version">Version générée : 13df1d459fd2</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -23091,7 +23091,7 @@ function R3init(T) {
     
     if (o.w && o.w !== 1 && !complet && !hanfu && !o.pnj) m.root.scale.set(o.w, 1, o.w); 
     d.ink = addInk(m.root); 
-    d.femme = !!o.female;
+    d.femme = !!o.female; d.fig = fig; 
     return d;
   }
   
@@ -23639,7 +23639,7 @@ function R3init(T) {
   }
   
   function poserPnj(md, root, mv, t, ph, look, vit) {
-    const femme = !!(md && (md.femme || (look && look.female)));
+    const femme = !!(md && !md.fig && (md.femme || (look && look.female)));
     if (mv && !femme && md.m && md.m.acts && md.m.acts.walk) {
       const dur = md.m.acts.walk.getClip().duration || 0.93;
       const spd = reglerCadence(md, Math.max(0.7, vit || 1.3), dur, 1.5);
@@ -24712,7 +24712,7 @@ function R3init(T) {
       o.anim = (t, wind, mv, en) => {
         const hor = en && en.anim != null ? en.anim : t;
         const sol = en ? vitesseSol(o, W(en.x), W(en.y), hor) : 0;
-        const femme = !!(md.femme || look.female);
+        const femme = !md.fig && !!(md.femme || look.female); 
         let key = 'idle', sp = 0.55;
         if (en && en.dead && o.mortClip) { key = 'death'; md.m.fige = Math.min(1.3, en.deathT * 2); } 
         else if (wind) {
