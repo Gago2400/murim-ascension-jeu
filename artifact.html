@@ -2321,7 +2321,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="f3463ffce676" aria-label="Identifiant de version">Version générée : f3463ffce676</div>
+      <div class="meta" id="t-build" data-build="43406a532919" aria-label="Identifiant de version">Version générée : 43406a532919</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -10516,6 +10516,22 @@ function aimTarget(maxRange = 12, strict) {
   return best;
 }
 
+
+
+function cibleApercu() {
+  if (P.dead) return null;
+  const lockR = feel('lockRange', 18) * M;
+  if (P.lock && cibleOk(P.lock) && dist(P.lock.x, P.lock.y, P.x, P.y) < lockR) return P.lock;
+  const auto = !!(S && S.settings && S.settings.auto) && !(G && G.arena) && typeof AUTO_NAV !== 'undefined' ? AUTO_NAV.cible : null;
+  if (auto && cibleOk(auto)) return auto;
+  const softR = feel('softRange', 7) * M;
+  if (P.soft && P.softT > 0 && cibleOk(P.soft) && dist(P.soft.x, P.soft.y, P.x, P.y) <= softR * 1.45) return P.soft;
+  const e = nearestEnemy(softR, true);
+  return e && cibleOk(e) ? e : null;
+}
+
+function ciblePortee(e) { return !!e && dist(e.x, e.y, P.x, P.y) <= 2.3 * M + (e.r || 0); }
+
 function combatReadout() {
   const A = P.atk; const open = A.ph === 'window';
   const perfect = feel('perfect', 0.13), win = feel('window', 0.55);
@@ -10557,6 +10573,9 @@ function montureFx(on) {
 
 function updatePlayer(dt) {
   oterCiblesInvalides();
+  
+  P.viseT = (P.viseT || 0) - dt;
+  if (P.viseT <= 0) { P.viseT = 0.12; P.vise = cibleApercu(); } else if (P.vise && !cibleOk(P.vise)) P.vise = null;
   const st = P.st;
   P.iframes = Math.max(0, P.iframes - dt); P.dodge.cd = Math.max(0, P.dodge.cd - dt);
   P.softT = Math.max(0, (P.softT || 0) - dt);
@@ -24151,7 +24170,19 @@ function R3init(T) {
     }
     if (P.buffs.counter > 0) decal(fxDecalP, MODE.ringfx, P.x, P.y, 0.05, 1.0, '#9fe8ff', 0.8, { r: W(16), w: 0.06 });
     if (P.lock && !P.lock.dead) decal(fxDecalP, MODE.dash, P.lock.x, P.lock.y, 0.06, W(P.lock.r + 8) + 0.3, '#ffd56a', 0.95, { r: W(P.lock.r + 8), w: 0.07, half: 0.38, time: t * 2 });
+    cibleVisee3D(t);
     armesReposer(v.root);
+  }
+  
+  
+  
+  function cibleVisee3D(t) {
+    const e = P.vise;
+    if (!e || e.dead || e === P.lock || P.dead) return;
+    const pres = typeof ciblePortee === 'function' && ciblePortee(e);
+    const bat = pres ? 0.5 + 0.5 * Math.sin(t * 7) : 0;
+    const r = W(e.r + (pres ? 4 : 7));
+    decal(fxDecalP, MODE.ringfx, e.x, e.y, 0.055, r + 0.3, pres ? '#ffe08a' : '#f0e2bc', pres ? 0.7 + 0.25 * bat : 0.5, { r, w: pres ? 0.075 : 0.045 });
   }
   function setAlpha(mats, a, fondu) {
     for (const m of mats) {
