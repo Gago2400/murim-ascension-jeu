@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="9c98fc3dc7ef">
+<meta name="murim-build" content="7c4d993433ef">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2340,7 +2340,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="9c98fc3dc7ef" aria-label="Identifiant de version">Version générée : 9c98fc3dc7ef</div>
+      <div class="meta" id="t-build" data-build="7c4d993433ef" aria-label="Identifiant de version">Version générée : 7c4d993433ef</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -16148,13 +16148,15 @@ function trackFps() {
 
 
 
+
+
 const QUAL = {
   basse: { ratio: 0.85, shadows: false, bloom: false, grass: false, lamps: 1, glow: 0.18, label: 'basse' },
   moyenne: { ratio: 1.25, shadows: false, bloom: false, grass: true, lamps: 2, glow: 0.25, label: 'moyenne' },
-  haute: { ratio: 2, shadows: true, shadowPx: 1024, shadowDemi: 26, shadowForce: 1, bloom: true, grass: true, lamps: 3, glow: 0.5, label: 'haute' },
+  haute: { ratio: 2, shadows: true, shadowPx: 1024, shadowDemi: 26, shadowForce: 1, bloom: true, grass: true, dalles: true, lamps: 3, glow: 0.5, label: 'haute' },
 };
 const QUAL_AUTO = [
-  { ratio: 1.5, shadows: true, shadowPx: 1024, shadowDemi: 26, shadowForce: 1, bloom: false, grass: true, lamps: 2, glow: 0.35, label: 'haute' },
+  { ratio: 1.5, shadows: true, shadowPx: 1024, shadowDemi: 26, shadowForce: 1, bloom: false, grass: true, dalles: true, lamps: 2, glow: 0.35, label: 'haute' },
   QUAL.moyenne,
   { ratio: 1, shadows: false, bloom: false, grass: true, lamps: 1, glow: 0.22, label: 'moyenne −' },
   QUAL.basse,
@@ -16546,6 +16548,25 @@ function R3init(T) {
         g = new T.BufferGeometry();
         g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
         g.setAttribute('color', new T.Float32BufferAttribute(colr, 3)); g.setIndex(idx);
+        break;
+      }
+      
+      
+      
+      case 'dalle': {
+        const pos = [], nor = [], colr = [];
+        const som = (v, n, ton) => { pos.push(v[0], v[1], v[2]); nor.push(n[0], n[1], n[2]); colr.push(ton, ton, ton); };
+        const H = 0.46, B = 0.5, up = [0, 1, 0];
+        for (const v of [[-H, 1, H], [H, 1, H], [H, 1, -H], [-H, 1, H], [H, 1, -H], [-H, 1, -H]]) som(v, up, 1);
+        for (let k = 0; k < 4; k++) {
+          const c = Math.cos(k * Math.PI / 2), si = Math.sin(k * Math.PI / 2), r = (x, y, z) => [x * c + z * si, y, z * c - x * si];
+          const nl = Math.hypot(1, B - H), n = r(0, (B - H) / nl, 1 / nl);
+          const a = r(-B, 0, B), b = r(B, 0, B), h1 = r(H, 1, H), h0 = r(-H, 1, H);
+          som(a, n, 0.3); som(b, n, 0.3); som(h1, n, 0.84); som(a, n, 0.3); som(h1, n, 0.84); som(h0, n, 0.84);
+        }
+        g = new T.BufferGeometry();
+        g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
+        g.setAttribute('color', new T.Float32BufferAttribute(colr, 3));
         break;
       }
       
@@ -20491,6 +20512,7 @@ function R3init(T) {
       }
     }
     buildGrassField(sc, root);
+    buildDallage(sc, root);
     for (const b of buckets.values()) {
       const mat = matPiece(b);
       const im = new T.InstancedMesh(b.geo || geo(b.g), mat, b.m.length);
@@ -20945,6 +20967,126 @@ function R3init(T) {
     if (!cultures) return false;
     for (const c of cultures) if (Math.abs(x - c.x) < c.hw && Math.abs(y - c.y) < c.hh) return true;
     return false;
+  }
+  
+  
+  
+  
+  
+  
+  const DALLE_M = 2.4, DALLE_H = 0.016, DALLE_N = 1300, DALLE_SEUIL = 0.66;
+  const DALLE_TONS = ['#9a9890', '#a6a49a', '#8e8c86', '#b0aea4', '#96958e', '#807e7a', '#84907c'];
+  let dallageLive = null;
+  function buildDallage(sc, root) {
+    if (sc.type !== 'region' || !sc.pal || !sc.pal.paved) return;
+    
+    
+    
+    
+    
+    const mat = new T.ShaderMaterial({
+      uniforms: T.UniformsUtils.merge([T.UniformsLib.lights, T.UniformsLib.fog, { tGrain: { value: null } }]), 
+      lights: true, fog: true, vertexColors: true,
+      vertexShader: '#include <common>\n#include <lights_pars_begin>\n#include <shadowmap_pars_vertex>\n#include <tonemapping_pars_fragment>\n'
+        + 'varying vec3 vTon; varying vec2 vDW; varying float vOmb;\n'
+        + '#ifdef USE_FOG\n uniform vec3 fogColor; uniform float fogNear; uniform float fogFar;\n#endif\n'
+        + 'void main() {\n vec4 p = vec4(position, 1.0); vec3 n = normal;\n'
+        + '#ifdef USE_INSTANCING\n p = instanceMatrix * p; mat3 mi = mat3(instanceMatrix);\n'
+        + ' n /= vec3(dot(mi[0], mi[0]), dot(mi[1], mi[1]), dot(mi[2], mi[2])); n = mi * n;\n#endif\n'
+        + ' vec4 worldPosition = modelMatrix * p; vDW = worldPosition.xz * 0.46; vec3 transformedNormal = normalize(normalMatrix * n);\n'
+        + ' vec3 irr = ambientLightColor;\n'
+        + '#if NUM_HEMI_LIGHTS > 0\n irr += getHemisphereLightIrradiance(hemisphereLights[0], transformedNormal);\n#endif\n'
+        + ' float sansSoleil = dot(irr, vec3(0.33));\n'
+        + '#if NUM_DIR_LIGHTS > 0\n irr += max(dot(transformedNormal, directionalLights[0].direction), 0.0) * directionalLights[0].color;\n#endif\n'
+        + ' vOmb = sansSoleil / max(dot(irr, vec3(0.33)), 0.001);\n' 
+        
+        + ' vec3 c = color * irr * RECIPROCAL_PI * 0.4;\n'
+        + '#ifdef USE_INSTANCING_COLOR\n c *= instanceColor;\n#endif\n'
+        + ' c = ACESFilmicToneMapping(c);\n'
+        + ' c = mix(pow(c, vec3(0.41666)) * 1.055 - vec3(0.055), c * 12.92, vec3(lessThanEqual(c, vec3(0.0031308))));\n'
+        + ' vec4 mvPosition = viewMatrix * worldPosition; gl_Position = projectionMatrix * mvPosition;\n'
+        + '#ifdef USE_FOG\n c = mix(c, fogColor, smoothstep(fogNear, fogFar, -mvPosition.z));\n#endif\n'
+        + ' vTon = c;\n#include <shadowmap_vertex>\n}',
+      fragmentShader: 'uniform sampler2D tGrain; varying vec3 vTon; varying vec2 vDW; varying float vOmb;\n'
+        + '#include <common>\n#include <packing>\n#include <lights_pars_begin>\n#include <shadowmap_pars_fragment>\n#include <shadowmask_pars_fragment>\n'
+        + 'void main() {\n vec3 c = vTon * (0.5 + 1.35 * texture2D(tGrain, vDW).g);\n'
+        + '#ifdef USE_SHADOWMAP\n c *= mix(vOmb, 1.0, getShadowMask());\n#endif\n'
+        + ' gl_FragColor = vec4(c, 1.0); }',
+    });
+    mat.uniforms.tGrain.value = GROUND_RGB.dalles;
+    const im = new T.InstancedMesh(geo('dalle'), mat, DALLE_N);
+    im.count = 0; im.visible = false; im.frustumCulled = false; im.castShadow = false; im.receiveShadow = true; 
+    im.instanceMatrix.setUsage(T.DynamicDrawUsage); im.userData.ownMat = true; root.add(im);
+    im.renderOrder = -2; 
+    dallageLive = { sc, im, key: '', cases: new Map(), cultures: culturesParcelles(sc), poses: 0 };
+  }
+  
+  function dalleLibre(g, sc, x, y) {
+    const k = Math.round(x) * 100003 + Math.round(y); let v = g.cases.get(k);
+    if (v !== undefined) return v;
+    const dans = (r, m) => r && x >= r.x0 - m && x <= r.x1 + m && y >= r.y0 - m && y <= r.y1 + m;
+    const pas = DALLE_M * M;
+    v = !(x < pas || y < pas || x > sc.w - pas || y > (sc.seaY || sc.h) - pas
+      || dans(sc.bourg && sc.bourg.rect, pas) || dans(sc.cite && sc.cite.rect, pas)
+      || (sc.safe && dist2(x, y, sc.safe.x, sc.safe.y) < 230 ** 2)
+      || (sc.hamlets && sc.hamlets.some((h) => dist2(x, y, h.x, h.y) < (h.r + pas * 0.6) ** 2))
+      || !x10RouteLibre(sc, x, y, 34 + pas * 0.7)
+      || (sc.riviere && planRiviereProche(sc.riviere.brut, x, y).d < sc.riviere.larg / 2 + 30 + pas * 0.7)
+      || herbeDansCulture(g.cultures, x, y) || herbeObstacle(sc, x, y));
+    
+    if (v) {
+      const m0 = 34 + pas * 0.7; v = 1;
+      for (let q = 0; q < 8; q++) {
+        if (!x10RouteLibre(sc, x + Math.cos(q * Math.PI / 4) * pas * 1.6, y + Math.sin(q * Math.PI / 4) * pas * 1.6, m0)) { v = 2; break; }
+      }
+    } else v = 0;
+    g.cases.set(k, v); return v;
+  }
+  function updateDallage(cx, cz) {
+    const g = dallageLive;
+    if (!g || g.sc !== curScene) return;
+    const im = g.im;
+    if (!qualityPreset().dalles) { if (im.visible) { im.count = 0; im.visible = false; g.key = ''; } return; } 
+    im.visible = true;
+    const pas = DALLE_M * M, bx = Math.floor(cx * M / (pas * 2)), by = Math.floor(cz * M / (pas * 2)), key = bx + ':' + by;
+    if (key === g.key) return;
+    g.key = key; g.poses++;
+    const sc = g.sc, C = new T.Color();
+    const hash = (a, b, c) => { const t = Math.sin(a * 127.1 + b * 311.7 + c * 74.7) * 43758.5453; return t - Math.floor(t); };
+    
+    const lisse = (x, y, c) => {
+      const x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0, ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+      const a = hash(x0, y0, c), b = hash(x0 + 1, y0, c), d = hash(x0, y0 + 1, c), e = hash(x0 + 1, y0 + 1, c);
+      return a + (b - a) * ux + (d - a) * uy + (a - b - d + e) * ux * uy;
+    };
+    const plaque = (ix, iy) => 0.72 * lisse(ix / 6, iy / 6, 21) + 0.28 * lisse(ix / 2.1, iy / 2.1, 23);
+    
+    const ix0 = bx * 2 - 11, ix1 = bx * 2 + 12, iy0 = by * 2 - 18, iy1 = by * 2 + 6;
+    let n = 0;
+    const poser = (x, z, sx, sz, ix, iy, k) => {
+      if (n >= DALLE_N) return;
+      const r = hash(ix, iy, 3 + k), r2 = hash(ix, iy, 5 + k);
+      E1.set((r - 0.5) * 0.014, (r2 - 0.5) * 0.05, (hash(ix, iy, 7 + k) - 0.5) * 0.014);
+      M1.compose(V1.set(x, 0, z), Q1.setFromEuler(E1), S1.set(sx, DALLE_H * (0.75 + r * 0.5), sz));
+      im.setMatrixAt(n, M1);
+      C.set(DALLE_TONS[Math.floor(r2 * r2 * DALLE_TONS.length) % DALLE_TONS.length]).multiplyScalar(0.92 + r * 0.16);
+      im.setColorAt(n, C); n++;
+    };
+    for (let iy = iy0; iy < iy1; iy++) for (let ix = ix0; ix < ix1; ix++) {
+      const x = (ix + 0.5) * pas, y = (iy + 0.5) * pas;
+      const lib = dalleLibre(g, sc, x, y);
+      if (!lib) continue;
+      
+      
+      const v = plaque(ix, iy), u = hash(ix, iy, 1);
+      if (lib === 2) { if (u < 0.09) continue; } 
+      else if (v < DALLE_SEUIL || u < (v < DALLE_SEUIL + 0.035 ? 0.34 : 0.035)) continue; 
+      const X = W(x), Z = W(y), L = DALLE_M;
+      if (u < 0.3) { poser(X - L / 4, Z, L / 2, L, ix, iy, 0); poser(X + L / 4, Z, L / 2, L, ix, iy, 10); } 
+      else if (u < 0.52) { poser(X, Z - L / 4, L, L / 2, ix, iy, 0); poser(X, Z + L / 4, L, L / 2, ix, iy, 10); } 
+      else poser(X, Z, L, L, ix, iy, 0);
+    }
+    im.count = n; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
   }
   function updateGrassField(cx, cz) {
     const g = grassLive;
@@ -28778,7 +28920,7 @@ function R3init(T) {
     stepCamera(dt); const { tx, tz, gx, gz } = placeCamera();
     const cpu = R3.cpu || (R3.cpu = {});
     let tCpu = performance.now();
-    updateGrassField(gx, gz); cpu.grass = performance.now() - tCpu;
+    updateGrassField(gx, gz); updateDallage(gx, gz); cpu.grass = performance.now() - tCpu;
     tCpu = performance.now();
     updateFrustum(); dialogueBatiments(); cullInstances(); updateOcclusion(); cpu.cull = performance.now() - tCpu;
     updatePlayer3D(); updateNetPeers3D(); chaufferCompagnon();
@@ -28921,6 +29063,14 @@ function R3init(T) {
       out.push({ nom: o.n ? o.n.name : o.f.a, h: +(maxY - minY).toFixed(2), bas: +(minY - o.root.position.y).toFixed(2), cible: o.md.m.obj.userData.cible || null });
     }
     return out;
+  };
+  
+  R3.dallageInfo = () => {
+    const g = dallageLive; if (!g || g.sc !== curScene) return { region: null, instances: 0, poses: 0, surRoute: 0 };
+    let surRoute = 0; const a = g.im.instanceMatrix.array;
+    for (let i = 0; i < g.im.count; i++) if (!x10RouteLibre(g.sc, a[i * 16 + 12] * M, a[i * 16 + 14] * M, 30)) surRoute++;
+    let voie = 0, plaques = 0; for (const v of g.cases.values()) { if (v === 2) voie++; else if (v === 1) plaques++; }
+    return { region: g.sc.id, instances: g.im.count, poses: g.poses, surRoute, capacite: DALLE_N, casesVoie: voie, casesAilleurs: plaques };
   };
   R3.grassInfo = () => {
     const g = grassLive; if (!g) return { region: null, instances: 0 };
