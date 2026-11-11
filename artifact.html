@@ -2324,7 +2324,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="0a371db43f93" aria-label="Identifiant de version">Version générée : 0a371db43f93</div>
+      <div class="meta" id="t-build" data-build="f31a0a400324" aria-label="Identifiant de version">Version générée : f31a0a400324</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -23308,14 +23308,25 @@ function R3init(T) {
     return g;
   }
   
-  function collerCheville(m, root) {
+  
+  
+  
+  
+  function collerCheville(m, root, monte, now) {
     const pieds = piedsHumain(m);
     if (!pieds || !root || !m.obj) return;
     m.obj.updateMatrixWorld(true);
     let bas = Infinity;
     for (const p of pieds) { p.pied.getWorldPosition(AN_A); if (AN_A.y < bas) bas = AN_A.y; }
     if (!(bas < 1e8)) return;
-    m.obj.position.y += (root.position.y + 0.12) - bas;
+    if (!(monte > 0)) { m.obj.position.y += (root.position.y + 0.12) - bas; m._chev = null; m._vol = 0; return; }
+    const z = bas - m.obj.position.y; 
+    let e = m._chev;
+    const dt = e ? pasAnim(now, e.t) : 0;
+    if (!e || dt > 0.2) e = m._chev = { env: z, t: now };
+    else { e.env = suivreAppui(e.env, z, monte, dt); e.t = now; }
+    m._vol = z - e.env; 
+    m.obj.position.y = root.position.y + 0.12 - e.env;
   }
   function ossature(m) {
     if (m._os) return m._os;
@@ -23411,7 +23422,43 @@ function R3init(T) {
   
   
   
+  
+  
+  
+  
+  
+  
+  function melerMarche(m, amb, now) {
+    const a = m.acts.walk, i = m.acts.idle;
+    let e = m.pnjMel;
+    if (!e) { 
+      e = m.pnjMel = { k: m.cur === a ? 1 : 0, f: amb.f };
+      for (const k in m.acts) { const x = m.acts[k]; if (x !== a && x !== i && x.isRunning()) x.stop(); }
+      if (!a.isRunning()) a.reset().play();
+      if (!i.isRunning()) i.reset().play();
+      m.cur = null; m.melee = false;
+    }
+    const dt = pasAnim(now, m.t);
+    e.k = clamp(e.k + (amb.veut ? dt : -dt) / 0.28, 0, 1);
+    if (amb.veut) e.f = amb.f; 
+    if (!amb.veut && e.k <= 0) { quitterMelange(m); m.vit = 0.55; return; } 
+    const u = e.k * e.k * (3 - 2 * e.k), pw = amb.w * u;
+    a.enabled = true; i.enabled = true; a.stopFading(); i.stopFading();
+    a.weight = pw; i.weight = 1 - pw;
+    a.timeScale = e.f * (a.getClip().duration || 1); i.timeScale = 0.55;
+    m.vit = a.timeScale;
+  }
+  
+  function quitterMelange(m) {
+    const a = m.acts.walk, i = m.acts.idle, marche = m.pnjMel.k > 0.5;
+    m.pnjMel = null;
+    (marche ? i : a).stop(); (marche ? a : i).weight = 1; i.timeScale = 0.55;
+    m.cur = marche ? a : i; m.vit = null;
+  }
   function animModel(m, key, speed = 1, restart = false, now = G.t, fade = 0.15) {
+    const amb = m.amble; m.amble = null;
+    if (amb && m.acts.walk && m.acts.idle && m.acts.walk !== m.acts.idle && m.fige == null) { melerMarche(m, amb, now); return finAnim(m, now); }
+    if (m.pnjMel) quitterMelange(m);
     const a = m.acts[key] || m.acts.idle;
     
     const al = m.allure; m.allure = null;
@@ -23444,6 +23491,9 @@ function R3init(T) {
       }
       if (!mele && m.melee) { run.fadeOut(0.12); a.weight = 1; m.melee = false; } 
     }
+    finAnim(m, now);
+  }
+  function finAnim(m, now) {
     let dt = pasAnim(now, m.t);
     if (now < m.t - 0.5) m.t = now;
     m.t = now;
@@ -23976,7 +24026,8 @@ function R3init(T) {
     if (!MV) { const fe = { id: 'monture', d: ENEMIES[m.base] || ENEMIES.tigre, r: 0.75 * M, anim: 0, status: {}, rarePoi: { rare: { name: m.rare || 'monture_' + S.montures.active } } }; MV = { fe, id: S.montures.active, v: buildEnemyView(fe), t0: G.t }; }
     const v = MV.v, t = G.t, mv = P.moving ? P.anim * (8 + 6 * (P.run || 0)) * (m.allure || 1) : 0;
     poussiereMonture(m, t);
-    v.root.visible = true; v.root.position.set(W(P.x), hSol(P.x, P.y), W(P.y)); v.root.rotation.y = -(PV && PV._cap != null ? PV._cap : P.face);
+    const ep = entrePas(MV); 
+    v.root.visible = true; v.root.position.set(W(ep.x), hSol(ep.x, ep.y), W(ep.y)); v.root.rotation.y = -(PV && PV._cap != null ? PV._cap : P.face);
     const pop = Math.min(1, (t - MV.t0) / 0.35);
     if (!v.cale) calibreMonture(v, m); 
     v.root.scale.setScalar((v.kTaille || 1) * (0.6 + 0.4 * (1 - (1 - pop) ** 3)));
@@ -23985,7 +24036,7 @@ function R3init(T) {
     if (window.__m) R3.montureEtat = { id: S.montures && S.montures.active, sc: +v.root.scale.y.toFixed(3), pop: +pop.toFixed(2), sol: +v.root.position.y.toFixed(2), md: v.md && v.md.m ? 1 : 0, wait: v.wait || '', sy: v.siege ? +v.siege.y.toFixed(2) : null, sx: v.siege ? +v.siege.x.toFixed(2) : null };
     const s = v.cale ? siegeMonde(v) : null;
     if (s) return s;
-    SG_S.set(W(P.x), hSol(P.x, P.y) + (m.garrot || 1.3) * 0.78, W(P.y));
+    SG_S.set(W(ep.x), hSol(ep.x, ep.y) + (m.garrot || 1.3) * 0.78, W(ep.y));
     return SG_S;
   }
   
@@ -24293,18 +24344,45 @@ function R3init(T) {
     });
   }
   
+  
+  
+  
+  
+  const PNJ_PAS = { c0: 0.62, c1: 0.24, p: 1, min: 0.4, depart: 0.3, arret: 0.15, on: true }, PNJ_SONDE = new Set();
+  function pasPnj(md, root, t) {
+    const walk = md.m.acts.walk, idle = md.m.acts.idle;
+    if (!PNJ_PAS.on || !idle || idle === walk) return null;
+    const f = fouleeClip(walk), os = f && osFoulee(walk.getRoot()); if (!f || !os) return null;
+    const foul = f.ratio * cuisseMonde(os); if (!(foul > 0.05)) return null;
+    const reel = vitesseSol(md, root.position.x, root.position.z, t, 8), v = clamp(reel, 0.5, 3.2); 
+    
+    md._avance = reel > (md._avance ? PNJ_PAS.arret : PNJ_PAS.depart);
+    const l = loiPasPnj(v, foul);
+    return { w: l.w, f: l.f, v, foul, avance: md._avance };
+  }
+  
+  
+  function loiPasPnj(v, foul) {
+    const cad = PNJ_PAS.c0 + PNJ_PAS.c1 * v, w = Math.min(1, Math.max(PNJ_PAS.min, Math.pow(v / (cad * foul), 1 / PNJ_PAS.p)));
+    return { w, f: v / (foul * Math.pow(w, PNJ_PAS.p)) };
+  }
   function poserPnj(md, root, mv, t, ph, look, vit) {
     const femme = !!(md && !md.fig && (md.femme || (look && look.female)));
-    if (mv && !femme && md.m && md.m.acts && md.m.acts.walk) {
+    const anime = !femme && md.m && md.m.acts && md.m.acts.walk;
+    const pas = anime && (mv || md.m.pnjMel) ? pasPnj(md, root, t) : null;
+    if (pas && !pas.avance) mv = false; 
+    if (window.__m && anime) { md._sondeVu = true; md._sondeMv = mv; md._sondeRoot = root; PNJ_SONDE.add(md); }
+    if (mv && anime) {
       const dur = md.m.acts.walk.getClip().duration || 0.93;
-      const spd = reglerCadence(md, Math.max(0.7, vit || 1.3), dur, 1.5);
-      md.m._vit = vit || 1.3;
-      poseHumanModel(md, 'walk', spd, false, t, 0.2);
+      md.m._vit = pas ? pas.v : (vit || 1.3);
+      if (pas) { md.m.amble = { veut: true, w: pas.w, f: pas.f }; md._pasPnj = pas; }
+      poseHumanModel(md, 'walk', pas ? pas.f * dur : reglerCadence(md, Math.max(0.7, vit || 1.3), dur, 1.5), false, t, 0.2);
       collerPieds(md, root);
       planterPieds(md.m, root, true, 0.016);
       poseArmePnj(md, root, look && look.weapon, false);
       return;
     }
+    if (pas && md.m.pnjMel) md.m.amble = { veut: false, w: (md._pasPnj || pas).w, f: pas.f }; 
     poseHumanModel(md, 'idle', mv ? 0.7 : 0.55, false, t, 0.2);
     poseDebout(md, root, mv, t, ph);
     poseReposPnj(md, root, t, ph);
@@ -24361,7 +24439,15 @@ function R3init(T) {
     R3.cavalierMes = { bassinY: +SG_A.y.toFixed(2), selleY: +selle.y.toFixed(2), piedY: +SG_B.y.toFixed(2), pied: piedE, piedD: droitE, lame };
   }
   
-  function aligneCavalier(v, siege) {
+  
+  
+  const SELLE = { monte: 0.22, descend: 0.18 };
+  function descendreSelle(v, dt) {
+    if (!(v._selleK > 0) || !v._selleOff) return;
+    v._selleK = Math.max(0, v._selleK - (dt || 0) / SELLE.descend);
+    const u = v._selleK; v.root.position.y += v._selleOff.y * u * u * (3 - 2 * u);
+  }
+  function aligneCavalier(v, siege, dt) {
     if (!siege) return;
     let ok = false;
     if (v.m) {
@@ -24372,7 +24458,10 @@ function R3init(T) {
       const h = (typeof heroMeters === 'function' ? heroMeters(S.look) : 1.7) * 0.52;
       SG_A.set(0, h, 0).applyMatrix4(v.root.matrixWorld);
     }
-    v.root.position.add(SG_B.copy(siege).sub(SG_A));
+    SG_B.copy(siege).sub(SG_A);
+    v._selleK = dt == null ? 1 : Math.min(1, (v._selleK || 0) + dt / SELLE.monte);
+    (v._selleOff || (v._selleOff = new T.Vector3())).copy(SG_B);
+    const u = v._selleK; v.root.position.addScaledVector(SG_B, u * u * (3 - 2 * u));
   }
   const SEM_BOX = new T.Box3();
   
@@ -24399,8 +24488,21 @@ function R3init(T) {
       if (b.min.y < bas) bas = b.min.y;
     }
     const delta = bas - v.root.position.y;
-    if (bas < 1e8 && delta > -0.4 && delta < 0.45) obj.position.y = obj.userData.baseY - delta;
+    if (!(bas < 1e8 && delta > -0.4 && delta < 0.45)) { v._semEnv = null; return; }
+    
+    
+    
+    
+    const dt = pasAnim(G.t, v._semT == null ? G.t : v._semT); v._semT = G.t;
+    const course = v._pas && P.moving ? v._pas.course || 0 : 0;
+    const monte = VOL.marche + (VOL.course - VOL.marche) * course;
+    const env = v._semEnv == null || dt > 0.2 || !VOL.on ? delta : suivreAppui(v._semEnv, delta, monte, dt);
+    v._semEnv = env; v._vol = delta - env; 
+    obj.position.y = obj.userData.baseY - env;
   }
+  const VOL = { marche: 3, course: 0.1, on: true };
+  
+  function suivreAppui(env, delta, monte, dt) { return Math.min(delta, env + monte * dt); }
   
   function osGeste(m) {
     if (!m) return null;
@@ -24662,7 +24764,7 @@ function R3init(T) {
     const brk = typeof breakthroughOn === 'function' && breakthroughOn();
     const wpn = v.weapon || 'sword';
     
-    const ep = entrePas(v), hx = selle ? P.x : ep.x, hy = selle ? P.y : ep.y;
+    const ep = entrePas(v), hx = ep.x, hy = ep.y;
     v.root.position.set(W(hx), hSol(hx, hy), W(hy));
     const sol = vitesseSol(v, W(P.x), W(P.y), t, 24); 
     v._sol = sol;
@@ -24671,6 +24773,7 @@ function R3init(T) {
       const tourDt = pasAnim(t, v._ft || t); v._ft = t;
       const cap = lisserCap(v, P.face, tourDt, P.atk.ph === 'swing' || P.dodge.t > 0 ? 22 : 14, true);
       v.root.rotation.set(0, -cap, 0);
+      if (!selle) descendreSelle(v, tourDt);
       v.d._tour = tourDt > 1e-4 ? angDiff(v._fy || P.face, P.face) / tourDt : 0; v._fy = P.face;
       v.d._vit = sol;
       if (P.dead) { gaineArme(v.d, false, v.root); poseHumanModel(v.d, 'death', 1, false, t, 0.22); v._geste = 'mort'; v._souffle = 0; setAlpha(v.mats, 0.85); showModelInk(v.m, false); showInk(v.ink, false); v.shield.visible = false; return; }
@@ -24698,7 +24801,11 @@ function R3init(T) {
       else if (hit && !selle && !emo) { reculCoup(v.root, v.m, hit, cap, P.hurtA, P.hurtK); v._geste = 'coup'; }
       else v._geste = cle;
       const recep = !roll && !selle && !emo && !sw ? receptionEsquive() : 0;
-      if (!selle && !sw && !roll && !hit) collerCheville(v.m, v.root);
+      if (!selle && !sw && !roll && !hit) {
+        const course = marche && v._pas ? v._pas.course || 0 : 0;
+        collerCheville(v.m, v.root, VOL.on ? VOL.marche + (VOL.course - VOL.marche) * course : 0, t);
+        v._vol = v.m._vol || 0;
+      } else if (v.m._chev) { v.m._chev = null; v._vol = 0; }
       if (marche && !hit) {
         const g = planterPieds(v.m, v.root, true, tourDt || 0.016);
         collerGlisse(v.m, v.root);
@@ -24714,9 +24821,10 @@ function R3init(T) {
       }
       if (selle) {
         poseCavalier(v.m, v.root.rotation.y, t);
+        raccordPose(v, 'selle', 0.2, tourDt); 
         gaineArme(v.d, true, v.root);
         if (v.d.skirt) { v.d.skirt.visible = false; if (v.d.trim) v.d.trim.visible = false; }
-        aligneCavalier(v, selle);
+        aligneCavalier(v, selle, tourDt);
         if (window.__m) sondeCavalier(v, selle);
       } else if (emo === 'salut') { gaineArme(v.d, false, v.root); poseBrasHero(v.m, 'salut', v.root.rotation.y, t); }
       else if (P.med || emo === 'medite') { gaineArme(v.d, false, v.root); poseBrasHero(v.m, 'med', v.root.rotation.y, t); }
@@ -29516,6 +29624,22 @@ function R3init(T) {
     return { hero, betes };
   };
   
+  
+  R3.reglagesPas = { pnj: PNJ_PAS, vol: VOL, selle: SELLE };
+  R3.sondePnjN = 0;
+  R3.sondePnj = () => {
+    const out = [];
+    for (const md of PNJ_SONDE) {
+      if (!md._sondeVu || !md.m || !md._sondeRoot || !md._sondeRoot.parent) { if (!md._sondeRoot || !md._sondeRoot.parent) PNJ_SONDE.delete(md); continue; }
+      md._sondeVu = false; 
+      const r = md._sondeRoot, pieds = [], ps = piedsHumain(md.m);
+      if (ps) for (const p of ps) { p.pied.getWorldPosition(AN_A); pieds.push({ x: AN_A.x, y: AN_A.y - r.position.y, z: AN_A.z }); }
+      const w = md.m.acts.walk, e = md.m.pnjMel;
+      out.push({ id: md._sondeId || (md._sondeId = ++R3.sondePnjN), x: r.position.x, z: r.position.z, cap: -r.rotation.y, mv: !!md._sondeMv, clip: md.m.cur === md.m.acts.walk || !!(md.m.pnjMel && md.m.pnjMel.k > 0.5), pieds, k: e ? e.k : null, poids: w ? w.weight : null, ts: w ? w.timeScale : null,
+        dur: w ? w.getClip().duration : null, pas: md._pasPnj ? { w: md._pasPnj.w, f: md._pasPnj.f, v: md._pasPnj.v, foul: md._pasPnj.foul } : null });
+    }
+    return out;
+  };
   R3.sondeLoco = () => {
     if (!PV || !PV.root) return null;
     const r = PV.root, pieds = [];
@@ -29526,6 +29650,7 @@ function R3init(T) {
       ecart: Math.hypot(r.position.x - W(P.x), r.position.z - W(P.y)),
       foulee: PV._cad && PV._cad.foulM ? PV._cad.foulM : null, cadence: PV._cad && PV._cad.ts != null ? PV._cad.ts : null,
       cycles: PV._cad && PV._cad._cycles ? PV._cad._cycles : null, course: PV._cad && PV._cad.course != null ? PV._cad.course : null, sol: PV._sol || 0,
+      vol: PV._vol || 0, selle: PV._selleK || 0, monture: MV && MV.v && MV.v.root ? { x: MV.v.root.position.x, y: MV.v.root.position.y, z: MV.v.root.position.z } : null,
     };
   };
   const SB_A = new T.Vector3(), SB_B = new T.Vector3(), SB_C = new T.Vector3(), SB_Q = new T.Quaternion();
