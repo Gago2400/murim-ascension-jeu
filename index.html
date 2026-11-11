@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="b1ec63ede825">
+<meta name="murim-build" content="2d6f3734c2b0">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2340,7 +2340,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="b1ec63ede825" aria-label="Identifiant de version">Version générée : b1ec63ede825</div>
+      <div class="meta" id="t-build" data-build="2d6f3734c2b0" aria-label="Identifiant de version">Version générée : 2d6f3734c2b0</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -9729,6 +9729,47 @@ function collideDecor(o, r) {
   if (typeof eauRepousse === 'function') eauRepousse(o, r);
 }
 
+
+
+
+
+const ROND_DEVANT = { d: null, px: 0, py: 0, lat: 0, rr: 0, e: 0 };
+function rondDevant(o, r, ux, uy, portee, sauf) {
+  const sc = G.scene; if (!sc || !sc.grid || !sc.cs) return null;
+  const vy = uy * 1.25, vl = Math.hypot(ux, vy); if (!(vl > 0)) return null;
+  const ax = ux / vl, ay = vy / vl;
+  const gx = Math.floor(o.x / sc.cs), gy = Math.floor(o.y / sc.cs), R = ROND_DEVANT;
+  let e0 = portee; R.d = null;
+  for (let ix = gx - 1; ix <= gx + 1; ix++) for (let iy = gy - 1; iy <= gy + 1; iy++) {
+    const list = sc.grid.get(cleGrille(ix, iy)); if (!list) continue;
+    for (let i = 0; i < list.length; i++) {
+      const d = list[i];
+      if (d === R.d || d === sauf || d.berge || (d.type === 'house' && d.r && !d.interieur)) continue;
+      const rad = rayonSolide(d); if (!rad) continue;
+      const px = o.x - d.x, py = (o.y - d.y) * 1.25, rr = r + rad;
+      const av = -(px * ax + py * ay); if (av <= 0) continue; 
+      const lat = ax * py - ay * px; if (Math.abs(lat) >= rr) continue; 
+      const e = av - Math.sqrt(rr * rr - lat * lat); 
+      if (e >= e0) continue;
+      e0 = e; R.d = d; R.px = px; R.py = py; R.lat = lat; R.rr = rr; R.e = e;
+    }
+  }
+  return R.d ? R : null;
+}
+
+
+
+const VOIE_SONDE = { x: 0, y: 0 };
+function voieLibre(o, r, ux, uy, len, tol) {
+  const n = Math.max(1, Math.ceil(len / 6)), pas = len / n, q = VOIE_SONDE;
+  q.x = o.x; q.y = o.y;
+  for (let i = 1; i <= n; i++) {
+    q.x += ux * pas; q.y += uy * pas; collideDecor(q, r); clampToScene(q, r);
+    if (Math.hypot(q.x - (o.x + ux * pas * i), q.y - (o.y + uy * pas * i)) > tol) return false;
+  }
+  return true;
+}
+
 function glisser(o, dx, dy, r) {
   const dist = Math.hypot(dx, dy);
   const n = Math.max(1, Math.ceil(dist / 6));
@@ -10556,7 +10597,60 @@ function rayonSol() {
 }
 
 
-const LOCO = { elan: 0.14, frein: 0.12, mini: 4, saut: 40 };
+
+
+
+
+const LOCO = { elan: 0.14, frein: 0.12, mini: 4, saut: 40, contour: 0.25, marge: 1.5, cale: 0.25, retour: -0.02, suite: 28 };
+
+
+
+
+
+
+
+
+
+const CONTOUR = { x: 0, y: 0 }, CONTOUR_Q = { x: 0, y: 0 };
+function contourHero(dt, wx, wy, pleine) {
+  if (!(LOCO.contour > 0) || typeof rondDevant !== 'function' || typeof voieLibre !== 'function') return null;
+  const wl = Math.hypot(wx, wy); if (!(wl > 0)) return null;
+  const r = rayonSol(), ux = wx / wl, uy = wy / wl, ob = rondDevant(P, r, ux, uy, LOCO.contour * pleine, null);
+  if (!ob) { if (P.locoObs && P.anim - P.locoCoteA > 0.3) { P.locoObs = null; P.locoCote = 0; } P.locoCale = 0; return null; }
+  const d = ob.d, rr = ob.rr + LOCO.marge, dl = Math.hypot(ob.px, ob.py) || 1;
+  const cx = -ob.px / dl, cy = -ob.py / dl; 
+  const sn = Math.min(1, rr / dl), cs = Math.sqrt(1 - sn * sn), jusque = Math.sqrt(Math.max(0, dl * dl - rr * rr)) + 2;
+  let pris = d === P.locoObs ? P.locoCote : 0; 
+  
+  P.locoCale = Math.hypot((P.vx || 0) - (P.bx || 0), (P.vy || 0) - (P.by || 0)) < 0.2 * pleine ? (P.locoCale || 0) + dt : 0;
+  if (pris && P.locoCale > LOCO.cale) { pris = -pris; P.locoCale = 0; }
+  
+  const pref = pris || (ob.lat > 0.25 ? 1 : ob.lat < -0.25 ? -1 : P.locoCote || 1);
+  
+  
+  
+  const al = Math.hypot(ux, uy * 1.25), ax = ux / al, ay = uy * 1.25 / al;
+  let choix = 0, tx0 = 0, ty0 = 0;
+  for (let essai = 0; essai < (pris ? 1 : 2); essai++) {
+    const cote = essai ? -pref : pref;
+    
+    let tx = cx * cs - cote * cy * sn, ty = (cy * cs + cote * cx * sn) / 1.25; const tl = Math.hypot(tx, ty) || 1;
+    tx /= tl; ty /= tl;
+    if (tx * ux + ty * uy < LOCO.retour) continue; 
+    if (!voieLibre(P, r + 1, tx, ty, jusque, 3)) continue; 
+    if (!pris) {
+      
+      CONTOUR_Q.x = d.x - cote * rr * ay; CONTOUR_Q.y = d.y + cote * rr * ax / 1.25;
+      if (!voieLibre(CONTOUR_Q, r + 1, ux, uy, 6, 3)) continue; 
+      if (!voieLibre(CONTOUR_Q, r + 1, ux, uy, LOCO.suite, 3)) { if (!choix) { choix = cote; tx0 = tx; ty0 = ty; } continue; }
+    }
+    choix = cote; tx0 = tx; ty0 = ty; break;
+  }
+  if (!choix) { if (pris) { P.locoObs = d; P.locoCote = pris; P.locoCoteA = P.anim; } return null; }
+  P.locoObs = d; P.locoCote = choix; P.locoCoteA = P.anim;
+  CONTOUR.x = tx0 * wl; CONTOUR.y = ty0 * wl;
+  return CONTOUR;
+}
 
 
 
@@ -10565,7 +10659,9 @@ const LOCO = { elan: 0.14, frein: 0.12, mini: 4, saut: 40 };
 
 function locoHero(dt, mx, my, pleine, sp, direct) {
   const mlen = Math.hypot(mx, my), veut = mlen > 0.15, k = Math.min(1, mlen);
-  const wx = veut ? mx / mlen * sp * k : 0, wy = veut ? my / mlen * sp * k : 0;
+  let wx = veut ? mx / mlen * sp * k : 0, wy = veut ? my / mlen * sp * k : 0;
+  const tour = veut && !direct ? contourHero(dt, wx, wy, pleine) : null; 
+  if (tour) { wx = tour.x; wy = tour.y; }
   if (direct) { P.vx = wx; P.vy = wy; P.bx = 0; P.by = 0; }
   else if (!(P.locoA != null && Math.abs(P.anim - P.locoA - dt) < dt * 0.5)) {
     
@@ -10597,7 +10693,8 @@ function locoHero(dt, mx, my, pleine, sp, direct) {
     P.bx = 0; P.by = 0;
   }
   P.vx = vx; P.vy = vy; P.locoA = P.anim; P.locoX = P.x; P.locoY = P.y; P.locoS = G.scene;
-  if (veut && P.atk.ph !== 'swing') P.face = Math.atan2(my, mx);
+  
+  if (veut && P.atk.ph !== 'swing') P.face = tour ? Math.atan2(wy, wx) : Math.atan2(my, mx);
   return veut;
 }
 
