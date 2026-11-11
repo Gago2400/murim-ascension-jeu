@@ -2324,7 +2324,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="902a52ab4701" aria-label="Identifiant de version">Version générée : 902a52ab4701</div>
+      <div class="meta" id="t-build" data-build="b1ec63ede825" aria-label="Identifiant de version">Version générée : b1ec63ede825</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -28050,6 +28050,41 @@ function R3init(T) {
     if (d > 900) return null;
     return { x: P.x * 0.62 + n.x * 0.38, y: P.y * 0.62 + n.y * 0.38 };
   }
+  
+  
+  
+  
+  
+  
+  
+  const AVA = { fx: 0, fy: 0, x: 0, y: 0, vx: 0, vy: 0, ux: 0, uy: 0, px: null, py: 0, t: 0, sc: null, bond: false, w: 9 };
+  function avanceCamera(dt) {
+    if (AVA.px == null || AVA.sc !== G.scene || Math.hypot(P.x - AVA.px, P.y - AVA.py) > 90) { 
+      AVA.fx = AVA.fy = AVA.x = AVA.y = AVA.vx = AVA.vy = AVA.ux = AVA.uy = 0;
+      AVA.px = P.x; AVA.py = P.y; AVA.t = G.t; AVA.sc = G.scene; return;
+    }
+    const foc = typeof storyCam === 'function' ? storyCam() : null; 
+    const k = 1 - Math.exp(-dt * 5.5), on = P.moving && !foc;
+    AVA.fx += ((on ? Math.cos(P.face) * 30 : 0) - AVA.fx) * k; AVA.fy += ((on ? Math.sin(P.face) * 20 : 0) - AVA.fy) * k;
+    
+    
+    const dj = G.t - AVA.t;
+    if (dj > 1e-6) {
+      const bond = (P.dodge && P.dodge.t > 0) || !!P.dash, avant = AVA.bond; AVA.bond = bond;
+      if (!bond && !avant) { 
+        const vx = (P.x - AVA.px) / dj, vy = (P.y - AVA.py) / dj, vl = Math.hypot(vx, vy), g = Math.min(1, vl / 40);
+        AVA.ux = vl > 1 ? vx / vl * g : 0; AVA.uy = vl > 1 ? vy / vl * g : 0;
+      }
+      AVA.px = P.x; AVA.py = P.y; AVA.t = G.t;
+    }
+    const tx = foc ? 0 : AVA.ux * 30, ty = foc ? 0 : AVA.uy * 20, w = AVA.w;
+    
+    for (let reste = Math.min(dt, 0.1); reste > 1e-5;) {
+      const h = Math.min(reste, 1 / 60); reste -= h;
+      AVA.vx += (w * w * (tx - AVA.x) - 2 * w * AVA.vx) * h; AVA.vy += (w * w * (ty - AVA.y) - 2 * w * AVA.vy) * h;
+      AVA.x += AVA.vx * h; AVA.y += AVA.vy * h;
+    }
+  }
   function stepCamera(dt) {
     dt = dt || 0;
     let b = null, bd = 1e9; for (const e of G.enemies) if (!e.dead && e.isBoss) { const d = dist(e.x, e.y, P.x, P.y); if (d < bd) { bd = d; b = e; } }
@@ -28083,6 +28118,7 @@ function R3init(T) {
     
     if (typeof STORY !== 'undefined' && STORY.cur && STORY.cur.id === 'prologue') want = clamp(Math.min(want, 14), 12, 15);
     const k = 1 - Math.exp(-dt * (foc ? 2.6 : (P.cast && P.cast.id === '__ult' ? 5 : 2.2))); CAM.dist += (want - CAM.dist) * k;
+    avanceCamera(dt);
   }
   let lastW = 0, lastH = 0, pxPerM = 30;
   function resize() {
@@ -28142,8 +28178,9 @@ function R3init(T) {
     
     const vue = S && S.settings && S.settings.fxLow ? 1.15 : 2.8;
     const sx = (Math.random() - 0.5) * amp * vue, sy = (Math.random() - 0.5) * amp * vue;
-    const tx = W(G.cam.x + CAM.ox + sx), tz = W(G.cam.y + CAM.oy + 4 + sy);
-    const gx = W(G.cam.x + CAM.ox), gz = W(G.cam.y + CAM.oy + 4); 
+    const ax = AVA.x - AVA.fx, ay = AVA.y - AVA.fy; 
+    const tx = W(G.cam.x + CAM.ox + ax + sx), tz = W(G.cam.y + CAM.oy + ay + 4 + sy);
+    const gx = W(G.cam.x + CAM.ox + ax), gz = W(G.cam.y + CAM.oy + ay + 4); 
     if (curScene && curScene.dungeon === 'crypte_sceau') {
       if (!cam.userData.crypte) cam.userData.crypte = 1;
       const asp = VW / Math.max(1, VH);
