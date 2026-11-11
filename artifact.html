@@ -2324,7 +2324,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="e6f160d43dfa" aria-label="Identifiant de version">Version générée : e6f160d43dfa</div>
+      <div class="meta" id="t-build" data-build="a25f03d981b4" aria-label="Identifiant de version">Version générée : a25f03d981b4</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -24426,11 +24426,36 @@ function R3init(T) {
   }
   
   
-  function lisserCap(o, cible, dt, vit) {
+  
+  function lisserCap(o, cible, dt, vit, doux) {
     if (o._cap == null || !(dt > 0)) { o._cap = cible; return cible; }
-    const d = angDiff(o._cap, cible);
-    o._cap += Math.sign(d) * Math.min(Math.abs(d), vit * dt);
+    const d = angDiff(o._cap, cible), a = Math.abs(d);
+    const w = doux ? vit * Math.min(1, 0.25 + a / 0.5 * 0.75) : vit;
+    o._cap += Math.sign(d) * Math.min(a, w * dt);
     return o._cap;
+  }
+  
+  
+  
+  
+  
+  const EP = { x: 0, y: 0 }, EP_PAS = 1 / 60;
+  function entrePas(v) {
+    let s = v._ep;
+    if (!s || s.sc !== G.scene) s = v._ep = { sc: G.scene, t: G.t, x: P.x, y: P.y, dx: 0, dy: 0, r: 0 };
+    if (!G.paused) s.r += (CAM.dtImage || 0) * (G.slowT > 0 ? 0.35 : 1);
+    const n = Math.round((G.t - s.t) / EP_PAS);
+    if (n > 0) {
+      const ex = P.x - s.x, ey = P.y - s.y;
+      
+      if (n > 8 || ex * ex + ey * ey > (40 * n) ** 2) { s.dx = 0; s.dy = 0; } else { s.dx = ex / n; s.dy = ey / n; }
+      s.r -= n * EP_PAS; s.t = G.t; s.x = P.x; s.y = P.y;
+    } else if (n < 0) { s.t = G.t; s.x = P.x; s.y = P.y; s.dx = 0; s.dy = 0; s.r = 0; }
+    else if (P.x !== s.x || P.y !== s.y) { s.x = P.x; s.y = P.y; s.dx = 0; s.dy = 0; } 
+    s.r = clamp(s.r, 0, EP_PAS);
+    const k = 1 - s.r / EP_PAS; 
+    EP.x = P.x - s.dx * k; EP.y = P.y - s.dy * k;
+    return EP;
   }
   
   
@@ -24501,13 +24526,15 @@ function R3init(T) {
     const hit = P.hurtT > 0 ? clamp(P.hurtT / 0.25, 0, 1) : 0;
     const brk = typeof breakthroughOn === 'function' && breakthroughOn();
     const wpn = v.weapon || 'sword';
-    v.root.position.set(W(P.x), hSol(P.x, P.y), W(P.y));
-    const sol = vitesseSol(v, v.root.position.x, v.root.position.z, t, 24);
+    
+    const ep = entrePas(v), hx = selle ? P.x : ep.x, hy = selle ? P.y : ep.y;
+    v.root.position.set(W(hx), hSol(hx, hy), W(hy));
+    const sol = vitesseSol(v, W(P.x), W(P.y), t, 24); 
     v._sol = sol;
     const emo = typeof netPose === 'function' ? netPose() : '';
     if (v.m) { 
       const tourDt = pasAnim(t, v._ft || t); v._ft = t;
-      const cap = lisserCap(v, P.face, tourDt, P.atk.ph === 'swing' || P.dodge.t > 0 ? 22 : 11);
+      const cap = lisserCap(v, P.face, tourDt, P.atk.ph === 'swing' || P.dodge.t > 0 ? 22 : 14, true);
       v.root.rotation.set(0, -cap, 0);
       v.d._tour = tourDt > 1e-4 ? angDiff(v._fy || P.face, P.face) / tourDt : 0; v._fy = P.face;
       v.d._vit = sol;
@@ -24616,26 +24643,26 @@ function R3init(T) {
       const ac = pc(auraColor()); const pulse = 0.75 + Math.sin(t * 3) * 0.25;
       const cosm = typeof gardeAuraPortee === 'function' && gardeAuraPortee();
       if (cosm) {
-        decal(fxDecalP, MODE.ringfx, P.x, P.y, 0.04, W(22), auraColor(), 0.42 * pulse, { r: W(20), w: 0.03 });
+        decal(fxDecalP, MODE.ringfx, hx, hy, 0.04, W(22), auraColor(), 0.42 * pulse, { r: W(20), w: 0.03 });
         const n = S.settings.fxLow ? 3 : 5;
         for (let i = 0; i < n; i++) {
           const a = t * 0.65 + i * TAU / n, hh = (t * 0.32 + i * 0.19) % 1;
-          glows.add(W(P.x) + Math.cos(a) * W(16), 0.25 + hh * 1.35, W(P.y) + Math.sin(a) * W(16), 0.11, ac, (1 - hh) * 0.42);
+          glows.add(W(hx) + Math.cos(a) * W(16), 0.25 + hh * 1.35, W(hy) + Math.sin(a) * W(16), 0.11, ac, (1 - hh) * 0.42);
         }
       } else {
         const r = [0, 0, 22, 26, 30, 34, 38, 42, 48][rk];
-        glows.add(W(P.x), 0.9, W(P.y), W(r) * 2.8, ac, 0.16 * pulse + rk * 0.02);
+        glows.add(W(hx), 0.9, W(hy), W(r) * 2.8, ac, 0.16 * pulse + rk * 0.02);
         if (rk >= 3) for (let i = 0; i < (rk - 1) * 2; i++) {
           const a = t * (1 + i * 0.13) + i * 2.4, hh = (t * 0.6 + i * 0.37) % 1;
           const mc = rk >= 8 ? pc(['#ff8a8a', '#ffe08a', '#8affc8', '#8ac8ff', '#d08aff'][i % 5]) : ac;
-          glows.add(W(P.x) + Math.cos(a) * W(10 + rk), 0.2 + hh * W(30 + rk * 3) * 1.4, W(P.y) + Math.sin(a) * W(10 + rk), 0.45 + rk * 0.04, mc, (1 - hh) * 0.9);
+          glows.add(W(hx) + Math.cos(a) * W(10 + rk), 0.2 + hh * W(30 + rk * 3) * 1.4, W(hy) + Math.sin(a) * W(10 + rk), 0.45 + rk * 0.04, mc, (1 - hh) * 0.9);
         }
-        if (rk >= 6) { const p = (t * 0.8) % 1; decal(fxDecalP, MODE.ringfx, P.x, P.y, 0.05, W(14 + p * 30) + 0.2, auraColor(), (1 - p) * 0.5, { r: W(14 + p * 30), w: 0.08 }); }
-        if (rk >= 7) decal(fxDecalP, MODE.dash, P.x, P.y, 0.04, W(15 * M * 0.35) + 0.2, auraColor(), 0.25, { r: W(15 * M * 0.35), w: 0.06, half: 0.5, time: t * 0.3 });
-        if (rk >= 8) pillar(P.x, P.y, 0.35, 7, '#fff8dc', 0.14);
+        if (rk >= 6) { const p = (t * 0.8) % 1; decal(fxDecalP, MODE.ringfx, hx, hy, 0.05, W(14 + p * 30) + 0.2, auraColor(), (1 - p) * 0.5, { r: W(14 + p * 30), w: 0.08 }); }
+        if (rk >= 7) decal(fxDecalP, MODE.dash, hx, hy, 0.04, W(15 * M * 0.35) + 0.2, auraColor(), 0.25, { r: W(15 * M * 0.35), w: 0.06, half: 0.5, time: t * 0.3 });
+        if (rk >= 8) pillar(hx, hy, 0.35, 7, '#fff8dc', 0.14);
       }
     }
-    if (P.buffs.counter > 0) decal(fxDecalP, MODE.ringfx, P.x, P.y, 0.05, 1.0, '#9fe8ff', 0.8, { r: W(16), w: 0.06 });
+    if (P.buffs.counter > 0) decal(fxDecalP, MODE.ringfx, hx, hy, 0.05, 1.0, '#9fe8ff', 0.8, { r: W(16), w: 0.06 });
     if (P.lock && !P.lock.dead) decal(fxDecalP, MODE.dash, P.lock.x, P.lock.y, 0.06, W(P.lock.r + 8) + 0.3, '#ffd56a', 0.95, { r: W(P.lock.r + 8), w: 0.07, half: 0.38, time: t * 2 });
     cibleVisee3D(t);
     armesReposer(v.root);
@@ -28315,6 +28342,7 @@ function R3init(T) {
   }
   function stepCamera(dt) {
     dt = dt || 0;
+    CAM.dtImage = dt; 
     let b = null, bd = 1e9; for (const e of G.enemies) if (!e.dead && e.isBoss) { const d = dist(e.x, e.y, P.x, P.y); if (d < bd) { bd = d; b = e; } }
     if (b && b !== CAM.introB && bd < 30 * M) { CAM.introB = b; CAM.intro = S.settings.shake === false ? 0 : 1.6; }
     if (!b) CAM.introB = null;
