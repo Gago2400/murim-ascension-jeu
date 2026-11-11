@@ -2324,7 +2324,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="7c4d993433ef" aria-label="Identifiant de version">Version générée : 7c4d993433ef</div>
+      <div class="meta" id="t-build" data-build="902a52ab4701" aria-label="Identifiant de version">Version générée : 902a52ab4701</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -10557,8 +10557,55 @@ function rayonSol() {
   return (m && m.rayon) || P.r;
 }
 
+
+const LOCO = { elan: 0.14, frein: 0.12, mini: 4, saut: 40 };
+
+
+
+
+
+
+function locoHero(dt, mx, my, pleine, sp, direct) {
+  const mlen = Math.hypot(mx, my), veut = mlen > 0.15, k = Math.min(1, mlen);
+  const wx = veut ? mx / mlen * sp * k : 0, wy = veut ? my / mlen * sp * k : 0;
+  if (direct) { P.vx = wx; P.vy = wy; P.bx = 0; P.by = 0; }
+  else if (!(P.locoA != null && Math.abs(P.anim - P.locoA - dt) < dt * 0.5)) {
+    
+    
+    
+    const porte = P.pasA != null && P.anim - P.pasA < dt * 1.5;
+    P.vx = porte ? wx : 0; P.vy = porte ? wy : 0; P.bx = 0; P.by = 0;
+  } else if (P.locoS !== G.scene || Math.hypot(P.x - P.locoX, P.y - P.locoY) > LOCO.saut) { P.vx = 0; P.vy = 0; P.bx = 0; P.by = 0; } 
+  let vx = P.vx || 0, vy = P.vy || 0;
+  
+  
+  
+  if ((P.bx || P.by) && wx * P.bx + wy * P.by <= 0) { vx -= P.bx; vy -= P.by; }
+  
+  const freine = wx * wx + wy * wy < vx * vx + vy * vy - 1e-9 || wx * vx + wy * vy < 0;
+  const ex = wx - vx, ey = wy - vy, e = Math.hypot(ex, ey), pas = pleine / (freine ? LOCO.frein : LOCO.elan) * dt;
+  if (e <= pas) { vx = wx; vy = wy; } else { vx += ex / e * pas; vy += ey / e * pas; }
+  const vit = Math.hypot(vx, vy);
+  if (vit > 0) {
+    const x0 = P.x, y0 = P.y;
+    pasHero(vx * dt, vy * dt);
+    
+    const rx = (P.x - x0) / dt, ry = (P.y - y0) / dt, rl = Math.hypot(rx, ry), q = rl > vit ? vit / rl : 1;
+    const bx = vx - rx * q, by = vy - ry * q, retenu = !direct && Math.hypot(bx, by) > 0.02 * vit + 1;
+    P.bx = retenu ? bx : 0; P.by = retenu ? by : 0;
+  } else {
+    if (typeof collideDecor === 'function') collideDecor(P, rayonSol());
+    if (typeof clampToScene === 'function') clampToScene(P, rayonSol());
+    P.bx = 0; P.by = 0;
+  }
+  P.vx = vx; P.vy = vy; P.locoA = P.anim; P.locoX = P.x; P.locoY = P.y; P.locoS = G.scene;
+  if (veut && P.atk.ph !== 'swing') P.face = Math.atan2(my, mx);
+  return veut;
+}
+
 function pasHero(dx, dy) {
   const r = rayonSol();
+  P.pasA = P.anim; 
   if (typeof glisser === 'function') glisser(P, dx, dy, r);
   else {
     P.x += dx; P.y += dy;
@@ -10789,24 +10836,19 @@ function updatePlayer(dt) {
     
     if (monte && G.scene && typeof departLibre === 'function') departLibre(G.scene, P, rayonSol());
   }
-  const mlen = Math.hypot(mx, my);
-  P.moving = mlen > 0.15;
-  if (P.moving) {
+  const veut = Math.hypot(mx, my) > 0.15;
+  if (veut) {
     
     const calm = P.combatT > 2 && !enemiesNear(10);
     P.run = calm ? Math.min(1, (P.run || 0) + dt / 0.6) : 0;
-    let sp = st.move * (P.status.slow > 0 ? 0.7 : 1) * (1 + 0.6 * P.run) * (1 + (P.monte ? montureBonus() : 0) * P.run); 
-    if (P.atk.ph === 'swing') sp *= 0.35;
-    const k = Math.min(1, mlen);
-    pasHero(mx / mlen * sp * k * dt, my / mlen * sp * k * dt);
-    if (P.atk.ph !== 'swing') P.face = Math.atan2(my, mx);
-  } else {
-    if (typeof collideDecor === 'function') collideDecor(P, rayonSol());
-    if (typeof clampToScene === 'function') clampToScene(P, rayonSol());
   }
+  const pleine = st.move * (P.status.slow > 0 ? 0.7 : 1) * (1 + 0.6 * (P.run || 0)) * (1 + (P.monte ? montureBonus() : 0) * (P.run || 0)); 
+  locoHero(dt, mx, my, pleine, P.atk.ph === 'swing' ? pleine * 0.35 : pleine, autoOn);
+  
+  P.moving = veut || Math.hypot(P.vx, P.vy) > LOCO.mini;
   if (auto && autoFuiteActive()) I.interact = false;
   else if (autoOn && !autoTarget && !autoFuiteActive() && typeof autoQueteInteragir === 'function') autoQueteInteragir();
-  if (autoOn) autoSuivi(dt, AUTO_NAV.cible, P.moving);
+  if (autoOn) autoSuivi(dt, AUTO_NAV.cible, veut);
 
   
   updateAttack(dt, auto && autoTarget && dist(autoTarget.x, autoTarget.y, P.x, P.y) < autoTarget.r + 2.4 * M);
