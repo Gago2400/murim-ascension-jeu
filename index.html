@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="2d6f3734c2b0">
+<meta name="murim-build" content="e6f160d43dfa">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2340,7 +2340,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="2d6f3734c2b0" aria-label="Identifiant de version">Version générée : 2d6f3734c2b0</div>
+      <div class="meta" id="t-build" data-build="e6f160d43dfa" aria-label="Identifiant de version">Version générée : e6f160d43dfa</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -22957,13 +22957,14 @@ function R3init(T) {
     return d > 0.2 ? 0.2 : d;
   }
   
-  function vitesseSol(slot, x, z, now) {
+  
+  function vitesseSol(slot, x, z, now, raide) {
     if (slot._px == null) { slot._px = x; slot._pz = z; slot._pt = now; slot._vit = 0; return 0; }
     const dt = now - slot._pt;
     if (!(dt > 1e-4)) return slot._vit || 0;
     const s = Math.hypot(x - slot._px, z - slot._pz) / dt;
     slot._px = x; slot._pz = z; slot._pt = now;
-    slot._vit = slot._vit == null ? s : slot._vit + (s - slot._vit) * Math.min(1, dt * 8);
+    slot._vit = slot._vit == null ? s : slot._vit + (s - slot._vit) * Math.min(1, dt * (raide || 8));
     return slot._vit;
   }
   
@@ -22972,21 +22973,85 @@ function R3init(T) {
   
   
   
+  
+  const FOULEES = new Map(), FOUL_OS = new WeakMap(), FOUL_A = new T.Vector3(), FOUL_B = new T.Vector3();
+  function osFoulee(racine) {
+    let o = FOUL_OS.get(racine);
+    if (o === undefined) {
+      const t = (rx) => { let os = null; racine.traverse((q) => { if (!os && !q.isMesh && rx.test(q.name)) os = q; }); return os; };
+      const haut = t(/^thigh_l$/i), genou = t(/^calf_l$/i), pied = t(/^foot_l$/i);
+      o = haut && genou && pied ? { haut, genou, pied } : null;
+      FOUL_OS.set(racine, o);
+    }
+    return o;
+  }
+  function cuisseMonde(os) { os.haut.getWorldPosition(FOUL_A); os.genou.getWorldPosition(FOUL_B); return FOUL_A.distanceTo(FOUL_B); }
+  
+  
+  function fouleeClip(act) {
+    if (!act) return null;
+    const racine = act.getRoot(), os = osFoulee(racine); if (!os) return null;
+    const clip = act.getClip(), cle = clip.uuid + '|' + os.genou.position.length().toFixed(4);
+    let f = FOULEES.get(cle);
+    if (f !== undefined) return f;
+    f = null;
+    const mx = new T.AnimationMixer(racine), a = mx.clipAction(clip), N = 48, pts = [];
+    a.play();
+    let cuisse = 0;
+    for (let i = 0; i <= N; i++) {
+      a.time = clip.duration * i / N; mx.update(0); racine.updateMatrixWorld(true);
+      if (!i) cuisse = cuisseMonde(os);
+      os.pied.getWorldPosition(FOUL_A); racine.getWorldPosition(FOUL_B);
+      pts.push([FOUL_A.x - FOUL_B.x, FOUL_A.y - FOUL_B.y, FOUL_A.z - FOUL_B.z]);
+    }
+    mx.stopAllAction(); mx.uncacheRoot(racine); racine.updateMatrixWorld(true);
+    if (!(cuisse > 1e-4)) return null; 
+    let bas = Infinity; for (const q of pts) if (q[1] < bas) bas = q[1];
+    const sol = bas + cuisse * 0.07; 
+    let trajet = 0, n = 0;
+    for (let i = 0; i < N; i++) if (pts[i][1] < sol && pts[i + 1][1] < sol) { trajet += Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][2] - pts[i][2]); n++; }
+    if (n >= 2 && trajet > cuisse * 0.05) f = { ratio: trajet / n * N / cuisse };
+    FOULEES.set(cle, f);
+    return f;
+  }
+  
+  
+  
   function clipAllure(slot, acts, sol) {
-    const seuil = slot._course ? 3.8 : 4.4;
+    const seuil = slot._course ? 3.2 : 3.7;
     slot._course = !!(acts.run && sol > seuil);
-    if (slot._course) { const c = slot._cadR || (slot._cadR = {}); return { key: 'run', act: acts.run, cad: c, foul0: 2.3 }; }
-    return { key: 'walk', act: acts.walk, cad: slot, foul0: null };
+    const act = slot._course ? acts.run : acts.walk, cad = slot._course ? (slot._cadR || (slot._cadR = {})) : slot;
+    const f = fouleeClip(act);
+    cad.foulM = f ? f.ratio * cuisseMonde(osFoulee(act.getRoot())) : null; 
+    return { key: slot._course ? 'run' : 'walk', act, cad, foul0: cad.foulM || (slot._course ? 2.3 : null) };
+  }
+  
+  
+  
+  
+  const ALLURE = { trot: 3.2, course: 5.4, lent: 0.55 };
+  function allureMelee(slot, m, sol) {
+    const w = m.acts.walk, r = m.acts.run; if (!w || !r) return null;
+    const fw = fouleeClip(w), fr = fouleeClip(r); if (!fw || !fr) return null;
+    const u = clamp((sol - ALLURE.trot) / (ALLURE.course - ALLURE.trot), 0, 1), wr = u * u * (3 - 2 * u);
+    const foul = (fw.ratio + (fr.ratio - fw.ratio) * wr) * cuisseMonde(osFoulee(w.getRoot()));
+    if (!(foul > 0.05)) return null;
+    const f = sol <= 16 ? Math.max(ALLURE.lent, sol / foul) : (slot._cycles || 1); 
+    slot._cycles = f; slot.foulM = foul; slot.ts = f * (w.getClip().duration || 1); slot.course = wr;
+    m.allure = { wr, f };
+    return slot;
   }
   function reglerCadence(slot, vit, dur, foul0) {
     if (slot.foul == null) slot.foul = foul0 || 1.6;
     if (!(vit >= 0) || vit > 16) return slot.ts || 0.45;
-    const want = vit < 0.25 ? 0.45 : Math.max(0.55, vit * (dur || 1) / slot.foul);
-    const k = vit >= 6 ? 1 : 0.5; 
+    
+    const want = vit < 0.25 ? 0.45 : Math.max(slot.foulM ? 0.4 : 0.55, vit * (dur || 1) / (slot.foulM || slot.foul));
+    const k = vit >= 6 || slot.foulM ? 1 : 0.5; 
     slot.ts = slot.ts == null ? want : slot.ts + (want - slot.ts) * k;
     return slot.ts;
   }
   function noterFoulee(slot, glisse, dt) {
+    if (slot.foulM) return; 
     if (glisse == null || !(dt > 0) || Math.abs(glisse) < 0.12) return;
     if (slot.foul == null) slot.foul = 1.5;
     
@@ -23217,18 +23282,36 @@ function R3init(T) {
   
   function animModel(m, key, speed = 1, restart = false, now = G.t, fade = 0.15) {
     const a = m.acts[key] || m.acts.idle;
+    
+    const al = m.allure; m.allure = null;
+    const run = m.acts.run, mele = !!(al && run && a === m.acts.walk && a !== run);
     if (a && (m.cur !== a || restart)) {
-      a.reset().play(); if (m.cur && m.cur !== a) a.crossFadeFrom(m.cur, fade, false);
+      
+      const pas = !restart && m.cur && m.cur !== a && (m.cur === m.acts.walk || m.cur === run) && (a === m.acts.walk || a === run);
+      const phase = pas ? m.cur.time / (m.cur.getClip().duration || 1) : 0;
+      if (m.melee && a !== run) run.fadeOut(fade); 
+      if (!(m.melee && a === run)) a.reset().play();
+      a.weight = 1; if (pas) a.time = phase * a.getClip().duration;
+      if (m.cur && m.cur !== a) a.crossFadeFrom(m.cur, fade, false);
+      m.melee = false;
       m.cur = a; m.vit = null;
     }
     const fige = m.fige; m.fige = null;
     if (a) {
       if (fige != null) { a.time = fige; a.timeScale = 0; }
+      else if (mele) {
+        const dw = a.getClip().duration || 1, dr = run.getClip().duration || 1;
+        if (!m.melee) { run.reset().play(); run.fadeIn(fade); m.melee = true; }
+        a.weight = 1 - al.wr; run.weight = al.wr;
+        a.timeScale = al.f * dw; run.timeScale = al.f * dr; run.time = a.time / dw * dr;
+        m.vit = a.timeScale;
+      }
       else if ((key === 'walk' || key === 'run') && m.acts[key]) { a.timeScale = speed; m.vit = speed; } 
       else {
         m.vit = m.vit == null ? speed : m.vit + (speed - m.vit) * 0.45;
         a.timeScale = m.vit;
       }
+      if (!mele && m.melee) { run.fadeOut(0.12); a.weight = 1; m.melee = false; } 
     }
     let dt = pasAnim(now, m.t);
     if (now < m.t - 0.5) m.t = now;
@@ -24333,6 +24416,13 @@ function R3init(T) {
     obj.position.z += dx * s + dz * c;
   }
   
+  function relacherGlisse(m, dt) {
+    const obj = m && m.obj; if (!obj || obj.userData.baseX == null) return;
+    const k = Math.min(1, (dt > 0 ? dt : 0) * 10);
+    obj.position.x += (obj.userData.baseX - obj.position.x) * k;
+    obj.position.z += (obj.userData.baseZ - obj.position.z) * k;
+  }
+  
   
   function lisserCap(o, cible, dt, vit) {
     if (o._cap == null || !(dt > 0)) { o._cap = cible; return cible; }
@@ -24367,6 +24457,39 @@ function R3init(T) {
     v._elan = (v._elan || 0) + (cible - (v._elan || 0)) * Math.min(1, dt * 6);
     if (Math.abs(v._elan) > 1e-3) osApresMixeur(o.sp, (os) => { os.rotateX(v._elan); }, v.m.osJeton);
   }
+  
+  
+  
+  
+  
+  const RC_Q = new T.Quaternion(), RC = { de: null, j: 0, k: 0 };
+  function rcMeler(b) { const d = RC.de, j = RC.j; if (RC.k > 0) b.quaternion.slerp(RC_Q.set(d[j], d[j + 1], d[j + 2], d[j + 3]), RC.k); }
+  function raccordPose(v, regime, dur, dt) {
+    const m = v.m, os = ossature(m), n = os.length; if (!n) return;
+    let r = v._racc;
+    if (!r || r.n !== n) {
+      r = v._racc = { n, vu: new Float32Array(n * 4), de: new Float32Array(n * 4), t: 1, dur: 0.2, regime, pret: false, fin: false, bas: modelBone(m, /^pelvis$/i), pv: new T.Vector3(), pd: new T.Vector3(), pb: new T.Vector3(), pf: new T.Vector3() };
+    }
+    if (r.pret && regime !== r.regime) {
+      if (dur > 0 && r.regime !== 'coup') { r.de.set(r.vu); r.pd.copy(r.pv); r.t = 0; r.dur = dur; r.fin = true; }
+      else if (r.fin) r.t = 1; 
+    }
+    r.regime = regime;
+    if (r.fin && dt > 0) {
+      r.t = Math.min(1, r.t + dt / r.dur);
+      const u = 1 - r.t; RC.k = u * u * (3 - 2 * u); RC.de = r.de; 
+      for (let i = 0; i < n; i++) { RC.j = i * 4; osApresMixeur(os[i], rcMeler, m.osJeton); }
+      if (r.bas) { 
+        const pp = r.bas.position;
+        if (pp.x !== r.pf.x || pp.y !== r.pf.y || pp.z !== r.pf.z) r.pb.copy(pp); else pp.copy(r.pb);
+        pp.lerp(r.pd, RC.k); r.pf.copy(pp);
+      }
+      if (r.t >= 1) r.fin = false;
+    }
+    for (let i = 0; i < n; i++) { const q = os[i].quaternion, j = i * 4; r.vu[j] = q.x; r.vu[j + 1] = q.y; r.vu[j + 2] = q.z; r.vu[j + 3] = q.w; }
+    if (r.bas) { r.pv.copy(r.bas.position); if (!r.fin) { r.pb.copy(r.pv); r.pf.copy(r.pv); } }
+    r.pret = true;
+  }
   function updatePlayer3D() {
     const v = ensurePlayer(); const t = G.t;
     armesReposer(v.root); 
@@ -24377,7 +24500,7 @@ function R3init(T) {
     const brk = typeof breakthroughOn === 'function' && breakthroughOn();
     const wpn = v.weapon || 'sword';
     v.root.position.set(W(P.x), hSol(P.x, P.y), W(P.y));
-    const sol = vitesseSol(v, v.root.position.x, v.root.position.z, t);
+    const sol = vitesseSol(v, v.root.position.x, v.root.position.z, t, 24);
     v._sol = sol;
     const emo = typeof netPose === 'function' ? netPose() : '';
     if (v.m) { 
@@ -24398,9 +24521,13 @@ function R3init(T) {
         spd = attackClipSpeed(wpn);
       } else if (selle || P.med || emo === 'medite') { cle = selle ? 'idle' : 'sit'; spd = 0.45; }
       else if (marche) {
-        const al = clipAllure(v, v.m.acts, sol); cle = al.key; v._cad = al.cad;
-        const dur = (al.act && al.act.getClip().duration) || 0.93;
-        spd = reglerCadence(al.cad, sol, dur, al.foul0 || 1.45);
+        const mel = allureMelee(v._pas || (v._pas = {}), v.m, sol);
+        if (mel) { cle = 'walk'; v._cad = mel; spd = mel.ts; }
+        else {
+          const al = clipAllure(v, v.m.acts, sol); cle = al.key; v._cad = al.cad;
+          const dur = (al.act && al.act.getClip().duration) || 0.93;
+          spd = reglerCadence(al.cad, sol, dur, al.foul0 || 1.45);
+        }
       } else spd = 0.55;
       poseHumanModel(v.d, cle, spd, restart, t, sw ? 0.1 : 0.22);
       if (roll && !emo) { sautEsquive(v.root, v.m, roll); v._geste = 'esquive'; v._glisse = null; }
@@ -24413,7 +24540,7 @@ function R3init(T) {
         collerGlisse(v.m, v.root);
         v._glisse = glissePosee(v.m, v.root, tourDt || 0.016);
         noterFoulee(v._cad || v, g, tourDt || 0.016);
-      } else { planterPieds(v.m, v.root, false, 0); if (!marche) v._glisse = null; }
+      } else { planterPieds(v.m, v.root, false, 0); if (!marche) { v._glisse = null; relacherGlisse(v.m, tourDt); } }
       if (!selle && sw && P.atk.ph === 'swing') {
         const k = clamp(P.atk.t / (P.atk.dur || 0.36), 0, 1);
         const port = wpn === 'spear' || wpn === 'staff' ? 1.35 : wpn === 'dagger' ? 0.55 : wpn === 'hammer' ? 0.7 : 1;
@@ -24444,6 +24571,10 @@ function R3init(T) {
         const k = clamp(P.cast.t / Math.max(0.05, P.cast.dur), 0, 1);
         poserBuste(v.m, 0.2 * (1 - k), v.root.rotation.y);
         poseBrasHero(v.m, 'frappe', v.root.rotation.y, t, -0.7 * (1 - k));
+      }
+      if (!selle && !emo && !roll) { 
+        const repos = !P.moving && !P.med && !P.cast && P.atk.ph !== 'swing';
+        raccordPose(v, repos ? 'repos' : sw ? 'coup' : 'clip', repos ? 0.24 : sw ? 0 : 0.14, tourDt);
       }
       if (recep) retombeeEsquive(v.root, v.m, recep); 
       if (!selle && !roll) semelleHero(v);
@@ -29161,6 +29292,19 @@ function R3init(T) {
     const betes = [];
     for (const [e, v] of EV) if (v.root && v.root.visible) betes.push({ id: e.id, clip: v.cur || null, demarche: !!v.demarche, bouge: !!e.moving, flex: v.flex != null ? v.flex : null, geste: v._geste || null, y: +v.root.position.y.toFixed(3), souffle: v._souffle != null ? +(+v._souffle).toFixed(3) : null });
     return { hero, betes };
+  };
+  
+  R3.sondeLoco = () => {
+    if (!PV || !PV.root) return null;
+    const r = PV.root, pieds = [];
+    if (PV.m && PV.m.pieds) for (const p of PV.m.pieds) if (p.pied) { p.pied.getWorldPosition(AN_A); pieds.push({ x: AN_A.x, y: AN_A.y - r.position.y, z: AN_A.z }); }
+    return {
+      x: r.position.x, y: r.position.y, z: r.position.z, cap: -r.rotation.y, pieds,
+      cam: { x: cam.position.x, y: cam.position.y, z: cam.position.z }, vise: CAM.vise ? { x: W(CAM.vise.x), z: W(CAM.vise.y) } : null,
+      ecart: Math.hypot(r.position.x - W(P.x), r.position.z - W(P.y)),
+      foulee: PV._cad && PV._cad.foulM ? PV._cad.foulM : null, cadence: PV._cad && PV._cad.ts != null ? PV._cad.ts : null,
+      cycles: PV._cad && PV._cad._cycles ? PV._cad._cycles : null, course: PV._cad && PV._cad.course != null ? PV._cad.course : null, sol: PV._sol || 0,
+    };
   };
   const SB_A = new T.Vector3(), SB_B = new T.Vector3(), SB_C = new T.Vector3(), SB_Q = new T.Quaternion();
   
