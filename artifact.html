@@ -2324,7 +2324,7 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="1ea16ffe7b34" aria-label="Identifiant de version">Version générée : 1ea16ffe7b34</div>
+      <div class="meta" id="t-build" data-build="a61758df939c" aria-label="Identifiant de version">Version générée : a61758df939c</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
@@ -4793,7 +4793,15 @@ const IMPACT = {
   stopCrit: 0.07, stopHeavy: 0.06, stopFinisher: 0.07, shakeCrit: 4.2, stopLight: 0.045, shakeHurt: 1.3, shakeHeavy: 2.4, stopHurt: 0.05, heavyFrac: 0.06,
   
   kbSpeed: 150, kbMeters: 6.8, kbBoss: 0, kbElite: 0.5, react: 0.22, impactMax: 8, inkMax: 5,
+  
+  
+  
+  flash: 0.12, flashPic: 0.07, flashCrit: 0.11, flashDot: 0.03, flashClair: 1.9, flashNeutre: '#ffd9a0', flashOr: '#ffc94a',
 };
+
+function teinteFlash(crit, teinte) { return crit ? IMPACT.flashOr : (teinte || IMPACT.flashNeutre); }
+
+function forceFlash(reste) { const k = Math.min(1, Math.max(0, reste / IMPACT.flash)); return k * k; }
 
 
 
@@ -12161,10 +12169,13 @@ function hitEnemy(e, raw, o = {}) {
   
   const auServeur = typeof partageOuvert === 'function' && partageOuvert() && typeof partageClef === 'function' && !!partageClef(e);
   if (!auServeur) e.hp -= dmg;
-  e.flash = 0.12;
+  
+  
+  const teinteCoup = o.col || (elem && typeof ELEMS !== 'undefined' && ELEMS[elem] ? ELEMS[elem].color : null);
+  e.flash = IMPACT.flash; e.flashC = teinteFlash(crit, teinteCoup); e.flashK = o.dot ? IMPACT.flashDot : crit ? IMPACT.flashCrit : IMPACT.flashPic;
   
   if (!o.dot) {
-    const teinte = o.col || (elem && typeof ELEMS !== 'undefined' && ELEMS[elem] ? ELEMS[elem].color : '#f4efe6');
+    const teinte = teinteCoup || '#f4efe6';
     const nEt = S.settings && S.settings.fxLow ? 2 : 5;
     for (let i = 0; i < nEt; i++) spark(e.x, e.y, i % 2 ? teinte : '#f7f1e4', crit ? 140 : 95, 0.28, crit ? 2 : 1.4);
     if (!(S.settings && S.settings.fxLow)) spark(e.x, e.y, '#cbb89a', 48, 0.36, 2.4);
@@ -15656,7 +15667,8 @@ function drawEnemy(e) {
     case 'turtle': drawTurtle(x, y, r, fx, t, d, wind); break;
   }
   ctx.shadowBlur = 0;
-  if (e.flash > 0) { ctx.globalAlpha = alpha * (e.flash / 0.12) * 0.55; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(x, y - r * 0.9, r * 1.05, r * 0.95, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = alpha; }
+  
+  if (e.flash > 0) { const fk = forceFlash(e.flash) * (e.flashK != null ? e.flashK : IMPACT.flashPic) / IMPACT.flashCrit; ctx.globalAlpha = alpha * fk * 0.42; ctx.fillStyle = e.flashC || IMPACT.flashNeutre; ctx.beginPath(); ctx.ellipse(x, y - r * 0.9, r * 0.9, r * 0.82, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = alpha; }
   if (e.status.burn > 0) { for (let i = 0; i < 2; i++) { const h = (t * 2 + i * 0.5) % 1; ctx.fillStyle = `rgba(255,120,40,${1 - h})`; ctx.beginPath(); ctx.arc(x + Math.sin(t * 5 + i) * r * 0.5, y - r - h * r, 2.5, 0, TAU); ctx.fill(); } }
   if (e.status.slow > 0) { ctx.strokeStyle = 'rgba(80,170,255,0.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.4, 0, 0, TAU); ctx.stroke(); }
   if (e.status.stun > 0) drawStunStars(x, y - r * 2 - 8);
@@ -24695,10 +24707,23 @@ function R3init(T) {
       }
     }
   }
-  function setFlash(mats, f, glowC, g) {
+  
+  
+  
+  function setFlash(mats, f, glowC, g, fc, clair) {
     for (const m of mats) {
       if (!m.emissive || m.userData.keepEm) continue;
-      if (f > 0) m.emissive.setRGB(f, f, f); else if (g > 0 && glowC) m.emissive.copy(glowC).multiplyScalar(g); else if (m.userData.em) m.emissive.copy(m.userData.em); else m.emissive.setRGB(0, 0, 0);
+      const u = m.userData;
+      if (f > 0) {
+        if (u.emI == null) u.emI = m.emissiveIntensity;
+        if (fc) m.emissive.copy(fc).multiplyScalar(f); else m.emissive.setRGB(f, f, f);
+        m.emissiveIntensity = 1;
+        if (clair > 1 && m.color) { if (!u.c0) u.c0 = m.color.clone(); m.color.copy(u.c0).multiplyScalar(clair); }
+        u.fl = 1;
+        continue;
+      }
+      if (u.fl) { u.fl = 0; m.emissiveIntensity = u.emI; if (u.c0) m.color.copy(u.c0); }
+      if (g > 0 && glowC) m.emissive.copy(glowC).multiplyScalar(g); else if (u.em) m.emissive.copy(u.em); else m.emissive.setRGB(0, 0, 0);
     }
   }
 
@@ -26367,17 +26392,24 @@ function R3init(T) {
       const auraHex = e.isBoss && typeof bossAuraColor === 'function' ? (e.aura || bossAuraColor(e.phase || 0)) : null;
       
       
-      setFlash(v.mats, e.flash > 0 ? (e.flash / 0.12) * 0.55 : 0, (ph && auraHex) ? pc(auraHex).c : (v.glowC || col('#ff4a4a')), ph ? 1 : 0);
+      
+      const fl = e.flash > 0 ? forceFlash(e.flash) : 0;
+      const flK = fl * (e.flashK != null ? e.flashK : IMPACT.flashPic) * (e.isBoss ? 0.7 : 1);
+      const flC = fl > 0 ? pc(e.flashC || IMPACT.flashNeutre) : null;
+      setFlash(v.mats, flK, (ph && auraHex) ? pc(auraHex).c : (v.glowC || col('#ff4a4a')), ph ? 1 : 0, flC ? flC.c : null, 1 + (IMPACT.flashClair - 1) * flK / IMPACT.flashCrit);
       if (e.isBoss && v.mats) {
         const k = (S.settings && S.settings.fxLow) ? 0.1 : 0.26;
         for (const m of v.mats) {
-          if (!m.emissive || m.userData.keepEm) continue;
+          if (!m.emissive || m.userData.keepEm || m.userData.fl) continue;
           if (m.userData.emI == null) m.userData.emI = m.emissiveIntensity;
           m.emissiveIntensity = ph ? k : m.userData.emI;
         }
       }
       
-      if (e.flash > 0 && !e.dead) glows.add(W(e.x), r * 1.05, W(e.y), r * (S.settings.fxLow ? 1.1 : 1.55), pc('#fff4e4'), (e.flash / 0.12) * (S.settings.fxLow ? 0.22 : 0.42));
+      if (fl > 0 && !e.dead && e.flashK > IMPACT.flashDot) {
+        const ha = e.hitA || 0;
+        glows.add(W(e.x) - Math.cos(ha) * r * 0.6, r * 1.0, W(e.y) - Math.sin(ha) * r * 0.6, r * (S.settings.fxLow ? 0.55 : 0.75), flC, fl * (S.settings.fxLow ? 0.2 : 0.36));
+      }
       
       if (e.isBoss) {
         const ac = auraHex || (e.d.glow || '#8f2e28');
@@ -27455,7 +27487,9 @@ function R3init(T) {
         case 'beam': beam(f.x1, f.y1, 1.0, f.x2, f.y2, 1.0, W(f.w) * 0.8 * (1 - k * 0.5), f.color, (1 - k) * 0.55); beam(f.x1, f.y1, 1.0, f.x2, f.y2, 1.0, W(f.w) * 0.2 * (1 - k), '#ffffff', 1 - k); break;
         case 'impact': {
           const a = 1 - k; const c = pc(f.color);
-          glows.add(W(f.x), W(f.h) + 0.45, W(f.y), (f.big ? 1.7 : 1.1) * (0.45 + k * 0.8), c, a);
+          
+          const ix = W(f.x) - Math.cos(f.ang || 0) * W(f.h) * 0.6, iz = W(f.y) - Math.sin(f.ang || 0) * W(f.h) * 0.6;
+          glows.add(ix, W(f.h) + 0.45, iz, (f.big ? 1.25 : 0.8) * (0.45 + k * 0.8), c, a * 0.8);
           
           
           const sr = (f.big ? 1.7 : 1.05) * (0.3 + k * 1.7);
