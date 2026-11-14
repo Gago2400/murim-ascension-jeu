@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Murim Ascension</title>
-<meta name="murim-build" content="a1f980c2be4c">
+<meta name="murim-build" content="d148056db539">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
 <meta name="mobile-web-app-capable" content="yes">
@@ -331,13 +331,6 @@ textarea { width: 100%; min-height: 70px; background: rgba(0,0,0,.4); color: var
 .title-box .btns { display: grid; gap: 8px; margin-top: 14px; width: min(280px, 80vw); }
 .title-box .btn { min-height: 44px; font-size: 15px; }
 .title-box .meta { font-size: 12px; color: var(--faint); margin-top: 6px; max-width: 44ch; line-height: 1.4; }
-#create-screen { background: #0c0a0e; }
-.create { width: min(920px, 100%); display: grid; grid-template-columns: minmax(0, 280px) minmax(0, 1fr); gap: 16px 22px; align-items: start; }
-.create > * { min-width: 0; }
-.create h2 { grid-column: 1 / -1; font-family: var(--f-display); font-size: clamp(18px, 3.4vmin, 24px); margin: 0; letter-spacing: .05em; }
-.create h2 small { display: block; font-family: var(--f-body); font-size: 13px; color: var(--muted); letter-spacing: 0; font-weight: 500; margin-top: 4px; }
-.create-prev { display: grid; justify-items: center; }
-#cr-prev { width: 100%; max-width: 280px; aspect-ratio: 3 / 4; height: auto; border-radius: 14px; background: radial-gradient(circle at 50% 40%, rgba(217,180,94,.2), rgba(0,0,0,.45) 70%); box-shadow: 0 0 0 1px var(--line), inset 0 0 0 1px rgba(217,180,94,.25); display: block; }
 .fld { display: grid; gap: 6px; margin-bottom: 12px; }
 .fld > span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); font-weight: 800; }
 .fld input[type=text] { background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; color: var(--paper); font: 600 16px var(--f-body); user-select: text; }
@@ -386,9 +379,7 @@ textarea { width: 100%; min-height: 70px; background: rgba(0,0,0,.4); color: var
   #toasts { top: calc(var(--sat) + 236px); max-width: 64vw; }
   #h-boss { top: calc(var(--sat) + 120px); width: 86vw; }
   #h-quest { top: calc(var(--sat) + 66px); max-width: 52vw; }
-  .create { grid-template-columns: 1fr; }
   .starts { grid-template-columns: 1fr; }
-  #cr-prev { max-width: 240px; margin: 0 auto; }
   #b-auto { top: auto; bottom: calc(var(--sab) + 50%); right: calc(var(--sar) + 10px); }
 }
 
@@ -447,12 +438,6 @@ textarea { width: 100%; min-height: 70px; background: rgba(0,0,0,.4); color: var
 #bt-screen, #res-screen {
   background: #07060c var(--ui-accueil) center 30% / cover no-repeat;
 }
-#create-screen {
-  background:
-    radial-gradient(70% 36% at 50% 0%, rgba(90, 62, 36, .28), transparent 62%),
-    radial-gradient(40% 28% at 100% 100%, rgba(120, 32, 24, .22), transparent 70%),
-    #0c0a0e;
-}
 #bt-screen::before, #res-screen::before {
   content: "";
   position: absolute;
@@ -463,12 +448,6 @@ textarea { width: 100%; min-height: 70px; background: rgba(0,0,0,.4); color: var
 .create, #death-screen > div, #bt-screen > div, #res-screen > div {
   position: relative;
   z-index: 1;
-}
-.create {
-  background: #14110f;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 0 0 1px rgba(217,180,94,.38), 0 18px 50px rgba(0,0,0,.55);
 }
 .sheet {
   border-style: solid;
@@ -737,9 +716,7 @@ html { overscroll-behavior: none; overflow: hidden; touch-action: manipulation; 
   #toasts { top: calc(var(--sat) + 80px + var(--qh, 0px)); }
 }
 
-/* [Grogrok] accueil et création au doigt : bouton « Commencer » toujours visible, titre à côté du héros en paysage */
-.cr-actions { position: sticky; bottom: calc(-12px - var(--sab)); z-index: 2; background: linear-gradient(to top, #14110f 62%, rgba(20,17,15,.92) 80%, rgba(20,17,15,0)); padding: 26px 0 calc(8px + var(--sab)); margin-bottom: -8px; }
-.cr-actions .btn.primary { flex: 1; }
+/* [Grogrok] accueil au doigt : titre à côté du héros en paysage (la création a son bloc en fin de feuille) */
 /* [Grogrok] CTA panneau collants : en paysage court Méditer / Valider / Vendre restent visibles sans scroll */
 .p-actions { position: sticky; bottom: calc(-10px - var(--sab)); z-index: 3; display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; background: linear-gradient(to top, #14110f 58%, rgba(20,17,15,.94) 78%, rgba(20,17,15,0)); padding: 22px 0 calc(8px + var(--sab)); margin: 4px 0 -6px; }
 .p-actions .btn { flex: 1 1 auto; min-height: 44px; }
@@ -756,18 +733,7 @@ html { overscroll-behavior: none; overflow: hidden; touch-action: manipulation; 
   #title-screen.m3d { background: linear-gradient(to left, rgba(6,6,12,.92) 0%, rgba(6,6,12,.7) 34%, transparent 58%); }
   .title-box { width: min(46vw, 380px); }
   .title-seal { display: none; } /* [Grogrok] masqué d'emblée : il disparaissait au chargement du héros 3D et le bouton sautait de 29 px sous le doigt */
-  .create { grid-template-columns: minmax(0, 190px) minmax(0, 1fr); padding: 12px; }
-  .create h2 { font-size: 18px; }
-  #cr-prev { max-height: 72vh; width: auto; max-width: 100%; }
 }
-@media (max-width: 560px) and (orientation: portrait) {
-  /* 24 vh : Visage (boutons) reste au-dessus de la barre collante ; 34 vh la recouvrait. */
-  #cr-prev { max-height: 24vh; width: auto; }
-  .create .fld { margin-bottom: 8px; }
-  .create-prev { position: sticky; top: 0; z-index: 2; padding-bottom: 10px; background: linear-gradient(#14110f 90%, rgba(20,17,15,0)); }
-  .cr-face { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 6px; }
-}
-#create-screen { scroll-padding-bottom: 80px; }
 
 /* ───── HUD mobile : lisibilité, pouce droit, zone sûre (§23.1) ───── */
 :root { --fs: 1; --muted: #c9c0ae; --faint: #b4aa98; }
@@ -2273,6 +2239,77 @@ body:has(#vcour) #net-parler { display: none !important; }
   .fac .card p { margin: 4px 0; font-size: 12.5px; line-height: 1.3; }
   #story .st-skip { top: calc(var(--sat) + 52px); }
 }
+/* ───── [Claude] Création de personnage : scène 3D plein cadre et panneau à onglets ─────
+   La scène (#cr-scene) est transparente quand la 3D tourne (classe m3d) : le héros est rendu directement sur #cv3,
+   en pleine définition, cadré sur .cr-cadre. Sans 3D, #cr-prev porte le dessin de repli. Portrait : scène en haut,
+   panneau en bas. Paysage : scène à gauche, panneau à droite. Retour / Commencer restent hors de la zone qui défile. */
+#create-screen { display: block; padding: 0; overflow: hidden; background: #0e0c12; }
+#create-screen.m3d { background: none; }
+/* Vitrine 3D affichée (accueil ou création, classe m3d) : le canevas 2D de superposition ne porte rien, on le masque.
+   Sous Chromium, le compositeur ressortait par moments sa dernière image peinte au démarrage (le fond 2D de l'accueil,
+   figé) par-dessus la scène de création. Dès que l'écran se ferme ou que la 3D cède, la règle ne s'applique plus. */
+#app:has(> .screen.m3d:not([hidden])) > #cv { visibility: hidden; }
+.create { position: absolute; inset: 0; display: grid; grid-template-rows: minmax(0, 1fr) min(60%, calc(356px + var(--sab))); }
+.create > * { min-width: 0; min-height: 0; }
+.create-prev { position: relative; display: grid; grid-template-rows: auto auto minmax(0, 1fr); padding: calc(var(--sat) + 10px) 0 26px; overflow: hidden; touch-action: none; cursor: grab; }
+.create-prev.prise { cursor: grabbing; }
+#cr-prev { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: opacity .4s; }
+#create-screen.m3d #cr-prev { opacity: 0; }
+.create h2 { position: relative; margin: 0; padding: 0 14px; text-align: center; font-family: var(--f-display); font-size: 12.5px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); text-shadow: 0 1px 2px #000, 0 0 10px rgba(0,0,0,.9); pointer-events: none; }
+/* Le nom se règle sur la scène, sous le titre : toujours visible, en haut de l'écran, donc jamais sous le clavier du téléphone. */
+.cr-nom { position: relative; justify-self: center; display: block; width: min(250px, 72%); margin-top: 6px; cursor: text; }
+.cr-nom input { display: block; box-sizing: border-box; width: 100%; min-height: 44px; padding: 6px 12px; text-align: center; font: 700 19px var(--f-display); letter-spacing: .05em; color: var(--paper); background: rgba(10,8,12,.5); border: 1px solid rgba(217,180,94,.45); border-radius: 10px; text-shadow: 0 1px 3px #000; user-select: text; -webkit-user-select: text; }
+.cr-nom input:focus { border-color: var(--gold); background: rgba(10,8,12,.78); outline: none; box-shadow: 0 0 0 2px rgba(217,180,94,.35); }
+.cr-cadre { position: relative; min-height: 0; pointer-events: none; }
+.cr-geste { position: absolute; left: max(12px, var(--sal)); bottom: 26px; padding: 5px 10px 5px 26px; border-radius: 99px; background: rgba(10,8,12,.55); box-shadow: 0 0 0 1px rgba(217,180,94,.22); font-size: 12px; color: #d6ccb6; pointer-events: none; transition: opacity .5s; }
+.cr-geste::before { content: ""; position: absolute; left: 9px; top: 50%; width: 11px; height: 11px; margin-top: -6.5px; border: 1.5px solid var(--gold); border-left-color: transparent; border-radius: 50%; transform: rotate(-35deg); }
+.cr-geste.vu { opacity: 0; }
+.create .cr-plan { position: absolute; right: max(12px, var(--sar)); bottom: 24px; background: rgba(10,8,12,.74); } /* pas de flou d'arrière-plan : il ferait relire la scène 3D à chaque image */
+.create .cr-plan button { flex: 0 0 auto; padding: 6px 12px; min-height: 44px; white-space: nowrap; }
+.cr-panneau { position: relative; z-index: 1; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; margin-top: -14px; padding-inline: max(14px, var(--sal)) max(14px, var(--sar)); border-radius: 18px 18px 0 0; background: linear-gradient(180deg, #1b1715, #120f0e 46%); box-shadow: 0 -1px 0 rgba(217,180,94,.5), 0 -16px 36px rgba(0,0,0,.5); }
+.cr-onglets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 4px; box-shadow: inset 0 -1px 0 rgba(217,180,94,.16); }
+.cr-onglets button { position: relative; min-height: 46px; font: 700 13px var(--f-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.cr-onglets button[aria-selected="true"] { color: #f3dc9c; }
+.cr-onglets button[aria-selected="true"]::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 0; height: 2px; border-radius: 2px; background: var(--gold); box-shadow: 0 0 10px rgba(217,180,94,.7); }
+.cr-pages { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 12px 2px 4px; }
+.cr-page { display: grid; align-content: start; }
+.create .fld { margin-bottom: 10px; }
+.cr-duo { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 0 10px; }
+.create .seg { display: flex; flex-wrap: nowrap; justify-self: stretch; background: rgba(0,0,0,.34); }
+.create .seg button { flex: 1 1 0; min-width: 0; padding: 8px 6px; }
+.create .seg button[aria-pressed="true"] { background: linear-gradient(180deg, #d2ac58, #a8853d); box-shadow: inset 0 1px 0 rgba(255,240,200,.45); }
+.create .cr-face { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; overflow: visible; border-radius: 0; background: none; box-shadow: none; }
+.create .cr-face button { border-radius: 9px; background: rgba(0,0,0,.34); box-shadow: 0 0 0 1px var(--line); }
+.create .cr-face button[aria-pressed="true"] { box-shadow: 0 0 0 1px #f3dc9c, inset 0 1px 0 rgba(255,240,200,.45); }
+/* Nuanciers : libellé à gauche, six pastilles sur une ligne (elles rétrécissent un peu à 375 px plutôt que de passer à la ligne). */
+.create .cr-ligne { grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: 0; }
+.create .cr-ligne > span { font-size: 10.5px; letter-spacing: .08em; }
+.create .sws { display: grid; grid-template-columns: repeat(6, minmax(0, 44px)); gap: 6px; padding: 2px 4px; }
+.create .sws button { width: 100%; height: auto; aspect-ratio: 1; }
+.create .sws button { box-shadow: 0 0 0 2px rgba(0,0,0,.6), inset 0 -8px 12px rgba(0,0,0,.28), inset 0 2px 3px rgba(255,255,255,.22); transition: transform .12s; }
+.create .sws button[aria-pressed="true"] { box-shadow: 0 0 0 2px #120f0e, 0 0 0 4px var(--gold), inset 0 -8px 12px rgba(0,0,0,.28), inset 0 2px 3px rgba(255,255,255,.22); transform: scale(1.06); }
+.cr-actions { flex-wrap: nowrap; padding: 8px 0 calc(8px + var(--sab)); box-shadow: 0 -1px 0 rgba(217,180,94,.16); }
+.cr-actions .btn.primary { flex: 1; }
+#cr-classe { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+@media (orientation: landscape) {
+  .create { grid-template-rows: none; grid-template-columns: minmax(0, 1fr) min(60%, 620px); }
+  /* Paysage : la scène est étroite. Le cadrage s'empile à droite, le rappel du geste s'efface seul : rien ne reste sur les pieds du héros. */
+  .create-prev { padding: calc(var(--sat) + 8px) 14px calc(var(--sab) + 6px) var(--sal); }
+  .create h2 { font-size: 11.5px; letter-spacing: .14em; }
+  .cr-nom { margin-top: 4px; }
+  .cr-nom input { min-height: 44px; font-size: 17px; padding-block: 4px; }
+  .cr-geste { left: max(12px, var(--sal)); bottom: calc(var(--sab) + 10px); }
+  .create .cr-plan { right: 24px; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; }
+  .cr-panneau { margin: 0 0 0 -14px; padding-inline: 16px max(14px, var(--sar)); padding-top: var(--sat); border-radius: 18px 0 0 18px; background: linear-gradient(90deg, #1b1715, #120f0e 46%); box-shadow: -1px 0 0 rgba(217,180,94,.5), -16px 0 36px rgba(0,0,0,.5); }
+  .cr-pages { padding-top: 8px; }
+  .create .fld { margin-bottom: 7px; }
+  .cr-actions { padding-top: 6px; padding-bottom: calc(6px + var(--sab)); }
+}
+@media (orientation: landscape) and (min-width: 800px) {
+  .create .cr-face { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .create .cr-face button { font-size: 12.5px; padding-inline: 3px; }
+}
+@media (orientation: landscape) and (min-height: 560px) { .create h2 { font-size: 12.5px; letter-spacing: .2em; } .cr-pages { padding-top: 16px; } .create .fld { margin-bottom: 14px; } }
 </style>
 
 <div id="app">
@@ -2340,24 +2377,43 @@ body:has(#vcour) #net-parler { display: none !important; }
       <div class="title-rule" aria-hidden="true"></div>
       <div class="tag2">Cultive · Perce · Transcende</div>
       <div class="btns"><button class="btn primary" id="t-continue" hidden>Continuer</button><button class="btn" id="t-new">Nouvelle voie</button></div>
-      <div class="meta" id="t-build" data-build="a1f980c2be4c" aria-label="Identifiant de version">Version générée : a1f980c2be4c</div>
+      <div class="meta" id="t-build" data-build="d148056db539" aria-label="Identifiant de version">Version générée : d148056db539</div>
       <div class="meta" id="t-meta">Sauvegarde automatique dans ce navigateur. Jouable au doigt ou au clavier.</div>
     </div>
   </div>
   <div class="screen" id="create-screen" hidden>
     <div class="create">
-      <h2>Une personne sans talent<small>Pas de classe : ta voie naîtra de tes choix de progression.</small></h2>
-      <div class="create-prev"><canvas id="cr-prev" width="480" height="640"></canvas></div>
-      <div>
-        <label class="fld"><span>Nom</span><input type="text" id="cr-name" maxlength="16" value="Lin Feng" autocomplete="off"></label>
-        <div class="fld"><span>Corps</span><div class="seg" id="cr-corps"></div></div>
-        <div class="fld"><span>Cheveux</span><div class="sws" id="cr-hair"></div></div>
-        <div class="fld"><span>Robe</span><div class="sws" id="cr-robe"></div></div>
-        <div class="fld"><span>Teint</span><div class="sws" id="cr-skin"></div></div>
-        <div class="fld"><span>Coiffure</span><div class="seg" id="cr-coif"></div></div>
-        <div class="fld"><span>Région de départ</span><div class="starts" id="cr-start"></div></div>
-        <div class="fld"><span>Rythme de progression</span><div class="seg" id="cr-pace"><button data-v="0" aria-pressed="true">Exigeant (GDD)</button><button data-v="1" aria-pressed="false">Test rapide · EXP ×10</button></div><div class="hint" id="cr-pace-h">Formules exactes du cahier des charges : chaque niveau se mérite.</div></div>
-        <div class="row cr-actions" style="margin-top:6px"><button class="btn" id="cr-back">Retour</button><button class="btn primary" id="cr-go">Commencer la cultivation</button></div>
+      <div class="create-prev" id="cr-scene">
+        <canvas id="cr-prev" width="480" height="640" aria-label="Aperçu du personnage : glisse pour le faire tourner"></canvas>
+        <h2>Une personne sans talent</h2>
+        <label class="cr-nom"><input type="text" id="cr-name" maxlength="16" value="Lin Feng" autocomplete="off" autocapitalize="words" enterkeyhint="done" aria-label="Nom du personnage"></label>
+        <div class="cr-geste" id="cr-geste" aria-hidden="true">Glisse pour tourner</div>
+        <div class="cr-cadre" id="cr-cadre" aria-hidden="true"></div>
+        <div class="seg cr-plan" id="cr-plan" role="group" aria-label="Cadrage de l'aperçu"><button type="button" data-v="corps" aria-pressed="true">En pied</button><button type="button" data-v="buste" aria-pressed="false">Visage</button></div>
+      </div>
+      <div class="cr-panneau">
+        <div class="cr-onglets" id="cr-onglets" role="tablist" aria-label="Réglages du personnage"><button type="button" role="tab" data-o="allure" aria-selected="true">Allure</button><button type="button" role="tab" data-o="visage" aria-selected="false">Visage</button><button type="button" role="tab" data-o="destin" aria-selected="false">Destin</button></div>
+        <div class="cr-pages" id="cr-pages">
+          <div class="cr-page" data-o="allure" role="tabpanel">
+            <div class="cr-duo">
+              <div class="fld" data-plan="corps"><span>Corps</span><div class="seg" id="cr-corps"></div></div>
+              <div class="fld" data-plan="corps"><span>Gabarit</span><div class="seg" id="cr-gabarit"></div></div>
+            </div>
+            <div class="fld cr-ligne" data-plan="buste"><span>Cheveux</span><div class="sws" id="cr-hair"></div></div>
+            <div class="fld cr-ligne" data-plan="corps"><span>Robe</span><div class="sws" id="cr-robe"></div></div>
+            <div class="fld cr-ligne" data-plan="buste"><span>Teint</span><div class="sws" id="cr-skin"></div></div>
+          </div>
+          <div class="cr-page" data-o="visage" role="tabpanel" hidden>
+            <div class="fld" data-plan="buste"><span>Traits</span><div class="seg cr-face" id="cr-face"></div></div>
+            <div class="fld" data-plan="buste"><span>Coiffure</span><div class="seg cr-face" id="cr-coif"></div></div>
+          </div>
+          <div class="cr-page" data-o="destin" role="tabpanel" hidden>
+            <p class="hint" id="cr-classe">Pas de classe : ta voie naîtra de tes choix de progression.</p>
+            <div class="fld"><span>Région de départ</span><div class="starts" id="cr-start"></div></div>
+            <div class="fld"><span>Rythme de progression</span><div class="seg" id="cr-pace"><button data-v="0" aria-pressed="true">Exigeant (GDD)</button><button data-v="1" aria-pressed="false">Test rapide · EXP ×10</button></div><div class="hint" id="cr-pace-h">Formules exactes du cahier des charges : chaque niveau se mérite.</div></div>
+          </div>
+        </div>
+        <div class="row cr-actions"><button class="btn" id="cr-back">Retour</button><button class="btn primary" id="cr-go">Commencer la cultivation</button></div>
       </div>
     </div>
   </div>
@@ -16615,8 +16671,10 @@ function R3load() {
 
 
 function menu3D(dt, look, mode, prev) {
-  const ok = menu3Dframe(dt, look, mode, prev), ts = document.getElementById('title-screen');
+  
+  const ok = menu3Dframe(dt, look, mode, prev), ts = document.getElementById(mode === 'creation' ? 'create-screen' : 'title-screen');
   if (ts && ts.classList.contains('m3d') !== ok) ts.classList.toggle('m3d', ok);
+  if (!ok && window.__m) R3.menuRefus = { n: ((R3.menuRefus && R3.menuRefus.n) | 0) + 1, st: R3.st, r3d: S && S.settings ? S.settings.r3d : null, mode, t: Math.round(performance.now()) }; 
   return ok;
 }
 function menu3Dframe(dt, look, mode, prev) {
@@ -29436,6 +29494,49 @@ function R3init(T) {
       for (const [x, z, h, c] of MENU_PIN_POS) menuPin(MENU.pins, x, z, h, c);
     }
   }
+  
+  
+  
+  function menuStudio() {
+    if (MENU.studio) return MENU.studio;
+    const g = group(MENU.scn), st = MENU.studio = { g, brume: [] };
+    const voile = (map, c, op) => new T.MeshBasicMaterial({ map, color: col(c), transparent: true, opacity: op, depthWrite: false, fog: false, toneMapped: false });
+    const pose = (forme, m, x, y, z, sx, sy, sz) => { const o = mesh(g, forme, m, x, y, z, sx, sy, sz, 0, 0, 0, false); o.userData.ownMat = true; return o; };
+    if (!MENU.lune) {
+      MENU.lune = canvasTex(512, 512, (x) => {
+        const d = x.createRadialGradient(214, 196, 20, 256, 256, 236);
+        d.addColorStop(0, 'rgba(216,222,240,.6)'); d.addColorStop(0.65, 'rgba(140,152,198,.42)'); d.addColorStop(1, 'rgba(94,106,158,.32)');
+        x.fillStyle = d; x.beginPath(); x.arc(256, 256, 236, 0, TAU); x.fill();
+        x.strokeStyle = 'rgba(226,190,104,.9)'; x.lineWidth = 3.5; x.beginPath(); x.arc(256, 256, 244, 0, TAU); x.stroke();
+        x.strokeStyle = 'rgba(226,190,104,.3)'; x.lineWidth = 1.5; x.beginPath(); x.arc(256, 256, 252, 0, TAU); x.stroke();
+      });
+      MENU.lune.userData.keep = true;
+      MENU.pics = canvasTex(512, 256, (x) => {
+        for (const [base, amp, s, a] of [[150, 120, 1, 0.5], [185, 95, 1.7, 0.62], [215, 60, 2.6, 0.78]]) {
+          const f = x.createLinearGradient(0, base - amp, 0, 256); f.addColorStop(0, 'rgba(70,84,134,' + a + ')'); f.addColorStop(1, 'rgba(70,84,134,0)');
+          x.fillStyle = f; x.beginPath(); x.moveTo(0, 256);
+          for (let i = 0; i <= 512; i += 8) { const pic = Math.pow(1 - Math.abs(Math.sin(i * 0.0105 * s + s * 2.1)), 2.4); x.lineTo(i, base - (pic * 0.85 + Math.sin(i * 0.031 * s + s) * 0.1) * amp); }
+          x.lineTo(512, 256); x.fill();
+        }
+        const b = x.createLinearGradient(0, 0, 512, 0); b.addColorStop(0, 'rgba(0,0,0,1)'); b.addColorStop(0.16, 'rgba(0,0,0,0)'); b.addColorStop(0.84, 'rgba(0,0,0,0)'); b.addColorStop(1, 'rgba(0,0,0,1)');
+        x.globalCompositeOperation = 'destination-out'; x.fillStyle = b; x.fillRect(0, 0, 512, 256); 
+      });
+      MENU.pics.userData.keep = true;
+    }
+    pose('plane1', voile(softTex, '#33407a', 0.9), 0, 1.7, -6.2, 17, 13, 1);
+    pose('plane1', voile(MENU.pics, '#ffffff', 0.85), 0, 1.25, -5.6, 15, 4.6, 1);
+    pose('plane1', voile(MENU.lune, '#ffffff', 1), 0, 1.2, -4.4, 3.5, 3.5, 1);
+    for (const [y, z, w, h, op, ph] of [[0.5, -3.2, 9, 1.5, 0.2, 0.6], [0.28, -1.7, 6.5, 0.9, 0.15, 2.4]]) st.brume.push({ m: pose('plane1', voile(softTex, '#aab6dc', op), 0, y, z, w, h, 1), x0: 0, ph });
+    pose('quad', voile(softTex, '#3a4686', 0.5), 0, 0.004, -0.4, 4.4, 1, 3.4); 
+    
+    const rond = new T.CylinderGeometry(1, 1, 1, 56); 
+    for (const [c, surf, y, r, h] of [['#3a2420', 'wood', 0.045, 1.18, 0.09], ['#b08a3a', 'metal', 0.088, 1.2, 0.012], ['#5c5560', 'stone', 0.094, 1.1, 0.012]]) {
+      const o = new T.Mesh(rond, sharedToon(c, surf)); o.position.y = y; o.scale.set(r, h, r); g.add(o);
+    }
+    st.rond = rond;
+    pose('quad', new T.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, fog: false }), 0, 0.104, 0, 0.62, 1, 0.5);
+    return st;
+  }
   let MENU_GRAD = null, CREA_GRAD = null;
   function menuGrad() {
     if (MENU_GRAD) return MENU_GRAD;
@@ -29531,10 +29632,9 @@ function R3init(T) {
     resize(); const asp = VW / Math.max(1, VH); MENU.cam.aspect = asp;
     MENU.t += dt; const t = MENU.t;
     const hero = menuHero(look, mode);
-    let tourne = mode === 'creation';
-    try { if (tourne && matchMedia('(prefers-reduced-motion: reduce)').matches) tourne = false; } catch (e) { tourne = false; }
+    if (mode === 'creation' && !hero.d && MDL.st === 'loading') return false; 
     
-    if (mode === 'creation') hero.root.rotation.y = -Math.PI / 2 + 0.42 + (tourne ? Math.sin(t * 0.5) * 0.12 : 0); 
+    if (mode === 'creation') hero.root.rotation.y = -Math.PI / 2 + (prev ? prev.tour : 0.42);
     else hero.root.rotation.y = -Math.PI / 2 + 0.38;
     hero.root.position.y = mode === 'creation' ? 0.1 : 0.47; 
     
@@ -29542,11 +29642,14 @@ function R3init(T) {
     
     
     
+    
+    hero.age = (hero.age || 0) + dt; const tp = prev && prev.calme ? Math.min(hero.age, 0.6) : t;
     if (hero.d) {
-      poseHumanModel(hero.d, 'idle', 0.6, false, t);
+      poseHumanModel(hero.d, 'idle', 0.6, false, tp);
       if (ancreApi && ancreApi.droit) ancreApi.droit(hero.d.m);
       const hanfu = hero.d.tenue && hero.d.tenue.has('hanfu');
-      menuPostureMaitre(hero.d, t, hero.root.rotation.y, !hanfu);
+      
+      menuPostureMaitre(hero.d, tp, hero.root.rotation.y, mode === 'creation' ? false : !hanfu);
       if (ancreApi && ancreApi.elargir) ancreApi.elargir(hero.d.m, hero.d.morpho && hero.d.morpho.kG);
       if (ancreApi && ancreApi.calerCoiffe) ancreApi.calerCoiffe(hero.d.m);
       showModelInk(hero.d.m, false); showInk(hero.d.ink, false);
@@ -29562,54 +29665,54 @@ function R3init(T) {
     }
     const portrait = asp < 1;
     ren.setRenderTarget(null);
+    const crea = !!prev;
+    if (crea || MENU.studio) menuStudio().g.visible = crea;
+    MENU.near.visible = MENU.far.visible = !crea;
+    MENU.scn.background = col(crea ? '#0e0c12' : '#0b0d18');
+    if (MENU.keyL) {
+      MENU.keyL.intensity = crea ? 2.5 : 1.8; MENU.rimC.intensity = crea ? 2.3 : 1.5; MENU.rimF.intensity = crea ? 1.9 : 1.3;
+      if (crea) MENU.keyL.position.set(1.5, 2.3, 3.4); else MENU.keyL.position.set(2.5, 3.6, 5.5); 
+    }
     
     
-    if (prev) {
+    
+    if (crea) {
+      for (const l of MENU.lans) l.intensity = 0; 
+      menuPinsVisibles(true); 
+      const st = MENU.studio;
+      if (!prev.calme) for (const v of st.brume) v.m.position.x = v.x0 + Math.sin(t * 0.11 + v.ph) * 0.9;
+      MENU.flies.p.visible = !prev.calme; 
       
-      menuPinsVisibles(true);
-      MENU.near.visible = true; MENU.far.visible = true; MENU.flies.p.visible = false;
-      if (MENU.pavillon) MENU.pavillon.visible = false;
-      if (MENU.lanPav) MENU.lanPav.intensity = 0;
-      const fog = MENU.scn.fog, fogN = fog.near, fogF = fog.far, fogC = fog.color.clone();
-      fog.near = 8; fog.far = 42; fog.color.copy(col('#1c2438'));
-      MENU.scn.background = col('#12182c');
-      if (MENU.keyL) { MENU.keyL.intensity = 2.6; MENU.rimC.intensity = 2.15; MENU.rimF.intensity = 1.65; }
-      const kx = MENU.keyL ? MENU.keyL.position.x : 0, ky = MENU.keyL ? MENU.keyL.position.y : 0, kz = MENU.keyL ? MENU.keyL.position.z : 0;
-      if (MENU.keyL) MENU.keyL.position.set(1.5, 2.15, 3.3); 
-      const grads = hero.toon.map((mm) => mm.gradientMap); for (const mm of hero.toon) mm.gradientMap = creaGrad();
-      const expo = ren.toneMappingExposure; ren.toneMappingExposure = 1.14;
-      const pw = Math.max(2, prev.width | 0), ph = Math.max(2, prev.height | 0);
-      if (!MENU.rt || MENU.rt.width !== pw || MENU.rt.height !== ph) {
-        if (MENU.rt) MENU.rt.dispose();
-        MENU.rt = new T.WebGLRenderTarget(pw, ph, { depthBuffer: true, stencilBuffer: false });
-        MENU.rt.texture.colorSpace = T.SRGBColorSpace;
+      let tete = hero.root.position.y + heroMeters(look) * 0.9;
+      if (hero.d) {
+        const m = hero.d.m; if (m.osTete === undefined) m.osTete = modelBone(m, /^head$/i) || null;
+        if (m.osTete) tete = m.osTete.getWorldPosition(PM_A).y;
       }
-      MENU.cam.aspect = pw / ph;
+      const y0 = hero.root.position.y - 0.05, y1 = tete + 0.42;
+      MENU.plan = MENU.plan == null || Math.abs(prev.plan - MENU.plan) < 0.002 ? prev.plan : MENU.plan + (prev.plan - MENU.plan) * (1 - Math.exp(-dt * 4.5));
+      const p = MENU.plan * MENU.plan * (3 - 2 * MENU.plan);
+      const haut = (y1 - y0) * Math.pow(0.68 / (y1 - y0), p); 
+      const cy = (y0 + y1) / 2 + (tete + 0.05 - (y0 + y1) / 2) * p, large = 1.1 - 0.42 * p;
+      const fov = 26, tg = Math.tan(fov * Math.PI / 360), ca = prev.w / Math.max(1, prev.h);
+      const dist = Math.max(haut / (2 * tg * 0.95), large / (2 * tg * ca));
+      MENU.cam.fov = fov;
+      MENU.cam.position.set(0, cy + 0.2 * (1 - p) + 0.02, dist); MENU.cam.lookAt(0, cy, 0);
+      MENU.cam.setViewOffset(prev.w, prev.h, -prev.x, -prev.y, VW, VH); 
+      const grads = hero.toon.map((mm) => mm.gradientMap); for (const mm of hero.toon) mm.gradientMap = creaGrad();
+      const expo = ren.toneMappingExposure; ren.toneMappingExposure = 1.12;
       
       
-      MENU.cam.fov = 34; MENU.cam.position.set(0.66, 1.45, 2.21); MENU.cam.lookAt(0.0, 1.18, -0.6); MENU.cam.updateProjectionMatrix();
-      const ratio = ren.getPixelRatio();
-      ren.setPixelRatio(1); ren.setRenderTarget(MENU.rt); ren.setViewport(0, 0, pw, ph);
-      ren.render(MENU.scn, MENU.cam);
-      if (!MENU.pix || MENU.pix.length !== pw * ph * 4) MENU.pix = new Uint8Array(pw * ph * 4);
-      ren.readRenderTargetPixels(MENU.rt, 0, 0, pw, ph, MENU.pix);
-      ren.setRenderTarget(null); ren.setPixelRatio(ratio); ren.setSize(VW, VH, false);
-      if (MENU.keyL) MENU.keyL.position.set(kx, ky, kz);
-      const x = prev.getContext('2d');
-      const img = x.createImageData(pw, ph);
-      for (let row = 0; row < ph; row++) img.data.set(MENU.pix.subarray((ph - 1 - row) * pw * 4, (ph - row) * pw * 4), row * pw * 4);
-      x.setTransform(1, 0, 0, 1, 0, 0); x.putImageData(img, 0, 0);
-      hero.toon.forEach((mm, i) => { mm.gradientMap = grads[i]; }); ren.toneMappingExposure = expo;
-      if (MENU.keyL) { MENU.keyL.intensity = 1.8; MENU.rimC.intensity = 1.5; MENU.rimF.intensity = 1.3; }
-      if (MENU.lanPav) MENU.lanPav.intensity = 0;
-      fog.near = fogN; fog.far = fogF; fog.color.copy(fogC);
-      MENU.near.visible = true; MENU.far.visible = true; if (MENU.pavillon) MENU.pavillon.visible = false;
-      MENU.flies.p.visible = true; MENU.scn.background = col('#0b0d18');
-      const keep = ren.getClearColor(new T.Color()), keepA = ren.getClearAlpha();
-      ren.setClearColor(0x0c0a0e, 1); ren.clear(); ren.setClearColor(keep, keepA);
+      try { ren.render(MENU.scn, MENU.cam); } finally { ren.toneMappingExposure = expo; hero.toon.forEach((mm, i) => { mm.gradientMap = grads[i]; }); }
+      if (window.__m) { 
+        const px = (y) => { PM_B.set(0, y, 0).project(MENU.cam); return [+((PM_B.x + 1) / 2 * VW).toFixed(1), +((1 - PM_B.y) / 2 * VH).toFixed(1)]; };
+        MENU.apercu = { plan: +MENU.plan.toFixed(3), tour: +prev.tour.toFixed(3), tete: px(tete), pieds: px(hero.root.position.y), cadre: [prev.x, prev.y, prev.w, prev.h], modele: !!hero.d, ratio: ren.getPixelRatio(), cle: MENU.key, n: MENU.nImg = (MENU.nImg | 0) + 1 };
+      }
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, VW, VH);
       return true;
     }
+    if (MENU.cam.view && MENU.cam.view.enabled) MENU.cam.clearViewOffset();
+    MENU.flies.p.visible = true;
+    MENU.cam.aspect = asp; MENU.plan = null;
     
     const dx = Math.sin(t * 0.12) * 0.25; 
     menuPinsVisibles(!portrait);
@@ -29629,6 +29732,7 @@ function R3init(T) {
     return true;
   };
   R3.menuHero = () => MENU.hero; 
+  R3.menuApercu = () => MENU.apercu || null; 
   R3.menuCadre = () => { 
     if (!MENU.cam) return null;
     const p = MENU.cam.position;
@@ -29644,7 +29748,8 @@ function R3init(T) {
     MENU.scn.traverse((o) => { if (o.userData.ownMat && o.material) o.material.dispose(); if (o.userData.ownGeo && o.geometry) o.geometry.dispose(); });
     
     
-    if (MENU.rt) { MENU.rt.dispose(); MENU.rt = null; }
+    if (MENU.studio && MENU.studio.rond) MENU.studio.rond.dispose();
+    MENU.studio = null; MENU.plan = null;
     MENU.scn = null; MENU.hero = null; MENU.key = ''; lastW = 0; 
   };
   
@@ -32858,48 +32963,111 @@ function setupCreate() {
   if (!dev) CR.test = 0;
   $$('#cr-pace button').forEach((b) => { b.setAttribute('aria-pressed', String(+b.dataset.v === CR.test)); b.onclick = () => { CR.test = +b.dataset.v; setupCreate(); }; });
   $('#cr-pace-h').textContent = CR.test ? 'Pour découvrir tout le contenu vite. Modifiable plus tard dans les options.' : 'Formules exactes du cahier des charges : chaque niveau se mérite. Modifiable dans les options.';
+  crLier(); crOnglet(CRV.onglet, true);
   drawPreview();
 }
+
+
+
+const CRV = { tour: 0, vit: 0, prise: null, repos: 9, pose: 0, ts: 0, plan: 'corps', onglet: 'allure', lie: false, r: null, rt: 0 };
+function crPlan(plan) {
+  CRV.plan = plan === 'buste' ? 'buste' : 'corps';
+  $$('#cr-plan button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === CRV.plan)));
+}
+
+function crCalme() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+function crFace() { CRV.repos = 9; CRV.ts = 0; CRV.vit = 0; CRV.pose = 1.6; if (crCalme()) CRV.tour = 0; }
+function crOnglet(o, discret) {
+  const change = CRV.onglet !== o; CRV.onglet = o;
+  $$('#cr-onglets button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.o === o)));
+  $$('#cr-pages .cr-page').forEach((pg) => { pg.hidden = pg.dataset.o !== o; });
+  if (discret) return;
+  if (change) { const pg = $('#cr-pages'); if (pg) pg.scrollTop = 0; }
+  crPlan(o === 'visage' ? 'buste' : 'corps'); CRV.rt = 0;
+}
+function crLier() {
+  if (CRV.lie) return; CRV.lie = true;
+  const scene = $('#cr-scene'), pages = $('#cr-pages'), nom = $('#cr-name');
+  $$('#cr-onglets button').forEach((b) => { b.onclick = () => crOnglet(b.dataset.o); });
+  $$('#cr-plan button').forEach((b) => { b.onclick = () => crPlan(b.dataset.v); });
+  
+  pages.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('button'), f = b && b.closest('.fld[data-plan]');
+    if (f) { crPlan(f.dataset.plan); crFace(); }
+  }, true);
+  const fin = (e) => {
+    if (!CRV.prise || (e && e.pointerId !== CRV.prise.id)) return;
+    CRV.prise = null; CRV.repos = 0; scene.classList.remove('prise');
+  };
+  scene.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button, label, input') || (e.pointerType === 'mouse' && e.button)) return;
+    if (document.activeElement === nom) nom.blur(); 
+    CRV.prise = { id: e.pointerId, x: e.clientX, t: performance.now() }; CRV.vit = 0; scene.classList.add('prise');
+    try { scene.setPointerCapture(e.pointerId); } catch (err) { }
+  });
+  scene.addEventListener('pointermove', (e) => {
+    const g = CRV.prise; if (!g || e.pointerId !== g.id) return;
+    const now = performance.now(), dx = e.clientX - g.x, d = dx * 0.0125; 
+    if (Math.abs(dx) > 2) $('#cr-geste').classList.add('vu');
+    CRV.tour += d; CRV.vit = d / Math.max(0.008, (now - g.t) / 1000); g.x = e.clientX; g.t = now;
+  });
+  scene.addEventListener('pointerup', fin); scene.addEventListener('pointercancel', fin); scene.addEventListener('lostpointercapture', fin);
+  nom.addEventListener('keydown', (e) => { if (e.key === 'Enter') nom.blur(); }); 
+  setTimeout(() => $('#cr-geste').classList.add('vu'), 7000); 
+  addEventListener('resize', () => { CRV.rt = 0; if (!$('#create-screen').hidden) drawPreview(); });
+}
+
+function crVue(dt) {
+  const calme = crCalme();
+  if (!CRV.prise) {
+    CRV.repos += dt;
+    if (Math.abs(CRV.vit) > 0.01) { CRV.tour += CRV.vit * dt; CRV.vit *= Math.exp(-dt * 3.2); } 
+    else if (CRV.repos > 3.2 && !calme) { 
+      CRV.tour = Math.atan2(Math.sin(CRV.tour), Math.cos(CRV.tour)); CRV.tour *= Math.exp(-dt * (CRV.pose > 0 ? 9 : 2.4));
+      if (CRV.pose > 0) CRV.pose -= dt; else if (Math.abs(CRV.tour) < 0.02) CRV.ts += dt;
+    }
+  }
+  CRV.rt -= dt;
+  if (CRV.rt <= 0 || !CRV.r) { 
+    const c = $('#cr-cadre').getBoundingClientRect();
+    CRV.r = { x: c.left, y: c.top, w: Math.max(40, c.width), h: Math.max(40, c.height) }; CRV.rt = 0.4;
+  }
+  const r = CRV.r;
+  return { x: r.x, y: r.y, w: r.w, h: r.h, calme, plan: CRV.plan === 'buste' ? 1 : 0, tour: CRV.tour + (calme ? 0 : Math.sin(CRV.ts * 0.36) * 0.6) };
+}
+
 function drawPreview() {
-  const c = $('#cr-prev'); const x = c.getContext('2d'); const w = c.width, h = c.height;
+  const c = $('#cr-prev'); const bx = c.getBoundingClientRect();
+  if (bx.width > 8 && bx.height > 8) {
+    const k = Math.min(2, window.devicePixelRatio || 1), cw = Math.round(bx.width * k), chh = Math.round(bx.height * k);
+    if (c.width !== cw || c.height !== chh) { c.width = cw; c.height = chh; }
+  }
+  const x = c.getContext('2d'); const w = c.width, h = c.height;
   x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, w, h);
-  apercuDecor(x, w, h);
+  
+  const vu = bx.height > 8, cd = $('#cr-cadre').getBoundingClientRect(), e = vu ? h / bx.height : 1;
+  const cy0 = vu ? (cd.top - bx.top) * e : h * 0.12, cy1 = vu ? (cd.bottom - bx.top) * e : h * 0.94;
+  const cx = vu ? (cd.left + cd.width / 2 - bx.left) * e : w / 2, ch = Math.max(40, cy1 - cy0);
+  apercuDecor(x, w, h, cx, cy0, ch);
   const robe = APPEARANCE.robe[CR.robe];
-  x.save(); x.translate(w / 2, h * 0.78); x.scale(7.2, 7.2);
-  const baseH = CR.corps === 1 ? 1.68 : 1.75;
+  const baseH = CR.corps === 1 ? 1.68 : 1.75, ech = ch / 52; 
+  x.save(); x.translate(cx, cy0 + ch * 0.95); x.scale(ech, ech);
   withCtx(x, () => drawHuman(0, 0, { face: Math.PI / 2 - 0.25, scale: heroMeters(CR) / baseH, robe, robe2: shade(robe, -0.35), skin: APPEARANCE.skin[CR.skin], hair: APPEARANCE.hair[CR.hair], hat: coifHat(CR), mark: CR.face | 0, weapon: null, sash: '#b08a3a', fem: CR.corps === 1, carrure: CR.gabarit }));
   x.restore();
 }
 
-
-function apercuDecor(x, w, h) {
-  const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#0b0d18'); g.addColorStop(0.55, '#1c1b2b'); g.addColorStop(1, '#241a1c');
+function apercuDecor(x, w, h, cx, cy0, ch) {
+  if (cx == null) { cx = w / 2; cy0 = h * 0.1; ch = h * 0.84; }
+  const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#0d0f1c'); g.addColorStop(0.6, '#171626'); g.addColorStop(1, '#0e0c12');
   x.fillStyle = g; x.fillRect(0, 0, w, h);
-  for (let i = 0; i < 28; i++) { x.fillStyle = `rgba(240,230,210,${0.18 + (i % 4) * 0.1})`; x.fillRect((i * 131.7) % w, (i * 71.3) % (h * 0.4), 2, 2); }
-  const mx = w * 0.74, my = h * 0.16, mr = w * 0.1;
-  const halo = x.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3); halo.addColorStop(0, 'rgba(240,226,190,.22)'); halo.addColorStop(1, 'rgba(240,226,190,0)');
-  x.fillStyle = halo; x.fillRect(0, 0, w, h * 0.6);
-  x.fillStyle = '#efe4c4'; x.beginPath(); x.arc(mx, my, mr, 0, TAU); x.fill();
-  const plans = [['#3a3d55', 0.42, 0.16, 1], ['#272a3c', 0.5, 0.12, 2], ['#171824', 0.58, 0.09, 3]];
-  for (const [c, base, amp, sd] of plans) {
-    x.fillStyle = c; x.beginPath(); x.moveTo(0, h);
-    
-    let px = 0, py = h * titleCrete(base, amp, sd, 0); x.lineTo(px, py);
-    for (let i = 16; i <= w + 16; i += 16) { const y = h * titleCrete(base, amp, sd, i * 2.2); x.quadraticCurveTo(px, py, (px + i) / 2, (py + y) / 2); px = i; py = y; }
-    x.lineTo(w, h); x.closePath(); x.fill();
-  }
-  const sol = h * 0.68;
-  const gs = x.createLinearGradient(0, sol, 0, h); gs.addColorStop(0, '#1d1517'); gs.addColorStop(1, '#0c0a0c');
-  x.fillStyle = gs; x.fillRect(0, sol, w, h - sol);
-  
-  const lum = x.createRadialGradient(w / 2, h * 0.5, 4, w / 2, h * 0.5, w * 0.42); lum.addColorStop(0, 'rgba(217,180,94,.32)'); lum.addColorStop(1, 'rgba(217,180,94,0)');
-  x.fillStyle = lum; x.fillRect(0, 0, w, h);
-  const gy = sol - h * 0.06, gh = h * 0.06, pas = w / 5;
-  x.fillStyle = '#6e1f18';
-  for (let px = pas / 2; px < w; px += pas) { x.fillRect(px - 5, gy - 4, 10, gh + 4); x.fillStyle = '#c9a24a'; x.fillRect(px - 6, gy - 8, 12, 5); x.fillStyle = '#6e1f18'; }
-  x.fillStyle = '#8a2a20'; x.fillRect(0, gy, w, 7); x.fillRect(0, gy + gh - 6, w, 6);
-  x.strokeStyle = 'rgba(138,42,32,.85)'; x.lineWidth = 3;
-  for (let px = pas / 2; px < w - 1; px += pas) { x.beginPath(); x.moveTo(px + 7, gy + gh - 6); x.lineTo(px + pas / 2, gy + 9); x.lineTo(px + pas - 7, gy + gh - 6); x.stroke(); }
+  const my = cy0 + ch * 0.42, mr = ch * 0.56;
+  const halo = x.createRadialGradient(cx, my, mr * 0.1, cx, my, mr * 1.5); halo.addColorStop(0, 'rgba(120,138,190,.42)'); halo.addColorStop(0.55, 'rgba(70,80,128,.2)'); halo.addColorStop(1, 'rgba(70,80,128,0)');
+  x.fillStyle = halo; x.fillRect(0, 0, w, h);
+  x.strokeStyle = 'rgba(217,180,94,.4)'; x.lineWidth = Math.max(1.5, ch * 0.006); x.beginPath(); x.arc(cx, my, mr, 0, TAU); x.stroke();
+  const sy = cy0 + ch * 0.95, rx = ch * 0.4, ry = ch * 0.07;
+  const sol = x.createRadialGradient(cx, sy, 2, cx, sy, rx); sol.addColorStop(0, '#5a4a40'); sol.addColorStop(1, '#2a2024');
+  x.fillStyle = sol; x.beginPath(); x.ellipse(cx, sy, rx, ry, 0, 0, TAU); x.fill();
+  x.strokeStyle = 'rgba(217,180,94,.6)'; x.lineWidth = Math.max(1.5, ch * 0.007); x.stroke();
 }
 function withCtx(c, fn) { const o = ctx; ctxSwap(c); try { fn(); } finally { ctxSwap(o); } }
 
@@ -32908,7 +33076,10 @@ function withCtx(c, fn) { const o = ctx; ctxSwap(c); try { fn(); } finally { ctx
 let titleLook = null;
 function menuFrame(dt, t) {
   const crea = !$('#create-screen').hidden;
-  if (menu3D(dt, crea || !titleLook ? CR : titleLook, crea ? 'creation' : 'titre', crea ? $('#cr-prev') : null)) return;
+  if (menu3D(dt, crea || !titleLook ? CR : titleLook, crea ? 'creation' : 'titre', crea ? crVue(dt) : null)) return;
+  
+  
+  if (crea) { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, VW, VH); return; }
   
   
   const sans3D = (typeof R3 !== 'undefined' && R3.st === 'failed') || (S && S.settings && S.settings.r3d === false);
